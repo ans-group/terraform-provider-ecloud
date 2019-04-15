@@ -2,16 +2,18 @@
 
 ## Getting Started
 
-To get started, the `terraform-provider-ecloud` binary (`.exe` extension if Windows) should be downloaded and placed in a directory. For this example,
+To get started, the `terraform-provider-ecloud` binary (`.exe` extension if Windows) should be downloaded from [Releases](https://github.com/ukfast/terraform-provider-ecloud/releases) and placed in a directory. For this example,
 we'll place it at `/tmp/terraform-provider-ecloud`.
 
 Next, we'll go ahead and create a new directory to hold our `terraform` file and state:
 
-> mkdir /home/user/terraform
+```console
+mkdir /home/user/terraform
+```
 
 We'll then create an example terraform file `/home/user/terraform/test.tf`:
 
-```
+```console
 cat > /home/user/terraform/test.tf <EOF
 provider "ecloud" {
   api_key = "abc"
@@ -29,9 +31,17 @@ resource "ecloud_virtualmachine" "vm-1" {
 EOF
 ```
 
+We'll then need to initialise terraform with our provider (specifying `plugin-dir` as the path to where the provider was downloaded to earlier):
+
+```console
+terraform init -get-plugins=false -plugin-dir=/tmp/terraform-provider-ecloud
+```
+
 Finally, we can invoke `terraform apply` to apply our terraform configuration:
 
-> terraform apply
+```console
+terraform apply
+```
 
 ## Provider
 
@@ -109,21 +119,3 @@ Finally, we can invoke `terraform apply` to apply our terraform configuration:
 
 - `name`: (Required) Name of network
 - `solution_id`: (Required) ID of solution which the network is a member of
-
-## Example
-
-```terraform
-provider "ecloud" {
-  api_key = "abc"
-}
-
-resource "ecloud_virtualmachine" "vm-1" {
-    cpu = 2
-    ram = 2
-    os_disk = 20
-    template = "CentOS 7 64-bit"
-    name = "vm-1"
-    environment = "Hybrid"
-    solution_id = 123
-}
-```
