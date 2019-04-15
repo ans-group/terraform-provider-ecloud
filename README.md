@@ -14,7 +14,7 @@ mkdir /home/user/terraform
 We'll then create an example terraform file `/home/user/terraform/test.tf`:
 
 ```console
-cat > /home/user/terraform/test.tf <EOF
+cat <<EOF > /home/user/terraform/test.tf
 provider "ecloud" {
   api_key = "abc"
 }
