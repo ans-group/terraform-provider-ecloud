@@ -40,7 +40,7 @@ func resourceSolutionTag() *schema.Resource {
 func resourceSolutionTagCreate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	vmid := d.Get("solution_id").(int)
+	solutionID := d.Get("solution_id").(int)
 	tagKey := d.Get("key").(string)
 	tagValue := d.Get("value").(string)
 
@@ -51,7 +51,7 @@ func resourceSolutionTagCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Created CreateTagRequest: %+v", createReq)
 
 	log.Print("Creating solution tag")
-	err := service.CreateSolutionTag(vmid, createReq)
+	err := service.CreateSolutionTag(solutionID, createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating solution tag: %s", err)
 	}
@@ -64,11 +64,11 @@ func resourceSolutionTagCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceSolutionTagRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	vmid := d.Get("solution_id").(int)
+	solutionID := d.Get("solution_id").(int)
 	tagKey := d.Id()
 
-	log.Printf("Retrieving tag with key [%s] for solution with ID [%d]", tagKey, vmid)
-	tag, err := service.GetSolutionTag(vmid, tagKey)
+	log.Printf("Retrieving tag with key [%s] for solution with ID [%d]", tagKey, solutionID)
+	tag, err := service.GetSolutionTag(solutionID, tagKey)
 	if err != nil {
 		switch err.(type) {
 		case *ecloudservice.TagNotFoundError:
@@ -88,7 +88,7 @@ func resourceSolutionTagRead(d *schema.ResourceData, meta interface{}) error {
 func resourceSolutionTagUpdate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	vmid := d.Get("solution_id").(int)
+	solutionID := d.Get("solution_id").(int)
 	tagKey := d.Id()
 
 	if d.HasChange("value") {
@@ -96,10 +96,10 @@ func resourceSolutionTagUpdate(d *schema.ResourceData, meta interface{}) error {
 			Value: d.Get("value").(string),
 		}
 
-		log.Printf("Updating tag with key [%s] for solution with ID [%d]", tagKey, vmid)
-		err := service.PatchSolutionTag(vmid, tagKey, patchReq)
+		log.Printf("Updating tag with key [%s] for solution with ID [%d]", tagKey, solutionID)
+		err := service.PatchSolutionTag(solutionID, tagKey, patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating tag with key [%s] for solution with ID [%d]", tagKey, vmid)
+			return fmt.Errorf("Error updating tag with key [%s] for solution with ID [%d]", tagKey, solutionID)
 		}
 	}
 
@@ -109,13 +109,13 @@ func resourceSolutionTagUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceSolutionTagDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	vmid := d.Get("solution_id").(int)
+	solutionID := d.Get("solution_id").(int)
 	tagKey := d.Id()
 
-	log.Printf("Removing tag with key [%s] for solution with ID [%d]", tagKey, vmid)
-	err := service.DeleteSolutionTag(vmid, tagKey)
+	log.Printf("Removing tag with key [%s] for solution with ID [%d]", tagKey, solutionID)
+	err := service.DeleteSolutionTag(solutionID, tagKey)
 	if err != nil {
-		return fmt.Errorf("Error removing tag with key [%s] for solution with ID [%d]: %s", tagKey, vmid, err)
+		return fmt.Errorf("Error removing tag with key [%s] for solution with ID [%d]: %s", tagKey, solutionID, err)
 	}
 
 	return nil
