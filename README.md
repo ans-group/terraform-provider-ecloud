@@ -1,5 +1,38 @@
 # terraform-provider-ecloud
 
+## Getting Started
+
+To get started, the `terraform-provider-ecloud` binary (`.exe` extension if Windows) should be downloaded and placed in a directory. For this example,
+we'll place it at `/tmp/terraform-provider-ecloud`.
+
+Next, we'll go ahead and create a new directory to hold our `terraform` file and state:
+
+> mkdir /home/user/terraform
+
+We'll then create an example terraform file `/home/user/terraform/test.tf`:
+
+```
+cat > /home/user/terraform/test.tf <EOF
+provider "ecloud" {
+  api_key = "abc"
+}
+
+resource "ecloud_virtualmachine" "vm-1" {
+    cpu = 2
+    ram = 2
+    os_disk = 20
+    template = "CentOS 7 64-bit"
+    name = "vm-1"
+    environment = "Hybrid"
+    solution_id = 123
+}
+EOF
+```
+
+Finally, we can invoke `terraform apply` to apply our terraform configuration:
+
+> terraform apply
+
 ## Provider
 
 **Parameters**
