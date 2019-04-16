@@ -107,7 +107,7 @@ var testAccCheckVirtualMachineTagConfigTemplate_basic = `
 resource "ecloud_virtualmachine" "test-vm" {
   cpu = 2
   ram = 2
-  hdd = 20
+  os_disk = 20
   template = "CentOS 7 64-bit"
   name = "{{ .VMName }}"
   environment = "{{ .UKF_TEST_SOLUTION_ENVIRONMENT }}"
