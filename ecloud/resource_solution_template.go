@@ -44,10 +44,10 @@ func resourceSolutionTemplateCreate(d *schema.ResourceData, meta interface{}) er
 
 	solutionID := d.Get("solution_id").(int)
 	vmID := d.Get("virtualmachine_id").(int)
-	name := d.Get("name").(string)
+	templateName := d.Get("name").(string)
 
 	createReq := ecloudservice.CreateVirtualMachineTemplateRequest{
-		TemplateName: name,
+		TemplateName: templateName,
 		TemplateType: ecloudservice.TemplateTypeSolution,
 	}
 	log.Printf("Created CreateVirtualMachineTemplateRequest: %+v", createReq)
@@ -70,7 +70,7 @@ func resourceSolutionTemplateCreate(d *schema.ResourceData, meta interface{}) er
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{"Existent"},
-		Refresh:    SolutionTemplateExistentStatusRefreshFunc(service, solutionID, name),
+		Refresh:    SolutionTemplateExistentStatusRefreshFunc(service, solutionID, templateName),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -78,10 +78,10 @@ func resourceSolutionTemplateCreate(d *schema.ResourceData, meta interface{}) er
 
 	_, err = stateConf.WaitForState()
 	if err != nil {
-		return fmt.Errorf("Error waiting for solution template with name [%s] to return status of [Existent]: %s", name, err)
+		return fmt.Errorf("Error waiting for solution template with name [%s] to return status of [Existent]: %s", templateName, err)
 	}
 
-	d.SetId(name)
+	d.SetId(templateName)
 
 	return resourceSolutionTemplateRead(d, meta)
 }
@@ -89,8 +89,8 @@ func resourceSolutionTemplateCreate(d *schema.ResourceData, meta interface{}) er
 func resourceSolutionTemplateRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	solutionID := d.Get("solution_id").(int)
 	templateName := d.Id()
+	solutionID := d.Get("solution_id").(int)
 
 	log.Printf("Retrieving template with name [%s] for solution with ID [%d]", templateName, solutionID)
 	template, err := service.GetSolutionTemplate(solutionID, templateName)
@@ -105,27 +105,42 @@ func resourceSolutionTemplateRead(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	d.Set("name", template.Name)
+	d.Set("solution_id", solutionID)
 
 	return nil
 }
 
 func resourceSolutionTemplateUpdate(d *schema.ResourceData, meta interface{}) error {
-	// service := meta.(ecloudservice.ECloudService)
+	service := meta.(ecloudservice.ECloudService)
 
-	// vmid := d.Get("solution_id").(int)
-	// TemplateKey := d.Id()
+	templateName := d.Id()
+	solutionID := d.Get("solution_id").(int)
 
-	// if d.HasChange("value") {
-	// 	patchReq := ecloudservice.PatchTemplateRequest{
-	// 		Value: d.Get("value").(string),
-	// 	}
+	if d.HasChange("name") {
+		newTemplateName := d.Get("name").(string)
 
-	// 	log.Printf("Updating Template with key [%s] for solution with ID [%d]", TemplateKey, vmid)
-	// 	err := service.PatchSolutionTemplate(vmid, TemplateKey, patchReq)
-	// 	if err != nil {
-	// 		return fmt.Errorf("Error updating Template with key [%s] for solution with ID [%d]", TemplateKey, vmid)
-	// 	}
-	// }
+		err := service.RenameSolutionTemplate(solutionID, templateName, ecloudservice.RenameTemplateRequest{
+			Destination: newTemplateName,
+		})
+		if err != nil {
+			return fmt.Errorf("Error updating template with name [%s]: %s", templateName, err)
+		}
+
+		stateConf := &resource.StateChangeConf{
+			Target:     []string{"Existent"},
+			Refresh:    SolutionTemplateExistentStatusRefreshFunc(service, solutionID, newTemplateName),
+			Timeout:    d.Timeout(schema.TimeoutCreate),
+			Delay:      5 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+
+		_, err = stateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for solution template with name [%s] to return status of [Existent]: %s", newTemplateName, err)
+		}
+
+		d.SetId(newTemplateName)
+	}
 
 	return resourceSolutionTemplateRead(d, meta)
 }
@@ -133,18 +148,18 @@ func resourceSolutionTemplateUpdate(d *schema.ResourceData, meta interface{}) er
 func resourceSolutionTemplateDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
+	templateName := d.Id()
 	solutionID := d.Get("solution_id").(int)
-	name := d.Id()
 
-	log.Printf("Removing solution template with name [%s] for solution with ID [%d]", name, solutionID)
-	err := service.DeleteSolutionTemplate(solutionID, name)
+	log.Printf("Removing solution template with name [%s] for solution with ID [%d]", templateName, solutionID)
+	err := service.DeleteSolutionTemplate(solutionID, templateName)
 	if err != nil {
-		return fmt.Errorf("Error removing solution template with name [%s] for solution with ID [%d]: %s", name, solutionID, err)
+		return fmt.Errorf("Error removing solution template with name [%s] for solution with ID [%d]: %s", templateName, solutionID, err)
 	}
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{"NonExistent"},
-		Refresh:    SolutionTemplateExistentStatusRefreshFunc(service, solutionID, name),
+		Refresh:    SolutionTemplateExistentStatusRefreshFunc(service, solutionID, templateName),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -152,7 +167,7 @@ func resourceSolutionTemplateDelete(d *schema.ResourceData, meta interface{}) er
 
 	_, err = stateConf.WaitForState()
 	if err != nil {
-		return fmt.Errorf("Error waiting for solution template with name [%s] to return status of [NonExistent]: %s", name, err)
+		return fmt.Errorf("Error waiting for solution template with name [%s] to return status of [NonExistent]: %s", templateName, err)
 	}
 
 	return nil
@@ -173,3 +188,13 @@ func SolutionTemplateExistentStatusRefreshFunc(service ecloudservice.ECloudServi
 		return template, "Existent", nil
 	}
 }
+
+// func getSolutionTemplateResourceID(solutionID int, templateName string) string {
+// 	return fmt.Sprintf("%d::%s", solutionID, templateName)
+// }
+
+// func parseSolutionTemplateResourceID(id string) (solutionID int, templateName string) {
+// 	parts := strings.Split(id, "::")
+// 	solutionID, _ = strconv.Atoi(parts[0])
+// 	return solutionID, parts[1]
+// }
