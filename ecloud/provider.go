@@ -41,6 +41,7 @@ func Provider() *schema.Provider {
 			"ecloud_virtualmachine":     resourceVirtualMachine(),
 			"ecloud_virtualmachine_tag": resourceVirtualMachineTag(),
 			"ecloud_solution_tag":       resourceSolutionTag(),
+			"ecloud_solution_template":  resourceSolutionTemplate(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
