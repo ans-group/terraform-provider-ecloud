@@ -43,6 +43,14 @@
 - `key`: (Required) Key for tag
 - `value`: Value for tag
 
+### ecloud_solution_template
+
+**Schema**
+
+- `solution_id`: (Required) ID of target solution
+- `virtualmachine_id`: (Required) ID of source virtual machine from which template will be created
+- `name`: (Required) Name of template
+
 ## Data sources
 
 ### ecloud_datastore
