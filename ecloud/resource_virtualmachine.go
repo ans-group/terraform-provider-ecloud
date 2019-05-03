@@ -69,12 +69,13 @@ func resourceVirtualMachine() *schema.Resource {
 			"solution_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 			"datastore_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				Computed: true,
+				ForceNew: true,
 			},
 			"ip_internal": &schema.Schema{
 				Type:     schema.TypeString,
@@ -87,13 +88,11 @@ func resourceVirtualMachine() *schema.Resource {
 			"site_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				Computed: true,
 				ForceNew: true,
 			},
 			"network_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				Computed: true,
 				ForceNew: true,
 			},
 			"power_status": &schema.Schema{
