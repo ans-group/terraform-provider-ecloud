@@ -75,7 +75,6 @@ func resourceVirtualMachine() *schema.Resource {
 			"datastore_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				ForceNew: true,
 			},
 			"ip_internal": &schema.Schema{
 				Type:     schema.TypeString,
@@ -88,12 +87,10 @@ func resourceVirtualMachine() *schema.Resource {
 			"site_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				ForceNew: true,
 			},
 			"network_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				ForceNew: true,
 			},
 			"power_status": &schema.Schema{
 				Type:     schema.TypeString,
@@ -124,6 +121,15 @@ func resourceVirtualMachine() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			customdiff.ForceNewIfChange("os_disk", func(old, new, meta interface{}) bool {
 				return new.(int) < old.(int)
+			}),
+			customdiff.ForceNewIfChange("datastore_id", func(old, new, meta interface{}) bool {
+				return old.(int) > 0
+			}),
+			customdiff.ForceNewIfChange("site_id", func(old, new, meta interface{}) bool {
+				return old.(int) > 0
+			}),
+			customdiff.ForceNewIfChange("network_id", func(old, new, meta interface{}) bool {
+				return old.(int) > 0
 			}),
 		),
 	}
