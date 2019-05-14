@@ -18,12 +18,31 @@ func expandVirtualMachineSSHKeys(raw []interface{}) []string {
 
 func expandCreateVirtualMachineRequestDisks(rawDisks []interface{}) []ecloudservice.CreateVirtualMachineRequestDisk {
 	var disks []ecloudservice.CreateVirtualMachineRequestDisk
-	var i int
-	for _, v := range rawDisks {
-		i++
-		disk := v.(map[string]interface{})
+
+	i := 0
+	getNextDiskName := func() string {
+		var name string
+		for {
+			i++
+			name = fmt.Sprintf("Hard disk %d", i)
+			if !rawDiskExistsByProperty(rawDisks, "name", name) {
+				break
+			}
+		}
+
+		return name
+	}
+
+	for _, rawDisk := range rawDisks {
+		disk := rawDisk.(map[string]interface{})
+
+		name := disk["name"].(string)
+		if len(name) < 1 {
+			name = getNextDiskName()
+		}
+
 		disks = append(disks, ecloudservice.CreateVirtualMachineRequestDisk{
-			Name:     fmt.Sprintf("Hard disk %d", i),
+			Name:     name,
 			Capacity: disk["capacity"].(int),
 		})
 	}
@@ -31,23 +50,13 @@ func expandCreateVirtualMachineRequestDisks(rawDisks []interface{}) []ecloudserv
 	return disks
 }
 
-func flattenVirtualMachineDisks(currentRawDisks []interface{}, new []ecloudservice.VirtualMachineDisk) interface{} {
-	var newDisks []map[string]interface{}
+func flattenVirtualMachineDisks(currentRawDisks []interface{}, vmDisks []ecloudservice.VirtualMachineDisk) interface{} {
+	var flattenedDisks []map[string]interface{}
 
-	newDiskExists := func(uuid string) bool {
-		for _, v := range newDisks {
-			if v["uuid"].(string) == uuid {
-				return true
-			}
-		}
-
-		return false
-	}
-
-	getDiskByUUID := func(disks []ecloudservice.VirtualMachineDisk, uuid string) *ecloudservice.VirtualMachineDisk {
-		for _, disk := range disks {
-			if disk.UUID == uuid {
-				return &disk
+	getDiskByUUID := func(vmDisks []ecloudservice.VirtualMachineDisk, uuid string) *ecloudservice.VirtualMachineDisk {
+		for _, vmDisk := range vmDisks {
+			if vmDisk.UUID == uuid {
+				return &vmDisk
 			}
 		}
 
@@ -61,59 +70,48 @@ func flattenVirtualMachineDisks(currentRawDisks []interface{}, new []ecloudservi
 			continue
 		}
 
-		newDisk := getDiskByUUID(new, currentDisk["uuid"].(string))
-		if newDisk != nil {
-			newDisks = append(newDisks, map[string]interface{}{
-				"uuid":     (*newDisk).UUID,
-				"capacity": (*newDisk).Capacity,
+		vmDisk := getDiskByUUID(vmDisks, currentDisk["uuid"].(string))
+		if vmDisk != nil {
+			flattenedDisks = append(flattenedDisks, map[string]interface{}{
+				"uuid":     (*vmDisk).UUID,
+				"capacity": (*vmDisk).Capacity,
 			})
 		}
 	}
 
 	// Next, find UUID for disks we do not have a UUID for, using the current capacity. This will use our current
-	// array of newDisks to determine which disks we shouldn't use
+	// array of flattenedDisks to determine which disks we shouldn't use
 	for _, currentRawDisk := range currentRawDisks {
 		currentDisk := currentRawDisk.(map[string]interface{})
 		if len(currentDisk["uuid"].(string)) > 0 {
 			continue
 		}
 
-		for _, newDisk := range new {
-			if !newDiskExists(newDisk.UUID) && currentDisk["capacity"].(int) == newDisk.Capacity {
-				newDisks = append(newDisks, map[string]interface{}{
-					"uuid":     (newDisk).UUID,
-					"capacity": (newDisk).Capacity,
+		for _, vmDisk := range vmDisks {
+			if !diskExistsByProperty(flattenedDisks, "uuid", vmDisk.UUID) && currentDisk["capacity"].(int) == vmDisk.Capacity {
+				flattenedDisks = append(flattenedDisks, map[string]interface{}{
+					"uuid":     (vmDisk).UUID,
+					"capacity": (vmDisk).Capacity,
 				})
 			}
 		}
 	}
 
 	// Finally, add any new disks
-	for _, newDisk := range new {
-		if !newDiskExists(newDisk.UUID) {
-			newDisks = append(newDisks, map[string]interface{}{
-				"uuid":     (newDisk).UUID,
-				"capacity": (newDisk).Capacity,
+	for _, vmDisk := range vmDisks {
+		if !diskExistsByProperty(flattenedDisks, "uuid", vmDisk.UUID) {
+			flattenedDisks = append(flattenedDisks, map[string]interface{}{
+				"uuid":     (vmDisk).UUID,
+				"capacity": (vmDisk).Capacity,
 			})
 		}
 	}
 
-	return newDisks
+	return flattenedDisks
 }
 
 func resourceVirtualMachineUpdateDisk(old, new interface{}) []ecloudservice.PatchVirtualMachineRequestDisk {
 	var disks []ecloudservice.PatchVirtualMachineRequestDisk
-
-	rawDiskExists := func(rawDisks []interface{}, uuid string) bool {
-		for _, rawDisk := range rawDisks {
-			disk := rawDisk.(map[string]interface{})
-			if disk["uuid"].(string) == uuid {
-				return true
-			}
-		}
-
-		return false
-	}
 
 	oldRawDisks := old.([]interface{})
 	newRawDisks := new.([]interface{})
@@ -134,7 +132,7 @@ func resourceVirtualMachineUpdateDisk(old, new interface{}) []ecloudservice.Patc
 	for _, oldRawDisk := range oldRawDisks {
 		oldDisk := oldRawDisk.(map[string]interface{})
 
-		if rawDiskExists(newRawDisks, oldDisk["uuid"].(string)) {
+		if rawDiskExistsByProperty(newRawDisks, "uuid", oldDisk["uuid"]) {
 			continue
 		}
 
@@ -145,4 +143,25 @@ func resourceVirtualMachineUpdateDisk(old, new interface{}) []ecloudservice.Patc
 	}
 
 	return disks
+}
+
+func diskExistsByProperty(disks []map[string]interface{}, name string, value interface{}) bool {
+	for _, disk := range disks {
+		if disk[name] == value {
+			return true
+		}
+	}
+
+	return false
+}
+
+func rawDiskExistsByProperty(rawDisks []interface{}, name string, value interface{}) bool {
+	for _, rawDisk := range rawDisks {
+		disk := rawDisk.(map[string]interface{})
+		if disk[name] == value {
+			return true
+		}
+	}
+
+	return false
 }

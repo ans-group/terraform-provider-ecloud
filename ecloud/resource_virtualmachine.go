@@ -54,6 +54,10 @@ func resourceVirtualMachine() *schema.Resource {
 				MinItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 						"capacity": {
 							Type:     schema.TypeInt,
 							Required: true,
