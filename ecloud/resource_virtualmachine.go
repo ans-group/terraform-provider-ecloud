@@ -48,13 +48,22 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeInt,
 				Required: true,
 			},
-			"os_disk_uuid": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"os_disk": &schema.Schema{
-				Type:     schema.TypeInt,
+			"disk": {
+				Type:     schema.TypeList,
 				Required: true,
+				MinItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"capacity": {
+							Type:     schema.TypeInt,
+							Required: true,
+						},
+						"uuid": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
 			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -119,9 +128,6 @@ func resourceVirtualMachine() *schema.Resource {
 			},
 		},
 		CustomizeDiff: customdiff.All(
-			customdiff.ForceNewIfChange("os_disk", func(old, new, meta interface{}) bool {
-				return new.(int) < old.(int)
-			}),
 			customdiff.ForceNewIfChange("datastore_id", func(old, new, meta interface{}) bool {
 				return old.(int) > 0
 			}),
@@ -138,14 +144,13 @@ func resourceVirtualMachine() *schema.Resource {
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	rawSSHKeys := d.Get("ssh_keys").([]interface{})
 	createReq := ecloudservice.CreateVirtualMachineRequest{
 		Environment:        d.Get("environment").(string),
 		Template:           d.Get("template").(string),
 		TemplatePassword:   d.Get("template_password").(string),
 		CPU:                d.Get("cpu").(int),
 		RAM:                d.Get("ram").(int),
-		HDD:                d.Get("os_disk").(int),
+		Disks:              expandCreateVirtualMachineRequestDisks(d.Get("disk").([]interface{})),
 		Name:               d.Get("name").(string),
 		ComputerName:       d.Get("computername").(string),
 		SolutionID:         d.Get("solution_id").(int),
@@ -153,7 +158,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		SiteID:             d.Get("site_id").(int),
 		NetworkID:          d.Get("network_id").(int),
 		ExternalIPRequired: d.Get("external_ip_required").(bool),
-		SSHKeys:            expandVirtualMachineSSHKeys(rawSSHKeys),
+		SSHKeys:            expandVirtualMachineSSHKeys(d.Get("ssh_keys").([]interface{})),
 	}
 
 	log.Printf("Created CreateVirtualMachineRequest: %+v", createReq)
@@ -219,15 +224,7 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("template", vm.Template)
 	d.Set("cpu", vm.CPU)
 	d.Set("ram", vm.RAM)
-	oldDiskUUID, newDiskUUID := d.GetChange("os_disk_uuid")
-	if oldDiskUUID.(string) == "" && len(vm.Disks) == 1 {
-		d.Set("os_disk_uuid", vm.Disks[0].UUID)
-	}
-	for _, disk := range vm.Disks {
-		if disk.UUID == newDiskUUID {
-			d.Set("os_disk", disk.Capacity)
-		}
-	}
+	d.Set("disk", flattenVirtualMachineDisks(d.Get("disk").([]interface{}), vm.Disks))
 	d.Set("name", vm.Name)
 	d.Set("computername", vm.ComputerName)
 	d.Set("solution_id", vm.SolutionID)
@@ -287,15 +284,13 @@ func resourceVirtualMachineUpdate(d *schema.ResourceData, meta interface{}) erro
 		hasChange = true
 		patchRequest.RAM = d.Get("ram").(int)
 	}
-	if d.HasChange("os_disk") {
+
+	if d.HasChange("disk") {
 		hasChange = true
-		patchRequest.Disks = []ecloudservice.PatchVirtualMachineRequestDisk{
-			ecloudservice.PatchVirtualMachineRequestDisk{
-				UUID:     d.Get("os_disk_uuid").(string),
-				Capacity: d.Get("os_disk").(int),
-			},
-		}
+		patchRequest.Disks = resourceVirtualMachineUpdateDisk(d.GetChange("disk"))
 	}
+
+	log.Printf("Created PatchVirtualMachineRequest: %+v", patchRequest)
 
 	if hasChange {
 		log.Printf("Updating virtual machine with ID [%d]", vmID)
