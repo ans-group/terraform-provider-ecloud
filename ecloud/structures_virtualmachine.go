@@ -44,6 +44,16 @@ func flattenVirtualMachineDisks(currentRawDisks []interface{}, new []ecloudservi
 		return false
 	}
 
+	getDiskByUUID := func(disks []ecloudservice.VirtualMachineDisk, uuid string) *ecloudservice.VirtualMachineDisk {
+		for _, disk := range disks {
+			if disk.UUID == uuid {
+				return &disk
+			}
+		}
+
+		return nil
+	}
+
 	// First, find all disks that we have a UUID for
 	for _, currentRawDisk := range currentRawDisks {
 		currentDisk := currentRawDisk.(map[string]interface{})
@@ -89,16 +99,6 @@ func flattenVirtualMachineDisks(currentRawDisks []interface{}, new []ecloudservi
 	}
 
 	return newDisks
-}
-
-func getDiskByUUID(disks []ecloudservice.VirtualMachineDisk, uuid string) *ecloudservice.VirtualMachineDisk {
-	for _, disk := range disks {
-		if disk.UUID == uuid {
-			return &disk
-		}
-	}
-
-	return nil
 }
 
 func resourceVirtualMachineUpdateDisk(old, new interface{}) []ecloudservice.PatchVirtualMachineRequestDisk {
