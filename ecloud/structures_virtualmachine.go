@@ -88,7 +88,8 @@ func flattenVirtualMachineDisks(currentRawDisks []interface{}, vmDisks []eclouds
 		}
 
 		for _, vmDisk := range vmDisks {
-			if !diskExistsByProperty(flattenedDisks, "uuid", vmDisk.UUID) && currentDisk["capacity"].(int) == vmDisk.Capacity {
+			// TODO - check vmDisk.Type once available
+			if len(vmDisk.UUID) > 0 && !diskExistsByProperty(flattenedDisks, "uuid", vmDisk.UUID) && currentDisk["capacity"].(int) == vmDisk.Capacity {
 				flattenedDisks = append(flattenedDisks, map[string]interface{}{
 					"uuid":     (vmDisk).UUID,
 					"capacity": (vmDisk).Capacity,
@@ -99,7 +100,8 @@ func flattenVirtualMachineDisks(currentRawDisks []interface{}, vmDisks []eclouds
 
 	// Finally, add any new disks
 	for _, vmDisk := range vmDisks {
-		if !diskExistsByProperty(flattenedDisks, "uuid", vmDisk.UUID) {
+		// TODO - check vmDisk.Type once available
+		if len(vmDisk.UUID) > 0 && !diskExistsByProperty(flattenedDisks, "uuid", vmDisk.UUID) {
 			flattenedDisks = append(flattenedDisks, map[string]interface{}{
 				"uuid":     (vmDisk).UUID,
 				"capacity": (vmDisk).Capacity,
