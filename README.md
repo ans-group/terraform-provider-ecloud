@@ -63,6 +63,7 @@ terraform apply
   - `capacity` (Required) Capacity of disk
   - `name` Name of disk to target
 - `template`: (Required) Template/OS name
+- `template_password`: Password for template (if using custom template)
 - `name`: Name of VM
 - `computername`: Computer name for VM
 - `environment`: Environment for VM
