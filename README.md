@@ -57,7 +57,9 @@ terraform apply
 
 - `cpu`: (Required) CPU count
 - `ram`: (Required) Amount of RAM in Gibibytes
-- `os_disk`: (Required) Size of primary disk in Gibibytes
+- `disk`: (Required) Disk(s) to attach
+  - `capacity` (Required) Capacity of disk
+  - `name` Name of disk to target
 - `template`: (Required) Template/OS name
 - `name`: Name of VM
 - `computername`: Computer name for VM
