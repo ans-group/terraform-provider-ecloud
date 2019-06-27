@@ -50,6 +50,19 @@ func expandCreateVirtualMachineRequestDisks(rawDisks []interface{}) []ecloudserv
 	return disks
 }
 
+func expandCreateVirtualMachineRequestApplianceParameters(rawParameters map[string]interface{}) []ecloudservice.CreateVirtualMachineRequestParameter {
+	var parameters []ecloudservice.CreateVirtualMachineRequestParameter
+
+	for key, val := range rawParameters {
+		parameters = append(parameters, ecloudservice.CreateVirtualMachineRequestParameter{
+			Key:   key,
+			Value: val.(string),
+		})
+	}
+
+	return parameters
+}
+
 func flattenVirtualMachineDisks(currentRawDisks []interface{}, vmDisks []ecloudservice.VirtualMachineDisk) interface{} {
 	var flattenedDisks []map[string]interface{}
 
