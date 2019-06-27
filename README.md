@@ -62,8 +62,12 @@ terraform apply
 - `disk`: (Required) Disk(s) to attach
   - `capacity` (Required) Capacity of disk
   - `name` Name of disk to target
-- `template`: (Required) Template/OS name
-- `template_password`: Password for template (if using custom template)
+- `template`: Template/OS name
+- `template_password`: Password for template (if using custom Linux template)
+- `appliance_id`: ID of Marketplace appliance to launch from (Mutually exclusive with `template`)
+- `appliance_parameters`: An array of appliance parameters
+  - `key`: Key of parameter
+  - `value`: Value of parameter
 - `name`: Name of VM
 - `computername`: Computer name for VM
 - `environment`: Environment for VM
