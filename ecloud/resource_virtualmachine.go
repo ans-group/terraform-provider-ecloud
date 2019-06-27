@@ -32,11 +32,21 @@ func resourceVirtualMachine() *schema.Resource {
 			},
 			"template": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
 			},
 			"template_password": &schema.Schema{
 				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"appliance_id": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"appliance_parameters": {
+				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,
 			},
@@ -152,6 +162,8 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		Environment:        d.Get("environment").(string),
 		Template:           d.Get("template").(string),
 		TemplatePassword:   d.Get("template_password").(string),
+		ApplianceID:        d.Get("appliance_id").(string),
+		Parameters:         expandCreateVirtualMachineRequestApplianceParameters(d.Get("appliance_parameters").(map[string]interface{})),
 		CPU:                d.Get("cpu").(int),
 		RAM:                d.Get("ram").(int),
 		Disks:              expandCreateVirtualMachineRequestDisks(d.Get("disk").([]interface{})),
