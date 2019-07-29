@@ -173,6 +173,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		DatastoreID:        d.Get("datastore_id").(int),
 		SiteID:             d.Get("site_id").(int),
 		NetworkID:          d.Get("network_id").(int),
+		Role:               d.Get("role").(string),
 		ExternalIPRequired: d.Get("external_ip_required").(bool),
 		SSHKeys:            expandVirtualMachineSSHKeys(d.Get("ssh_keys").([]interface{})),
 	}
@@ -306,6 +307,11 @@ func resourceVirtualMachineUpdate(d *schema.ResourceData, meta interface{}) erro
 		patchRequest.Disks = resourceVirtualMachineUpdateDisk(d.GetChange("disk"))
 	}
 
+	if d.HasChange("role") {
+		hasChange = true
+		patchRequest.Role = d.Get("role").(string)
+	}
+
 	log.Printf("Created PatchVirtualMachineRequest: %+v", patchRequest)
 
 	if hasChange {
@@ -331,6 +337,7 @@ func resourceVirtualMachineUpdate(d *schema.ResourceData, meta interface{}) erro
 		d.SetPartial("name")
 		d.SetPartial("cpu")
 		d.SetPartial("ram")
+		d.SetPartial("role")
 	}
 
 	d.Partial(false)
