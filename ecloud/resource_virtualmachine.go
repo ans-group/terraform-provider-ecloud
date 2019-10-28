@@ -140,6 +140,18 @@ func resourceVirtualMachine() *schema.Resource {
 				},
 				Optional: true,
 			},
+			"role": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"bootstrap_script": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"activedirectorydomain_id": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 		CustomizeDiff: customdiff.All(
 			customdiff.ForceNewIfChange("datastore_id", func(old, new, meta interface{}) bool {
@@ -159,23 +171,25 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateVirtualMachineRequest{
-		Environment:        d.Get("environment").(string),
-		Template:           d.Get("template").(string),
-		TemplatePassword:   d.Get("template_password").(string),
-		ApplianceID:        d.Get("appliance_id").(string),
-		Parameters:         expandCreateVirtualMachineRequestApplianceParameters(d.Get("appliance_parameters").(map[string]interface{})),
-		CPU:                d.Get("cpu").(int),
-		RAM:                d.Get("ram").(int),
-		Disks:              expandCreateVirtualMachineRequestDisks(d.Get("disk").([]interface{})),
-		Name:               d.Get("name").(string),
-		ComputerName:       d.Get("computername").(string),
-		SolutionID:         d.Get("solution_id").(int),
-		DatastoreID:        d.Get("datastore_id").(int),
-		SiteID:             d.Get("site_id").(int),
-		NetworkID:          d.Get("network_id").(int),
-		Role:               d.Get("role").(string),
-		ExternalIPRequired: d.Get("external_ip_required").(bool),
-		SSHKeys:            expandVirtualMachineSSHKeys(d.Get("ssh_keys").([]interface{})),
+		Environment:             d.Get("environment").(string),
+		Template:                d.Get("template").(string),
+		TemplatePassword:        d.Get("template_password").(string),
+		ApplianceID:             d.Get("appliance_id").(string),
+		Parameters:              expandCreateVirtualMachineRequestApplianceParameters(d.Get("appliance_parameters").(map[string]interface{})),
+		CPU:                     d.Get("cpu").(int),
+		RAM:                     d.Get("ram").(int),
+		Disks:                   expandCreateVirtualMachineRequestDisks(d.Get("disk").([]interface{})),
+		Name:                    d.Get("name").(string),
+		ComputerName:            d.Get("computername").(string),
+		SolutionID:              d.Get("solution_id").(int),
+		DatastoreID:             d.Get("datastore_id").(int),
+		SiteID:                  d.Get("site_id").(int),
+		NetworkID:               d.Get("network_id").(int),
+		Role:                    d.Get("role").(string),
+		ExternalIPRequired:      d.Get("external_ip_required").(bool),
+		SSHKeys:                 expandVirtualMachineSSHKeys(d.Get("ssh_keys").([]interface{})),
+		BootstrapScript:         d.Get("bootstrap_script").(string),
+		ActiveDirectoryDomainID: d.Get("activedirectorydomain_id").(int),
 	}
 
 	log.Printf("Created CreateVirtualMachineRequest: %+v", createReq)
