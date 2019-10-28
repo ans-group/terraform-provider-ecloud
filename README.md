@@ -80,7 +80,7 @@ terraform apply
 - `ssh_keys`: An array of SSH public keys to apply to VM
 - `role`: Role for VM
 - `bootstrap_script`: Script to be executed on first boot
-- `activedirectorydomain_id`: ID of Active Directory Domain for VM (applicable to Windows-based virtual machines only)
+- `activedirectory_domain_id`: ID of Active Directory Domain for VM (applicable to Windows-based virtual machines only)
 
 ### ecloud_virtualmachine_tag
 

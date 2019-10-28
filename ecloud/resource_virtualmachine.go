@@ -148,7 +148,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"activedirectorydomain_id": &schema.Schema{
+			"activedirectory_domain_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
@@ -189,7 +189,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		ExternalIPRequired:      d.Get("external_ip_required").(bool),
 		SSHKeys:                 expandVirtualMachineSSHKeys(d.Get("ssh_keys").([]interface{})),
 		BootstrapScript:         d.Get("bootstrap_script").(string),
-		ActiveDirectoryDomainID: d.Get("activedirectorydomain_id").(int),
+		ActiveDirectoryDomainID: d.Get("activedirectory_domain_id").(int),
 	}
 
 	log.Printf("Created CreateVirtualMachineRequest: %+v", createReq)
