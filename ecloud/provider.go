@@ -36,6 +36,9 @@ func Provider() *schema.Provider {
 			"ecloud_pod":               dataSourcePod(),
 			"ecloud_template":          dataSourceTemplate(),
 			"ecloud_solution_template": dataSourceSolutionTemplate(),
+			"ecloud_appliance":         dataSourceAppliance(),
+			"ecloud_pod_appliance":     dataSourcePodAppliance(),
+			"ecloud_active_directory":  dataSourceActiveDirectory(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_virtualmachine":     resourceVirtualMachine(),
