@@ -21,11 +21,6 @@ func dataSourcePodAppliance() *schema.Resource {
 				Type:     schema.TypeInt,
 				Required: true,
 			},
-			"appliance_id": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -49,7 +44,6 @@ func dataSourcePodApplianceRead(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(appliance.ID)
 	d.Set("name", appliance.Name)
-	d.Set("appliance_id", appliance.ID)
 	d.Set("pod_id", podID)
 
 	return nil

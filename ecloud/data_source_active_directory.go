@@ -18,10 +18,6 @@ func dataSourceActiveDirectory() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"ad_domain_id": &schema.Schema{
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -44,7 +40,6 @@ func dataSourceActiveDirectoryRead(d *schema.ResourceData, meta interface{}) err
 
 	d.SetId(strconv.Itoa(domain.ID))
 	d.Set("name", domain.Name)
-	d.Set("ad_domain_id", domain.ID)
 
 	return nil
 }
