@@ -42,7 +42,7 @@ func dataSourceApplianceRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.SetId(name)
+	d.SetId(appliance.ID)
 	d.Set("name", appliance.Name)
 	d.Set("appliance_id", appliance.ID)
 

@@ -2,6 +2,7 @@ package ecloud
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/ukfast/sdk-go/pkg/connection"
@@ -41,7 +42,7 @@ func dataSourceActiveDirectoryRead(d *schema.ResourceData, meta interface{}) err
 		return err
 	}
 
-	d.SetId(name)
+	d.SetId(strconv.Itoa(domain.ID))
 	d.Set("name", domain.Name)
 	d.Set("ad_domain_id", domain.ID)
 
