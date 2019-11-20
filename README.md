@@ -139,3 +139,23 @@ terraform apply
 
 - `name`: (Required) Name of network
 - `solution_id`: (Required) ID of solution which the network is a member of
+
+### ecloud_appliance
+
+**Schema**
+
+- `name`: (Required) Name of appliance
+
+
+### ecloud_pod_appliance
+
+**Schema**
+
+- `name`: (Required) Name of appliance
+- `pod_id`: (Required) ID of pod which the appliance exists on
+
+### ecloud_active_directory
+
+**Schema**
+
+- `name`: (Required) Name of Active Directory domain
