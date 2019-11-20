@@ -26,6 +26,9 @@ var (
 	UKF_TEST_TEMPLATE_NAME              = os.Getenv("UKF_TEST_TEMPLATE_NAME")
 	UKF_TEST_TEMPLATE_PLATFORM          = os.Getenv("UKF_TEST_TEMPLATE_PLATFORM")
 	UKF_TEST_POD_NAME                   = os.Getenv("UKF_TEST_POD_NAME")
+	UKF_TEST_APPLIANCE_NAME             = os.Getenv("UKF_TEST_APPLIANCE_NAME")
+	UKF_TEST_APPLIANCE_POD_ID           = os.Getenv("UKF_TEST_APPLIANCE_POD_ID")
+	UKF_TEST_ACTIVE_DIRECTORY_NAME      = os.Getenv("UKF_TEST_ACTIVE_DIRECTORY_NAME")
 )
 
 func init() {
@@ -85,6 +88,9 @@ func testAccPreCheckRequiredEnvVars(t *testing.T) {
 	}
 	if UKF_TEST_POD_NAME == "" {
 		t.Fatal("UKF_TEST_POD_NAME must be set for acceptance tests")
+	}
+	if UKF_TEST_APPLIANCE_NAME == "" {
+		t.Fatal("UKF_TEST_APPLIANCE_NAME must be set for acceptance tests")
 	}
 }
 
