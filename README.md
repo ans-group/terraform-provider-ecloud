@@ -81,6 +81,7 @@ terraform apply
 - `role`: Role for VM
 - `bootstrap_script`: Script to be executed on first boot
 - `activedirectory_domain_id`: ID of Active Directory Domain for VM (applicable to Windows-based virtual machines only)
+- `pod_id`: ID of Pod on which to launch VM
 
 ### ecloud_virtualmachine_tag
 
