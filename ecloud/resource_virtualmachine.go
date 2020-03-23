@@ -152,6 +152,10 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"pod_id": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 		CustomizeDiff: customdiff.All(
 			customdiff.ForceNewIfChange("datastore_id", func(old, new, meta interface{}) bool {
@@ -190,6 +194,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		SSHKeys:                 expandVirtualMachineSSHKeys(d.Get("ssh_keys").([]interface{})),
 		BootstrapScript:         d.Get("bootstrap_script").(string),
 		ActiveDirectoryDomainID: d.Get("activedirectory_domain_id").(int),
+		PodID:                   d.Get("pod_id").(int),
 	}
 
 	log.Printf("Created CreateVirtualMachineRequest: %+v", createReq)
