@@ -1,6 +1,6 @@
 module github.com/ukfast/terraform-provider-ecloud
 
-go 1.12
+go 1.13
 
 require (
 	github.com/hashicorp/go-hclog v0.12.1 // indirect
