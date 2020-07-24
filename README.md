@@ -2,41 +2,16 @@
 
 ## Getting Started
 
-To get started, the `terraform-provider-ecloud` binary (`.exe` extension if Windows) should be downloaded from [Releases](https://github.com/ukfast/terraform-provider-ecloud/releases) and placed in a directory. For this example,
-we'll place it at `/tmp/terraform-provider-ecloud`.
+This provider is available via the [Terraform Registry](https://registry.terraform.io/providers/ukfast/ecloud/latest) with Terraform v0.13+
 
-Next, we'll go ahead and create a new directory to hold our `terraform` file and state:
+## Getting Started (manual)
 
-```console
-mkdir /home/user/terraform
-```
+To get started, the `terraform-provider-ecloud` binary (`.exe` extension if Windows) should be downloaded from [Releases](https://github.com/ukfast/terraform-provider-ecloud/releases) and placed in the plugins directory (see [here](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins) for more information). For this example, we'll place it in `~/.terraform.d/plugins/`
 
-We'll then create an example terraform file `/home/user/terraform/test.tf`:
+We'll then need to initialise terraform with our provider:
 
 ```console
-cat <<EOF > /home/user/terraform/test.tf
-provider "ecloud" {
-  api_key = "abc"
-}
-
-resource "ecloud_virtualmachine" "vm-1" {
-    cpu = 2
-    ram = 2
-    disk {
-      capacity = 20
-    }
-    template = "CentOS 7 64-bit"
-    name = "vm-1"
-    environment = "Hybrid"
-    solution_id = 123
-}
-EOF
-```
-
-We'll then need to initialise terraform with our provider (specifying `plugin-dir` as the path to where the provider was downloaded to earlier):
-
-```console
-terraform init -get-plugins=false -plugin-dir=/tmp/terraform-provider-ecloud
+terraform init
 ```
 
 Finally, we can invoke `terraform apply` to apply our terraform configuration:
@@ -45,118 +20,6 @@ Finally, we can invoke `terraform apply` to apply our terraform configuration:
 terraform apply
 ```
 
-## Provider
+## Documentation
 
-**Parameters**
-
-- `api_key`: UKFast API key - read/write permissions for `ecloud` service required. If omitted, will use `UKF_API_KEY` environment variable value
-
-## Resources
-
-### ecloud_virtualmachine
-
-**Schema**
-
-- `cpu`: (Required) CPU count
-- `ram`: (Required) Amount of RAM in Gibibytes
-- `disk`: (Required) Disk(s) to attach
-  - `capacity` (Required) Capacity of disk
-  - `name` Name of disk to target
-- `template`: Template/OS name
-- `template_password`: Password for template (if using custom Linux template)
-- `appliance_id`: ID of Marketplace appliance to launch from (Mutually exclusive with `template`)
-- `appliance_parameters`: An array of appliance parameters
-  - `key`: Key of parameter
-  - `value`: Value of parameter
-- `name`: Name of VM
-- `computername`: Computer name for VM
-- `environment`: Environment for VM
-- `solution_id`: ID of solution which the VM is a member of
-- `datastore_id`: ID of datastore on which to launch VM
-- `site_id`: ID of site on which to launch VM
-- `network_id`: ID of network on which to launch VM
-- `external_ip_required`: Specifies that an external IP address should be allocated
-- `power_status`: Power status of VM. Valid values: `Online` (default), `Offline`
-- `ssh_keys`: An array of SSH public keys to apply to VM
-- `role`: Role for VM
-- `bootstrap_script`: Script to be executed on first boot
-- `activedirectory_domain_id`: ID of Active Directory Domain for VM (applicable to Windows-based virtual machines only)
-- `pod_id`: ID of Pod on which to launch VM
-
-### ecloud_virtualmachine_tag
-
-**Schema**
-
-- `virtualmachine_id`: (Required) ID of target virtual machine
-- `key`: (Required) Key for tag
-- `value`: Value for tag
-
-### ecloud_solution_tag
-
-**Schema**
-
-- `solution_id`: (Required) ID of target solution
-- `key`: (Required) Key for tag
-- `value`: Value for tag
-
-### ecloud_solution_template
-
-**Schema**
-
-- `solution_id`: (Required) ID of target solution
-- `virtualmachine_id`: (Required) ID of source virtual machine from which template will be created
-- `name`: (Required) Name of template
-
-## Data sources
-
-### ecloud_datastore
-
-**Schema**
-
-- `name`: (Required) Name of datastore
-- `solution_id`: (Required) ID of solution which the datastore is a member of
-- `site_id`: ID of site which the datastore is a member of
-- `status`: Status of datastore
-- `capacity`: Capacity of datastore
-
-### ecloud_site
-
-**Schema**
-
-- `pod_id`: (Required) ID of Pod which site is a member of
-- `solution_id`: (Required) ID of solution which the site is a member of
-- `state`: State of the site
-
-### ecloud_solution
-
-**Schema**
-
-- `name`: (Required) Name of solution
-- `environment`: Environment for solution
-
-### ecloud_network
-
-**Schema**
-
-- `name`: (Required) Name of network
-- `solution_id`: (Required) ID of solution which the network is a member of
-
-### ecloud_appliance
-
-**Schema**
-
-- `name`: (Required) Name of appliance
-
-
-### ecloud_pod_appliance
-
-**Schema**
-
-- `name`: (Required) Name of appliance
-- `pod_id`: (Required) ID of pod which the appliance exists on
-
-### ecloud_active_directory
-
-**Schema**
-
-- `name`: (Required) Name of Active Directory domain
+Documentation is located within this repository at `/docs`, and is published in the [Terraform Registry](https://registry.terraform.io/providers/ukfast/ecloud/latest/docs)
