@@ -8,9 +8,9 @@ import (
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
-func dataSourceNetwork() *schema.Resource {
+func dataSourceAvailabilityZone() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceNetworkRead,
+		Read: dataSourceAvailabilityZoneRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -21,7 +21,7 @@ func dataSourceNetwork() *schema.Resource {
 	}
 }
 
-func dataSourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceAvailabilityZoneRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	name := d.Get("name").(string)
@@ -33,22 +33,23 @@ func dataSourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 		Value:    []string{name},
 	})
 
-	networks, err := service.GetNetworks(params)
+	azs, err := service.GetAvailabilityZones(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active networks: %s", err)
+		return fmt.Errorf("Error retrieving active availability zones: %s", err)
 	}
 
-	if len(networks) < 1 {
-		return fmt.Errorf("No networks found with name [%s]", name)
+	if len(azs) < 1 {
+		return fmt.Errorf("No availability zones found with name [%s]", name)
 	}
 
-	if len(networks) > 1 {
-		return fmt.Errorf("More than 1 network found with name [%s]", name)
+	if len(azs) > 1 {
+		return fmt.Errorf("More than 1 availability zone found with name [%s]", name)
 	}
 
-	d.SetId(networks[0].ID)
-	d.Set("name", networks[0].Name)
-	d.Set("router_id", networks[0].RouterID)
+	d.SetId(azs[0].ID)
+	d.Set("name", azs[0].Name)
+	d.Set("datacentre_site_id", azs[0].DatacentreSiteID)
+	d.Set("code", azs[0].Code)
 
 	return nil
 }

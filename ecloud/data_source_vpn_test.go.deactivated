@@ -1,0 +1,71 @@
+package ecloud
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform/terraform"
+	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
+)
+
+func TestAccDataSourceVPN(t *testing.T) {
+	var vpn ecloudservice.VPN
+	config, err := testAccCheckDataSourceVPNConfig()
+	if err != nil {
+		t.Fatalf("Failed to generate config: %s", err)
+	}
+
+	resourceName := "data.ecloud_vpn.test-vpn"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckDataSourceVPNExists(resourceName, &vpn),
+					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_VPN_NAME),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckDataSourceVPNExists(n string, vpn *ecloudservice.VPN) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No VPN ID is set")
+		}
+
+		service := testAccProvider.Meta().(ecloudservice.ECloudService)
+
+		getVPN, err := service.GetVPN(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		*vpn = getVPN
+
+		return nil
+	}
+}
+
+var testAccCheckDataSourceVPNConfigTemplate = `
+data "ecloud_vpn" "test-vpn" {
+    name = "{{ .UKF_TEST_VPN_NAME }}"
+}`
+
+func testAccCheckDataSourceVPNConfig() (string, error) {
+	data := map[string]interface{}{
+		"UKF_TEST_VPN_NAME": UKF_TEST_VPN_NAME,
+	}
+
+	return testAccTemplateConfig(testAccCheckDataSourceVPNConfigTemplate, data)
+}

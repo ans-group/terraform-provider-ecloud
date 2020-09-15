@@ -1,17 +1,15 @@
 # ecloud_network Data Source
 
-This resource represents an eCloud network
+This resource represents an eCloud Network
 
 ## Example Usage
 
 ```hcl
-data "ecloud_network" "network-1" {
-    name = "some network"
-    solution_id = 12345
+data "ecloud_network" "web-network" {
+    name = "web"
 }
 ```
 
 ## Argument Reference
 
-* `name`: (Required) Name of network
-* `solution_id`: (Required) ID of solution which the network is a member of
+- `name`: (Required) Name of network
