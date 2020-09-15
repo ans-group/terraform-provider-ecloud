@@ -9,3 +9,5 @@ require (
 	github.com/hashicorp/terraform v0.12.23
 	github.com/ukfast/sdk-go v1.3.4
 )
+
+replace github.com/ukfast/sdk-go => ../sdk-go

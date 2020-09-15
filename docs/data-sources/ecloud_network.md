@@ -12,4 +12,13 @@ data "ecloud_network" "web-network" {
 
 ## Argument Reference
 
-- `name`: (Required) Name of network
+- `network_id`: ID of network
+- `name`: Name of network
+- `router_id`: Router ID of network
+
+## Attributes Reference
+
+`id` is set to network ID
+
+- `name`: Name of network
+- `router_id`: Router ID of network

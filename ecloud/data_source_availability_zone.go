@@ -1,6 +1,7 @@
 package ecloud
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -13,9 +14,14 @@ func dataSourceAvailabilityZone() *schema.Resource {
 		Read: dataSourceAvailabilityZoneRead,
 
 		Schema: map[string]*schema.Schema{
+			"availabilityzone_id": {
+				Type: schema.TypeString,
+			},
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type: schema.TypeString,
+			},
+			"datacentre_site_id": {
+				Type: schema.TypeInt,
 			},
 		},
 	}
@@ -24,14 +30,20 @@ func dataSourceAvailabilityZone() *schema.Resource {
 func dataSourceAvailabilityZoneRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	name := d.Get("name").(string)
-
 	params := connection.APIRequestParameters{}
-	params.WithFilter(connection.APIRequestFiltering{
-		Property: "name",
-		Operator: connection.EQOperator,
-		Value:    []string{name},
-	})
+
+	if id, ok := d.GetOk("availabilityzone_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
+	}
+	if name, ok := d.GetOk("name"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
+	}
+	if dcID, ok := d.GetOk("datacentre_site_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("datacentre_site_id", connection.EQOperator, []string{fmt.Sprintf("%d", dcID)}))
+	}
+	if code, ok := d.GetOk("code"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("code", connection.EQOperator, []string{code.(string)}))
+	}
 
 	azs, err := service.GetAvailabilityZones(params)
 	if err != nil {
@@ -39,11 +51,11 @@ func dataSourceAvailabilityZoneRead(d *schema.ResourceData, meta interface{}) er
 	}
 
 	if len(azs) < 1 {
-		return fmt.Errorf("No availability zones found with name [%s]", name)
+		return errors.New("No availability zones found with provided arguments")
 	}
 
 	if len(azs) > 1 {
-		return fmt.Errorf("More than 1 availability zone found with name [%s]", name)
+		return errors.New("More than 1 availability zone found with provided arguments")
 	}
 
 	d.SetId(azs[0].ID)

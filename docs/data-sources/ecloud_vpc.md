@@ -12,4 +12,11 @@ data "ecloud_vpc" "vpc-1" {
 
 ## Argument Reference
 
-- `name`: (Required) Name of VPC
+- `vpc_id`: ID of VPC
+- `name`: Name of VPC
+
+## Attributes Reference
+
+`id` is set to VPC ID
+
+- `name`: Name of VPC

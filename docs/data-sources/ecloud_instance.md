@@ -12,4 +12,11 @@ data "ecloud_instance" "instance-1" {
 
 ## Argument Reference
 
-- `name`: (Required) Name of instance
+- `instance_id`: ID of instance
+- `name`: Name of instance
+
+## Attributes Reference
+
+`id` is set to instance ID
+
+- `name`: Name of instance

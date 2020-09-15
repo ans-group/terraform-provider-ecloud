@@ -12,4 +12,11 @@ data "ecloud_dhcp" "dhcp-1" {
 
 ## Argument Reference
 
-- `availability_zone_id`: (Required) ID of availability zone
+- `dhcp_id`: ID of DHCP server/profile
+- `name`: Name of DHCP server/profile
+
+## Attributes Reference
+
+`id` is set to DHCP profile/server ID
+
+- `name`: Name of DHCP server/profile

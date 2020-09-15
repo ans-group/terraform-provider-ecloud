@@ -1,6 +1,7 @@
 package ecloud
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -13,9 +14,11 @@ func dataSourceVPC() *schema.Resource {
 		Read: dataSourceVPCRead,
 
 		Schema: map[string]*schema.Schema{
+			"vpc_id": {
+				Type: schema.TypeString,
+			},
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type: schema.TypeString,
 			},
 		},
 	}
@@ -24,14 +27,14 @@ func dataSourceVPC() *schema.Resource {
 func dataSourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	name := d.Get("name").(string)
-
 	params := connection.APIRequestParameters{}
-	params.WithFilter(connection.APIRequestFiltering{
-		Property: "name",
-		Operator: connection.EQOperator,
-		Value:    []string{name},
-	})
+
+	if id, ok := d.GetOk("vpc_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
+	}
+	if name, ok := d.GetOk("name"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
+	}
 
 	vpcs, err := service.GetVPCs(params)
 	if err != nil {
@@ -39,11 +42,11 @@ func dataSourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if len(vpcs) < 1 {
-		return fmt.Errorf("No VPCs found with name [%s]", name)
+		return errors.New("No VPCs found with provided arguments")
 	}
 
 	if len(vpcs) > 1 {
-		return fmt.Errorf("More than 1 VPC found with name [%s]", name)
+		return errors.New("More than 1 VPC found with provided arguments")
 	}
 
 	d.SetId(vpcs[0].ID)

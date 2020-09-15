@@ -1,6 +1,7 @@
 package ecloud
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -13,10 +14,13 @@ func dataSourceDHCP() *schema.Resource {
 		Read: dataSourceDHCPRead,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+			"dhcp_id": {
+				Type: schema.TypeString,
 			},
+			"name": {
+				Type: schema.TypeString,
+			},
+			"filters": dataSourceAPIRequestFiltersSchema(),
 		},
 	}
 }
@@ -24,14 +28,17 @@ func dataSourceDHCP() *schema.Resource {
 func dataSourceDHCPRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	azID := d.Get("availability_zone_id").(string)
-
 	params := connection.APIRequestParameters{}
-	params.WithFilter(connection.APIRequestFiltering{
-		Property: "availability_zone_id",
-		Operator: connection.EQOperator,
-		Value:    []string{azID},
-	})
+
+	if id, ok := d.GetOk("dhcp_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
+	}
+	if azID, ok := d.GetOk("availabilityzone_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("availabilityzone_id", connection.EQOperator, []string{azID.(string)}))
+	}
+	if filters, ok := d.GetOk("filters"); ok {
+		params.WithFilter(buildDataSourceAPIRequestFilters(filters.(*schema.Set))...)
+	}
 
 	dhcps, err := service.GetDHCPs(params)
 	if err != nil {
@@ -39,11 +46,11 @@ func dataSourceDHCPRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if len(dhcps) < 1 {
-		return fmt.Errorf("No DHCP servers/profiles found with availability zone [%s]", azID)
+		return errors.New("No DHCP servers/profiles found with provided arguments")
 	}
 
 	if len(dhcps) > 1 {
-		return fmt.Errorf("More than 1 DHCP server/profile found for availability zone [%s]", azID)
+		return errors.New("More than 1 DHCP server/profile found with provided arguments")
 	}
 
 	d.SetId(dhcps[0].ID)
