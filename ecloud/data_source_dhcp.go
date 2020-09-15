@@ -18,7 +18,7 @@ func dataSourceDHCP() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"name": {
+			"availability_zone_id": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},

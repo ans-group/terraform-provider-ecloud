@@ -12,7 +12,6 @@ import (
 func dataSourceAvailabilityZone() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceAvailabilityZoneRead,
-
 		Schema: map[string]*schema.Schema{
 			"availability_zone_id": {
 				Type:     schema.TypeString,
