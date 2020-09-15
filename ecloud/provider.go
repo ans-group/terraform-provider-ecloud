@@ -31,6 +31,7 @@ func Provider() *schema.Provider {
 		DataSourcesMap: map[string]*schema.Resource{
 			"ecloud_availabilityzone": dataSourceAvailabilityZone(),
 			"ecloud_dhcp":             dataSourceDHCP(),
+			"ecloud_instance":         dataSourceInstance(),
 			"ecloud_network":          dataSourceNetwork(),
 			"ecloud_vpc":              dataSourceVPC(),
 			// "ecloud_vpn": dataSourceVPN(),

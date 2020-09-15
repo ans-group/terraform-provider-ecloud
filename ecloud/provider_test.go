@@ -18,7 +18,9 @@ var (
 	UKF_TEST_AVAILABILITYZONE_NAME    = os.Getenv("UKF_TEST_AVAILABILITYZONE_NAME")
 	UKF_TEST_NETWORK_NAME             = os.Getenv("UKF_TEST_NETWORK_NAME")
 	UKF_TEST_DHCP_AVAILABILITYZONE_ID = os.Getenv("UKF_TEST_DHCP_AVAILABILITYZONE_ID")
+	UKF_TEST_INSTANCE_NAME            = os.Getenv("UKF_TEST_INSTANCE_NAME")
 	// UKF_TEST_VPN_NAME                 = os.Getenv("UKF_TEST_VPN_NAME")
+
 )
 
 func init() {
@@ -54,6 +56,9 @@ func testAccPreCheckRequiredEnvVars(t *testing.T) {
 	}
 	if UKF_TEST_DHCP_AVAILABILITYZONE_ID == "" {
 		t.Fatal("UKF_TEST_DHCP_AVAILABILITYZONE_ID must be set for acceptance tests")
+	}
+	if UKF_TEST_INSTANCE_NAME == "" {
+		t.Fatal("UKF_TEST_INSTANCE_NAME must be set for acceptance tests")
 	}
 	// if UKF_TEST_VPN_NAME == "" {
 	// 	t.Fatal("UKF_TEST_VPN_NAME must be set for acceptance tests")
