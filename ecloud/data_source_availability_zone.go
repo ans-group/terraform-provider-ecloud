@@ -30,6 +30,7 @@ func dataSourceAvailabilityZone() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"filters": dataSourceAPIRequestFiltersSchema(),
 		},
 	}
 }
@@ -50,6 +51,9 @@ func dataSourceAvailabilityZoneRead(d *schema.ResourceData, meta interface{}) er
 	}
 	if code, ok := d.GetOk("code"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("code", connection.EQOperator, []string{code.(string)}))
+	}
+	if filters, ok := d.GetOk("filters"); ok {
+		params.WithFilter(buildDataSourceAPIRequestFilters(filters.(*schema.Set))...)
 	}
 
 	azs, err := service.GetAvailabilityZones(params)
