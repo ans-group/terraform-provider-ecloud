@@ -26,7 +26,7 @@ func TestAccDataSourceFloatingIP(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceFloatingIPExists(resourceName, &az),
-					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_AVAILABILITYZONE_NAME),
+					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_FLOATINGIP_ID),
 				),
 			},
 		},
@@ -59,12 +59,12 @@ func testAccCheckDataSourceFloatingIPExists(n string, az *ecloudservice.Floating
 
 var testAccCheckDataSourceFloatingIPConfigTemplate = `
 data "ecloud_availabilityzone" "test-az" {
-    name = "{{ .UKF_TEST_AVAILABILITYZONE_NAME }}"
+    name = "{{ .UKF_TEST_FLOATINGIP_ID }}"
 }`
 
 func testAccCheckDataSourceFloatingIPConfig() (string, error) {
 	data := map[string]interface{}{
-		"UKF_TEST_AVAILABILITYZONE_NAME": UKF_TEST_AVAILABILITYZONE_NAME,
+		"UKF_TEST_FLOATINGIP_ID": UKF_TEST_FLOATINGIP_ID,
 	}
 
 	return testAccTemplateConfig(testAccCheckDataSourceFloatingIPConfigTemplate, data)
