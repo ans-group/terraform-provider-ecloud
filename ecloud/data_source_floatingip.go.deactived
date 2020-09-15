@@ -1,3 +1,5 @@
+// Deactivated until more properties are available for model
+
 package ecloud
 
 import (

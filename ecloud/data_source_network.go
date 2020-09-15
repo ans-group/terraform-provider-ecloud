@@ -15,13 +15,16 @@ func dataSourceNetwork() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"network_id": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"name": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"router_id": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 		},
 	}

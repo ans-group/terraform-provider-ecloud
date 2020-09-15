@@ -14,14 +14,21 @@ func dataSourceAvailabilityZone() *schema.Resource {
 		Read: dataSourceAvailabilityZoneRead,
 
 		Schema: map[string]*schema.Schema{
-			"availabilityzone_id": {
-				Type: schema.TypeString,
+			"availability_zone_id": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"name": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"code": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"datacentre_site_id": {
-				Type: schema.TypeInt,
+				Type:     schema.TypeInt,
+				Optional: true,
 			},
 		},
 	}
@@ -32,7 +39,7 @@ func dataSourceAvailabilityZoneRead(d *schema.ResourceData, meta interface{}) er
 
 	params := connection.APIRequestParameters{}
 
-	if id, ok := d.GetOk("availabilityzone_id"); ok {
+	if id, ok := d.GetOk("availability_zone_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
 	}
 	if name, ok := d.GetOk("name"); ok {

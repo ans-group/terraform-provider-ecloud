@@ -1,0 +1,42 @@
+package ecloud
+
+import (
+	"testing"
+
+	"github.com/hashicorp/terraform/helper/resource"
+)
+
+func TestAccDataSourceFirewallRule(t *testing.T) {
+	config, err := testAccCheckDataSourceFirewallRuleConfig()
+	if err != nil {
+		t.Fatalf("Failed to generate config: %s", err)
+	}
+
+	resourceName := "data.ecloud_firewallrule.test-fwr"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_AVAILABILITYZONE_NAME),
+				),
+			},
+		},
+	})
+}
+
+var testAccCheckDataSourceFirewallRuleConfigTemplate = `
+data "ecloud_firewallrule" "test-fwr" {
+    name = "{{ .UKF_TEST_AVAILABILITYZONE_NAME }}"
+}`
+
+func testAccCheckDataSourceFirewallRuleConfig() (string, error) {
+	data := map[string]interface{}{
+		"UKF_TEST_AVAILABILITYZONE_NAME": UKF_TEST_AVAILABILITYZONE_NAME,
+	}
+
+	return testAccTemplateConfig(testAccCheckDataSourceFirewallRuleConfigTemplate, data)
+}

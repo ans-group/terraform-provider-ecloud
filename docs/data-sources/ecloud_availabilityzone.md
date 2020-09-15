@@ -1,18 +1,18 @@
-# ecloud_availabilityzone Data Source
+# ecloud_availability_zone Data Source
 
 This resource represents an eCloud Availability Zone
 
 ## Example Usage
 
 ```hcl
-data "ecloud_availabilityzone" "az-1" {
+data "ecloud_availability_zone" "az-1" {
     name = "Manchester West"
 }
 ```
 
 ## Argument Reference
 
-- `availabilityzone_id`: ID of availability zone
+- `availability_zone_id`: ID of availability zone
 - `name`: Name of availability zone
 - `datacentre_site_id`: Datacentre site ID for availability zone
 

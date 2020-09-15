@@ -1,16 +1,12 @@
 package ecloud
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func TestAccDataSourceVPC(t *testing.T) {
-	var vpc ecloudservice.VPC
 	config, err := testAccCheckDataSourceVPCConfig()
 	if err != nil {
 		t.Fatalf("Failed to generate config: %s", err)
@@ -25,36 +21,11 @@ func TestAccDataSourceVPC(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceVPCExists(resourceName, &vpc),
 					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_VPC_NAME),
 				),
 			},
 		},
 	})
-}
-
-func testAccCheckDataSourceVPCExists(n string, vpc *ecloudservice.VPC) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No VPC ID is set")
-		}
-
-		service := testAccProvider.Meta().(ecloudservice.ECloudService)
-
-		getVPC, err := service.GetVPC(rs.Primary.ID)
-		if err != nil {
-			return err
-		}
-
-		*vpc = getVPC
-
-		return nil
-	}
 }
 
 var testAccCheckDataSourceVPCConfigTemplate = `

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -14,13 +13,14 @@ import (
 var testAccProviders map[string]terraform.ResourceProvider
 var testAccProvider *schema.Provider
 var (
-	UKF_TEST_VPC_NAME                 = os.Getenv("UKF_TEST_VPC_NAME")
-	UKF_TEST_AVAILABILITYZONE_NAME    = os.Getenv("UKF_TEST_AVAILABILITYZONE_NAME")
-	UKF_TEST_NETWORK_NAME             = os.Getenv("UKF_TEST_NETWORK_NAME")
-	UKF_TEST_DHCP_AVAILABILITYZONE_ID = os.Getenv("UKF_TEST_DHCP_AVAILABILITYZONE_ID")
-	UKF_TEST_INSTANCE_NAME            = os.Getenv("UKF_TEST_INSTANCE_NAME")
-	UKF_TEST_FLOATINGIP_ID            = os.Getenv("UKF_TEST_FLOATINGIP_ID")
-	// UKF_TEST_VPN_NAME                 = os.Getenv("UKF_TEST_VPN_NAME")
+// UKF_TEST_VPC_NAME                 = os.Getenv("UKF_TEST_VPC_NAME")
+// UKF_TEST_AVAILABILITYZONE_ID      = os.Getenv("UKF_TEST_AVAILABILITYZONE_ID")
+// UKF_TEST_AVAILABILITYZONE_NAME    = os.Getenv("UKF_TEST_AVAILABILITYZONE_NAME")
+// UKF_TEST_NETWORK_NAME             = os.Getenv("UKF_TEST_NETWORK_NAME")
+// UKF_TEST_DHCP_AVAILABILITYZONE_ID = os.Getenv("UKF_TEST_DHCP_AVAILABILITYZONE_ID")
+// UKF_TEST_INSTANCE_NAME            = os.Getenv("UKF_TEST_INSTANCE_NAME")
+// UKF_TEST_FLOATINGIP_ID            = os.Getenv("UKF_TEST_FLOATINGIP_ID")
+// UKF_TEST_VPN_NAME                 = os.Getenv("UKF_TEST_VPN_NAME")
 
 )
 
@@ -46,24 +46,27 @@ func testAccPreCheck(t *testing.T) {
 }
 
 func testAccPreCheckRequiredEnvVars(t *testing.T) {
-	if UKF_TEST_VPC_NAME == "" {
-		t.Fatal("UKF_TEST_VPC_NAME must be set for acceptance tests")
-	}
-	if UKF_TEST_AVAILABILITYZONE_NAME == "" {
-		t.Fatal("UKF_TEST_AVAILABILITYZONE_NAME must be set for acceptance tests")
-	}
-	if UKF_TEST_NETWORK_NAME == "" {
-		t.Fatal("UKF_TEST_NETWORK_NAME must be set for acceptance tests")
-	}
-	if UKF_TEST_DHCP_AVAILABILITYZONE_ID == "" {
-		t.Fatal("UKF_TEST_DHCP_AVAILABILITYZONE_ID must be set for acceptance tests")
-	}
-	if UKF_TEST_INSTANCE_NAME == "" {
-		t.Fatal("UKF_TEST_INSTANCE_NAME must be set for acceptance tests")
-	}
-	if UKF_TEST_FLOATINGIP_ID == "" {
-		t.Fatal("UKF_TEST_FLOATINGIP_ID must be set for acceptance tests")
-	}
+	// if UKF_TEST_VPC_NAME == "" {
+	// 	t.Fatal("UKF_TEST_VPC_NAME must be set for acceptance tests")
+	// }
+	// if UKF_TEST_AVAILABILITYZONE_ID == "" {
+	// 	t.Fatal("UKF_TEST_AVAILABILITYZONE_ID must be set for acceptance tests")
+	// }
+	// if UKF_TEST_AVAILABILITYZONE_NAME == "" {
+	// 	t.Fatal("UKF_TEST_AVAILABILITYZONE_NAME must be set for acceptance tests")
+	// }
+	// if UKF_TEST_NETWORK_NAME == "" {
+	// 	t.Fatal("UKF_TEST_NETWORK_NAME must be set for acceptance tests")
+	// }
+	// if UKF_TEST_DHCP_AVAILABILITYZONE_ID == "" {
+	// 	t.Fatal("UKF_TEST_DHCP_AVAILABILITYZONE_ID must be set for acceptance tests")
+	// }
+	// if UKF_TEST_INSTANCE_NAME == "" {
+	// 	t.Fatal("UKF_TEST_INSTANCE_NAME must be set for acceptance tests")
+	// }
+	// if UKF_TEST_FLOATINGIP_ID == "" {
+	// 	t.Fatal("UKF_TEST_FLOATINGIP_ID must be set for acceptance tests")
+	// }
 	// if UKF_TEST_VPN_NAME == "" {
 	// 	t.Fatal("UKF_TEST_VPN_NAME must be set for acceptance tests")
 	// }

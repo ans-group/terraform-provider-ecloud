@@ -16,7 +16,7 @@ func TestAccDataSourceFloatingIP(t *testing.T) {
 		t.Fatalf("Failed to generate config: %s", err)
 	}
 
-	resourceName := "data.ecloud_availabilityzone.test-az"
+	resourceName := "data.ecloud_floatingip.test-fip"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -26,7 +26,7 @@ func TestAccDataSourceFloatingIP(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceFloatingIPExists(resourceName, &az),
-					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_FLOATINGIP_ID),
+					resource.TestCheckResourceAttr(resourceName, "id", UKF_TEST_FLOATINGIP_ID),
 				),
 			},
 		},
@@ -41,7 +41,7 @@ func testAccCheckDataSourceFloatingIPExists(n string, az *ecloudservice.Floating
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No availability zone ID is set")
+			return fmt.Errorf("No floating IP ID is set")
 		}
 
 		service := testAccProvider.Meta().(ecloudservice.ECloudService)
@@ -58,8 +58,8 @@ func testAccCheckDataSourceFloatingIPExists(n string, az *ecloudservice.Floating
 }
 
 var testAccCheckDataSourceFloatingIPConfigTemplate = `
-data "ecloud_availabilityzone" "test-az" {
-    name = "{{ .UKF_TEST_FLOATINGIP_ID }}"
+data "ecloud_availability_zone" "test-fip" {
+    floatingip_id = "{{ .UKF_TEST_FLOATINGIP_ID }}"
 }`
 
 func testAccCheckDataSourceFloatingIPConfig() (string, error) {

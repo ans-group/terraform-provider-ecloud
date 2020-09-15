@@ -15,10 +15,12 @@ func dataSourceDHCP() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"dhcp_id": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"name": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"filters": dataSourceAPIRequestFiltersSchema(),
 		},
@@ -33,8 +35,8 @@ func dataSourceDHCPRead(d *schema.ResourceData, meta interface{}) error {
 	if id, ok := d.GetOk("dhcp_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
 	}
-	if azID, ok := d.GetOk("availabilityzone_id"); ok {
-		params.WithFilter(*connection.NewAPIRequestFiltering("availabilityzone_id", connection.EQOperator, []string{azID.(string)}))
+	if azID, ok := d.GetOk("availability_zone_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("availability_zone_id", connection.EQOperator, []string{azID.(string)}))
 	}
 	if filters, ok := d.GetOk("filters"); ok {
 		params.WithFilter(buildDataSourceAPIRequestFilters(filters.(*schema.Set))...)
