@@ -3,9 +3,9 @@ package ecloud
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"os"
 	"testing"
+	"text/template"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
