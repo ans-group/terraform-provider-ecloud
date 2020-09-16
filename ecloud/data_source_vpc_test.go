@@ -21,7 +21,7 @@ func TestAccDataSourceVPC(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_VPC_NAME),
+					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_REFERENCE_VPC_NAME),
 				),
 			},
 		},
@@ -30,12 +30,12 @@ func TestAccDataSourceVPC(t *testing.T) {
 
 var testAccCheckDataSourceVPCConfigTemplate = `
 data "ecloud_vpc" "test-vpc" {
-    name = "{{ .UKF_TEST_VPC_NAME }}"
+    vpc_id = "{{ .UKF_TEST_REFERENCE_VPC_ID }}"
 }`
 
 func testAccCheckDataSourceVPCConfig() (string, error) {
 	data := map[string]interface{}{
-		"UKF_TEST_VPC_NAME": UKF_TEST_VPC_NAME,
+		"UKF_TEST_REFERENCE_VPC_ID": UKF_TEST_REFERENCE_VPC_ID,
 	}
 
 	return testAccTemplateConfig(testAccCheckDataSourceVPCConfigTemplate, data)

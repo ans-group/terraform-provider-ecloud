@@ -21,7 +21,7 @@ func TestAccDataSourceInstance(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_INSTANCE_NAME),
+					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_REFERENCE_INSTANCE_NAME),
 				),
 			},
 		},
@@ -30,12 +30,12 @@ func TestAccDataSourceInstance(t *testing.T) {
 
 var testAccCheckDataSourceInstanceConfigTemplate = `
 data "ecloud_instance" "test-instance" {
-    name = "{{ .UKF_TEST_INSTANCE_NAME }}"
+    instance_id = "{{ .UKF_TEST_REFERENCE_INSTANCE_ID }}"
 }`
 
 func testAccCheckDataSourceInstanceConfig() (string, error) {
 	data := map[string]interface{}{
-		"UKF_TEST_INSTANCE_NAME": UKF_TEST_INSTANCE_NAME,
+		"UKF_TEST_REFERENCE_INSTANCE_ID": UKF_TEST_REFERENCE_INSTANCE_ID,
 	}
 
 	return testAccTemplateConfig(testAccCheckDataSourceInstanceConfigTemplate, data)

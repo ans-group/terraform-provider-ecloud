@@ -21,7 +21,8 @@ func TestAccDataSourceDHCP(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "vpc_id", UKF_TEST_VPC_ID),
+					resource.TestCheckResourceAttr(resourceName, "vpc_id", UKF_TEST_REFERENCE_VPC_ID),
+					resource.TestCheckResourceAttr(resourceName, "availability_zone_id", UKF_TEST_REFERENCE_DHCP_AVAILABILITY_ZONE_ID),
 				),
 			},
 		},
@@ -30,12 +31,12 @@ func TestAccDataSourceDHCP(t *testing.T) {
 
 var testAccCheckDataSourceDHCPConfigTemplate = `
 data "ecloud_dhcp" "test-dhcp" {
-    availability_zone_id = "{{ .UKF_TEST_DHCP_AVAILABILITY_ZONE_ID }}"
+    dhcp_id = "{{ .UKF_TEST_REFERENCE_DHCP_ID }}"
 }`
 
 func testAccCheckDataSourceDHCPConfig() (string, error) {
 	data := map[string]interface{}{
-		"UKF_TEST_DHCP_AVAILABILITY_ZONE_ID": UKF_TEST_DHCP_AVAILABILITY_ZONE_ID,
+		"UKF_TEST_REFERENCE_DHCP_ID": UKF_TEST_REFERENCE_DHCP_ID,
 	}
 
 	return testAccTemplateConfig(testAccCheckDataSourceDHCPConfigTemplate, data)

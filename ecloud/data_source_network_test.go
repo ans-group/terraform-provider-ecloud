@@ -21,7 +21,8 @@ func TestAccDataSourceNetwork(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_NETWORK_NAME),
+					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_REFERENCE_NETWORK_NAME),
+					resource.TestCheckResourceAttr(resourceName, "router_id", UKF_TEST_REFERENCE_ROUTER_ID),
 				),
 			},
 		},
@@ -30,12 +31,12 @@ func TestAccDataSourceNetwork(t *testing.T) {
 
 var testAccCheckDataSourceNetworkConfigTemplate = `
 data "ecloud_network" "test-network" {
-    name = "{{ .UKF_TEST_NETWORK_NAME }}"
+    network_id = "{{ .UKF_TEST_REFERENCE_NETWORK_ID }}"
 }`
 
 func testAccCheckDataSourceNetworkConfig() (string, error) {
 	data := map[string]interface{}{
-		"UKF_TEST_NETWORK_NAME": UKF_TEST_NETWORK_NAME,
+		"UKF_TEST_REFERENCE_NETWORK_ID": UKF_TEST_REFERENCE_NETWORK_ID,
 	}
 
 	return testAccTemplateConfig(testAccCheckDataSourceNetworkConfigTemplate, data)

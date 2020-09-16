@@ -18,6 +18,10 @@ func dataSourceDHCP() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"vpc_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"availability_zone_id": {
 				Type:     schema.TypeString,
 				Optional: true,
