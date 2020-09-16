@@ -14,7 +14,6 @@ func TestAccDataSourceNetwork(t *testing.T) {
 
 	resourceName := "data.ecloud_network.test-network"
 
-	t.Log(config)
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
