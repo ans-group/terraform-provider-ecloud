@@ -53,21 +53,21 @@ func testAccPreCheckRequiredEnvVars(t *testing.T) {
 	if UKF_TEST_REFERENCE_VPC_NAME == "" {
 		t.Fatal("UKF_TEST_REFERENCE_VPC_NAME must be set for acceptance tests")
 	}
-	if UKF_TEST_REFERENCE_NETWORK_ID == "" {
-		t.Fatal("UKF_TEST_REFERENCE_NETWORK_ID must be set for acceptance tests")
-	}
-	if UKF_TEST_REFERENCE_NETWORK_NAME == "" {
-		t.Fatal("UKF_TEST_REFERENCE_NETWORK_NAME must be set for acceptance tests")
-	}
-	if UKF_TEST_REFERENCE_DHCP_ID == "" {
-		t.Fatal("UKF_TEST_REFERENCE_DHCP_ID must be set for acceptance tests")
-	}
-	if UKF_TEST_REFERENCE_DHCP_AVAILABILITY_ZONE_ID == "" {
-		t.Fatal("UKF_TEST_REFERENCE_DHCP_AVAILABILITY_ZONE_ID must be set for acceptance tests")
-	}
-	if UKF_TEST_REFERENCE_ROUTER_ID == "" {
-		t.Fatal("UKF_TEST_REFERENCE_ROUTER_ID must be set for acceptance tests")
-	}
+	// if UKF_TEST_REFERENCE_NETWORK_ID == "" {
+	// 	t.Fatal("UKF_TEST_REFERENCE_NETWORK_ID must be set for acceptance tests")
+	// }
+	// if UKF_TEST_REFERENCE_NETWORK_NAME == "" {
+	// 	t.Fatal("UKF_TEST_REFERENCE_NETWORK_NAME must be set for acceptance tests")
+	// }
+	// if UKF_TEST_REFERENCE_DHCP_ID == "" {
+	// 	t.Fatal("UKF_TEST_REFERENCE_DHCP_ID must be set for acceptance tests")
+	// }
+	// if UKF_TEST_REFERENCE_DHCP_AVAILABILITY_ZONE_ID == "" {
+	// 	t.Fatal("UKF_TEST_REFERENCE_DHCP_AVAILABILITY_ZONE_ID must be set for acceptance tests")
+	// }
+	// if UKF_TEST_REFERENCE_ROUTER_ID == "" {
+	// 	t.Fatal("UKF_TEST_REFERENCE_ROUTER_ID must be set for acceptance tests")
+	// }
 	if UKF_TEST_REFERENCE_INSTANCE_ID == "" {
 		t.Fatal("UKF_TEST_REFERENCE_INSTANCE_ID must be set for acceptance tests")
 	}
