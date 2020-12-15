@@ -21,6 +21,7 @@ func TestAccDataSourceVPC(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "region_id", UKF_TEST_REFERENCE_VPC_REGION_ID),
 					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_REFERENCE_VPC_NAME),
 				),
 			},

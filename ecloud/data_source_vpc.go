@@ -18,6 +18,10 @@ func dataSourceVPC() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"region_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -33,6 +37,9 @@ func dataSourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 
 	if id, ok := d.GetOk("vpc_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
+	}
+	if regionID, ok := d.GetOk("region_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("region_id", connection.EQOperator, []string{regionID.(string)}))
 	}
 	if name, ok := d.GetOk("name"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
@@ -52,6 +59,7 @@ func dataSourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(vpcs[0].ID)
+	d.Set("region_id", vpcs[0].RegionID)
 	d.Set("name", vpcs[0].Name)
 
 	return nil

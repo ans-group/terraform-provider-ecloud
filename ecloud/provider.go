@@ -13,7 +13,7 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"api_key": &schema.Schema{
+			"api_key": {
 				Type:      schema.TypeString,
 				Optional:  true,
 				Sensitive: true,
@@ -29,14 +29,13 @@ func Provider() *schema.Provider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			// "ecloud_availability_zone": dataSourceAvailabilityZone(),
-			// "ecloud_dhcp":              dataSourceDHCP(),
-			"ecloud_instance": dataSourceInstance(),
-			// "ecloud_network":           dataSourceNetwork(),
 			"ecloud_vpc": dataSourceVPC(),
-			// "ecloud_vpn": dataSourceVPN(),
 		},
-		ResourcesMap:  map[string]*schema.Resource{},
+		ResourcesMap: map[string]*schema.Resource{
+			"ecloud_vpc":     resourceVPC(),
+			"ecloud_router":  resourceRouter(),
+			"ecloud_network": resourceNetwork(),
+		},
 		ConfigureFunc: providerConfigure,
 	}
 }

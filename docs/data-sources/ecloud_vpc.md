@@ -13,6 +13,7 @@ data "ecloud_vpc" "vpc-1" {
 ## Argument Reference
 
 - `vpc_id`: ID of VPC
+- `region_id`: ID of VPC region
 - `name`: Name of VPC
 
 ## Attributes Reference
@@ -20,3 +21,4 @@ data "ecloud_vpc" "vpc-1" {
 `id` is set to VPC ID
 
 - `name`: Name of VPC
+- `region_id`: ID of VPC region
