@@ -14,9 +14,7 @@ import (
 var testAccProviders map[string]terraform.ResourceProvider
 var testAccProvider *schema.Provider
 var (
-	UKF_TEST_REFERENCE_VPC_ID        = os.Getenv("UKF_TEST_REFERENCE_VPC_ID")
-	UKF_TEST_REFERENCE_VPC_NAME      = os.Getenv("UKF_TEST_REFERENCE_VPC_NAME")
-	UKF_TEST_REFERENCE_VPC_REGION_ID = os.Getenv("UKF_TEST_REFERENCE_VPC_REGION_ID")
+	UKF_TEST_VPC_REGION_ID = os.Getenv("UKF_TEST_VPC_REGION_ID")
 )
 
 func init() {
@@ -41,14 +39,8 @@ func testAccPreCheck(t *testing.T) {
 }
 
 func testAccPreCheckRequiredEnvVars(t *testing.T) {
-	if UKF_TEST_REFERENCE_VPC_ID == "" {
-		t.Fatal("UKF_TEST_REFERENCE_VPC_ID must be set for acceptance tests")
-	}
-	if UKF_TEST_REFERENCE_VPC_NAME == "" {
-		t.Fatal("UKF_TEST_REFERENCE_VPC_NAME must be set for acceptance tests")
-	}
-	if UKF_TEST_REFERENCE_VPC_REGION_ID == "" {
-		t.Fatal("UKF_TEST_REFERENCE_VPC_REGION_ID must be set for acceptance tests")
+	if UKF_TEST_VPC_REGION_ID == "" {
+		t.Fatal("UKF_TEST_VPC_REGION_ID must be set for acceptance tests")
 	}
 }
 

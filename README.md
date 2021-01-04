@@ -11,7 +11,7 @@ terraform {
   required_providers {
     ecloud = {
       source  = "ukfast/ecloud"
-      version = "~> 1.0"
+      version = "~> 2.0"
     }
   }
 }

@@ -1,17 +1,16 @@
 package ecloud
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 )
 
-func TestAccDataSourceVPC(t *testing.T) {
-	config, err := testAccCheckDataSourceVPCConfig()
-	if err != nil {
-		t.Fatalf("Failed to generate config: %s", err)
-	}
-
+func TestAccDataSourceVPC_basic(t *testing.T) {
+	vpcName := acctest.RandomWithPrefix("tftest")
+	config := testAccDataSourceVPCConfig_basic(UKF_TEST_VPC_REGION_ID, vpcName)
 	resourceName := "data.ecloud_vpc.test-vpc"
 
 	resource.Test(t, resource.TestCase{
@@ -21,23 +20,23 @@ func TestAccDataSourceVPC(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "region_id", UKF_TEST_REFERENCE_VPC_REGION_ID),
-					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_REFERENCE_VPC_NAME),
+					resource.TestCheckResourceAttr(resourceName, "region_id", UKF_TEST_VPC_REGION_ID),
+					resource.TestCheckResourceAttr(resourceName, "name", vpcName),
 				),
 			},
 		},
 	})
 }
 
-var testAccCheckDataSourceVPCConfigTemplate = `
+func testAccDataSourceVPCConfig_basic(regionID string, vpcName string) string {
+	return fmt.Sprintf(`
+resource "ecloud_vpc" "test-vpc" {
+	region_id = "%s"
+    name = "%s"
+}
+
 data "ecloud_vpc" "test-vpc" {
-    vpc_id = "{{ .UKF_TEST_REFERENCE_VPC_ID }}"
-}`
-
-func testAccCheckDataSourceVPCConfig() (string, error) {
-	data := map[string]interface{}{
-		"UKF_TEST_REFERENCE_VPC_ID": UKF_TEST_REFERENCE_VPC_ID,
-	}
-
-	return testAccTemplateConfig(testAccCheckDataSourceVPCConfigTemplate, data)
+    name = ecloud_vpc.test-vpc.name
+}
+`, regionID, vpcName)
 }

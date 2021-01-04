@@ -42,12 +42,12 @@ func resourceVPCCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Created CreateVPCRequest: %+v", createReq)
 
 	log.Print("Creating VPC")
-	id, err := service.CreateVPC(createReq)
+	vpcID, err := service.CreateVPC(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating VPC: %s", err)
 	}
 
-	d.SetId(id)
+	d.SetId(vpcID)
 
 	return resourceVPCRead(d, meta)
 }

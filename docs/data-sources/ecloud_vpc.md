@@ -20,5 +20,5 @@ data "ecloud_vpc" "vpc-1" {
 
 `id` is set to VPC ID
 
-- `name`: Name of VPC
 - `region_id`: ID of VPC region
+- `name`: Name of VPC

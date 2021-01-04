@@ -115,6 +115,19 @@ func resourceNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error removing network with ID [%s]: %s", d.Id(), err)
 	}
 
+	stateConf := &resource.StateChangeConf{
+		Target:     []string{ecloudservice.SyncStatusComplete.String()},
+		Refresh:    NetworkSyncStatusRefreshFunc(service, d.Id()),
+		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Delay:      5 * time.Second,
+		MinTimeout: 3 * time.Second,
+	}
+
+	_, err = stateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for network with ID [%s] to be deleted: %s", d.Id(), err)
+	}
+
 	return nil
 }
 

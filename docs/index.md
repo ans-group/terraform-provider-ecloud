@@ -9,16 +9,8 @@ provider "ecloud" {
   api_key = "abc"
 }
 
-resource "ecloud_virtualmachine" "vm-1" {
-    cpu = 2
-    ram = 2
-    disk {
-      capacity = 20
-    }
-    template = "CentOS 7 64-bit"
-    name = "vm-1"
-    environment = "Hybrid"
-    solution_id = 123
+resource "ecloud_vpc" "vpc-1" {
+    region_id = "reg-abcdef12"
 }
 ```
 
