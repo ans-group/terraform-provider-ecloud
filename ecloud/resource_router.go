@@ -116,7 +116,7 @@ func resourceRouterDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	stateConf := &resource.StateChangeConf{
-		Target:     []string{ecloudservice.SyncStatusComplete.String()},
+		Target:     []string{"Deleted"},
 		Refresh:    RouterSyncStatusRefreshFunc(service, d.Id()),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,

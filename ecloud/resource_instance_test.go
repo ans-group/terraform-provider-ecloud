@@ -87,9 +87,24 @@ resource "ecloud_vpc" "test-vpc" {
 	name = "test-vpc"
 }
 
+resource "ecloud_router" "test-router" {
+	vpc_id = ecloud_vpc.test-vpc.id
+	name = "test-router"
+}
+
+resource "ecloud_network" "test-network" {
+	router_id = ecloud_router.test-router.id
+	name = "test-network"
+}
+
 resource "ecloud_instance" "test-instance" {
 	vpc_id = ecloud_vpc.test-vpc.id
+	network_id = ecloud_network.test-network.id
 	name = "%s"
+	appliance_id = "6e12d729-ca82-49f9-89d2-eec2360c482a"
+	volume_capacity = 10
+	ram_capacity = 512
+	vcpu_cores = 1
 }
 `, regionID, instanceName)
 }
