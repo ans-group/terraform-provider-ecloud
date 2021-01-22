@@ -6,7 +6,7 @@ require (
 	github.com/hashicorp/go-hclog v0.12.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/terraform v0.14.3
-	github.com/ukfast/sdk-go v1.3.36
+	github.com/ukfast/sdk-go v1.3.37
 )
 
 // replace github.com/ukfast/sdk-go => ../sdk-go
