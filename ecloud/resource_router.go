@@ -101,6 +101,19 @@ func resourceRouterUpdate(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Error updating router with ID [%s]: %w", d.Id(), err)
 		}
+
+		stateConf := &resource.StateChangeConf{
+			Target:     []string{ecloudservice.SyncStatusComplete.String()},
+			Refresh:    RouterSyncStatusRefreshFunc(service, d.Id()),
+			Timeout:    d.Timeout(schema.TimeoutCreate),
+			Delay:      5 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+
+		_, err = stateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for router with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+		}
 	}
 
 	return resourceRouterRead(d, meta)
@@ -118,7 +131,7 @@ func resourceRouterDelete(d *schema.ResourceData, meta interface{}) error {
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{"Deleted"},
 		Refresh:    RouterSyncStatusRefreshFunc(service, d.Id()),
-		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}

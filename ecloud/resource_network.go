@@ -101,6 +101,19 @@ func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Error updating network with ID [%s]: %w", d.Id(), err)
 		}
+
+		stateConf := &resource.StateChangeConf{
+			Target:     []string{ecloudservice.SyncStatusComplete.String()},
+			Refresh:    NetworkSyncStatusRefreshFunc(service, d.Id()),
+			Timeout:    d.Timeout(schema.TimeoutUpdate),
+			Delay:      5 * time.Second,
+			MinTimeout: 1 * time.Second,
+		}
+
+		_, err = stateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for network with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+		}
 	}
 
 	return resourceNetworkRead(d, meta)
@@ -118,7 +131,7 @@ func resourceNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{"Deleted"},
 		Refresh:    NetworkSyncStatusRefreshFunc(service, d.Id()),
-		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}
