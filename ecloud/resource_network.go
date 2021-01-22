@@ -26,6 +26,11 @@ func resourceNetwork() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"subnet": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -39,6 +44,7 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 
 	createReq := ecloudservice.CreateNetworkRequest{
 		RouterID: d.Get("router_id").(string),
+		Subnet:   d.Get("subnet").(string),
 		Name:     d.Get("name").(string),
 	}
 	log.Printf("Created CreateNetworkRequest: %+v", createReq)
@@ -83,6 +89,7 @@ func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("router_id", network.RouterID)
+	d.Set("subnet", network.Subnet)
 	d.Set("name", network.Name)
 
 	return nil

@@ -14,6 +14,7 @@ data "ecloud_network" "network-1" {
 
 - `network_id`: ID of network
 - `router_id`: ID of network router
+- `subnet`: Subnet of network
 - `name`: Name of network
 
 ## Attributes Reference
@@ -21,4 +22,5 @@ data "ecloud_network" "network-1" {
 `id` is set to network ID
 
 - `router_id`: ID of network router
+- `subnet`: Subnet of network
 - `name`: Name of network

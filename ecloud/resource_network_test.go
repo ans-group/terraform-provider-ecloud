@@ -14,6 +14,7 @@ func TestAccNetwork_basic(t *testing.T) {
 	networkName := acctest.RandomWithPrefix("tftest")
 	resourceName := "ecloud_network.test-network"
 	routerResourceName := "ecloud_router.test-router"
+	subnet := "10.0.0.0/24"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -21,11 +22,12 @@ func TestAccNetwork_basic(t *testing.T) {
 		CheckDestroy: testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceNetworkConfig_basic(UKF_TEST_VPC_REGION_ID, networkName),
+				Config: testAccResourceNetworkConfig_basic(UKF_TEST_VPC_REGION_ID, networkName, subnet),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNetworkExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", networkName),
 					resource.TestCheckResourceAttrPair(routerResourceName, "id", resourceName, "router_id"),
+					resource.TestCheckResourceAttr(resourceName, "subnet", subnet),
 				),
 			},
 		},
@@ -80,10 +82,10 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceNetworkConfig_basic(regionID string, networkName string) string {
+func testAccResourceNetworkConfig_basic(regionID string, networkName string, subnet string) string {
 	return fmt.Sprintf(`
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%s"
+	region_id = "%[1]s"
 	name = "test-vpc"
 }
 
@@ -94,7 +96,8 @@ resource "ecloud_router" "test-router" {
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "%s"
+	name = "%[2]s"
+	subnet = "%[3]s"
 }
-`, regionID, networkName)
+`, regionID, networkName, subnet)
 }

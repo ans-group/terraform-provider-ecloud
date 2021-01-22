@@ -22,6 +22,10 @@ func dataSourceNetwork() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"subnet": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -40,6 +44,9 @@ func dataSourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	if routerID, ok := d.GetOk("router_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("router_id", connection.EQOperator, []string{routerID.(string)}))
+	}
+	if subnet, ok := d.GetOk("subnet"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("subnet", connection.EQOperator, []string{subnet.(string)}))
 	}
 	if name, ok := d.GetOk("name"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
@@ -60,6 +67,7 @@ func dataSourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(networks[0].ID)
 	d.Set("router_id", networks[0].RouterID)
+	d.Set("subnet", networks[0].Subnet)
 	d.Set("name", networks[0].Name)
 
 	return nil
