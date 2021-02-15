@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/ukfast/sdk-go/pkg/connection"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -147,8 +148,19 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("volume_capacity", instance.VolumeCapacity)
 	d.Set("locked", instance.Locked)
 	d.Set("backup_enabled", instance.BackupEnabled)
-	d.Set("network_id", instance.NetworkID)
-	d.Set("floating_ip_id", instance.FloatingIPID)
+
+	if d.Get("volume_id").(string) == "" {
+		volumes, err := service.GetInstanceVolumes(d.Id(), connection.APIRequestParameters{})
+		if err != nil {
+			return fmt.Errorf("Failed to retrieve instance volumes: %w", err)
+		}
+
+		if len(volumes) != 1 {
+			return fmt.Errorf("Unexpected number of volumes (%d), expected 1", len(volumes))
+		}
+
+		d.Set("volume_id", volumes[0].ID)
+	}
 
 	return nil
 }
@@ -156,16 +168,49 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
+	patchReq := ecloudservice.PatchInstanceRequest{}
+	hasChange := false
 	if d.HasChange("name") {
-		patchReq := ecloudservice.PatchInstanceRequest{
-			Name: d.Get("name").(string),
-		}
+		hasChange = true
+		patchReq.Name = d.Get("name").(string)
+	}
+	if d.HasChange("vcpu_cores") {
+		hasChange = true
+		patchReq.VCPUCores = d.Get("vcpu_cores").(int)
+	}
+	if d.HasChange("ram_capacity") {
+		hasChange = true
+		patchReq.RAMCapacity = d.Get("ram_capacity").(int)
+	}
 
+	if hasChange {
 		log.Printf("Updating instance with ID [%s]", d.Id())
 		err := service.PatchInstance(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating instance with ID [%s]: %w", d.Id(), err)
 		}
+
+		stateConf := &resource.StateChangeConf{
+			Target:     []string{ecloudservice.SyncStatusComplete.String()},
+			Refresh:    InstanceSyncStatusRefreshFunc(service, d.Id()),
+			Timeout:    d.Timeout(schema.TimeoutUpdate),
+			Delay:      5 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+
+		_, err = stateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for instance with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+		}
+	}
+
+	if d.HasChange("volume_capacity") {
+		log.Printf("Updating volume with ID [%s]", d.Get("volume_id").(string))
+		service.PatchVolume(d.Get("volume_id").(string), ecloudservice.PatchVolumeRequest{
+			Capacity: d.Get("volume_capacity").(int),
+		})
+
+		// TODO: wait for volume sync
 	}
 
 	return resourceInstanceRead(d, meta)
@@ -183,7 +228,7 @@ func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{"Deleted"},
 		Refresh:    InstanceSyncStatusRefreshFunc(service, d.Id()),
-		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}
