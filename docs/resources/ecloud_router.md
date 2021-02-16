@@ -1,4 +1,4 @@
-# ecloud_router Data Source
+# ecloud_router Resource
 
 This resource is for managing eCloud Routers
 
@@ -13,5 +13,5 @@ resource "ecloud_router" "router-1" {
 
 ## Argument Reference
 
-- `vpc_id`: ID of router VPC
+- `vpc_id`: (Required) ID of router VPC
 - `name`: Name of router

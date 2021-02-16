@@ -1,4 +1,4 @@
-# ecloud_vpc Data Source
+# ecloud_vpc Resource
 
 This resource is for managing eCloud VPCs
 
@@ -13,5 +13,5 @@ resource "ecloud_vpc" "vpc-1" {
 
 ## Argument Reference
 
-- `region_id`: ID of VPC region
+- `region_id`: (Required) ID of VPC region
 - `name`: Name of VPC

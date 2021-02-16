@@ -1,4 +1,4 @@
-# ecloud_network Data Source
+# ecloud_network Resource
 
 This resource is for managing eCloud Networks
 
@@ -13,6 +13,6 @@ resource "ecloud_network" "network-1" {
 
 ## Argument Reference
 
-- `router_id`: ID of network router
-- `subnet`: Subnet of network
+- `router_id`: (Required) ID of network router
+- `subnet`: (Required) Subnet of network
 - `name`: Name of network
