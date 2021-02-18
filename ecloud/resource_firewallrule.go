@@ -10,6 +10,7 @@ import (
 	"github.com/ukfast/sdk-go/pkg/connection"
 	"github.com/ukfast/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
+	"github.com/ukfast/terraform-provider-ecloud/pkg/lock"
 )
 
 func resourceFirewallRule() *schema.Resource {
@@ -81,6 +82,10 @@ func resourceFirewallRule() *schema.Resource {
 }
 
 func resourceFirewallRuleCreate(d *schema.ResourceData, meta interface{}) error {
+	firewallPolicyID := d.Get("firewall_policy_id").(string)
+	unlock := lock.LockResource(firewallPolicyID)
+	defer unlock()
+
 	service := meta.(ecloudservice.ECloudService)
 
 	portsExpanded, err := expandCreateFirewallRuleRequestPorts(d.Get("port").([]interface{}))
@@ -89,7 +94,7 @@ func resourceFirewallRuleCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	createReq := ecloudservice.CreateFirewallRuleRequest{
-		FirewallPolicyID: d.Get("firewall_policy_id").(string),
+		FirewallPolicyID: firewallPolicyID,
 		Name:             d.Get("name").(string),
 		Sequence:         d.Get("sequence").(int),
 		Source:           d.Get("source").(string),
@@ -112,9 +117,9 @@ func resourceFirewallRuleCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 	createReq.Action = actionParsed
 
-	log.Printf("Created CreateFirewallRuleRequest: %+v", createReq)
+	log.Printf("[DEBUG] Created CreateFirewallRuleRequest: %+v", createReq)
 
-	log.Print("Creating firewall rule")
+	log.Print("[INFO] Creating firewall rule")
 	ruleID, err := service.CreateFirewallRule(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating firewall rule: %s", err)
@@ -122,7 +127,6 @@ func resourceFirewallRuleCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(ruleID)
 
-	firewallPolicyID := d.Get("firewall_policy_id").(string)
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
 		Refresh:    FirewallPolicySyncStatusRefreshFunc(service, firewallPolicyID),
@@ -142,7 +146,7 @@ func resourceFirewallRuleCreate(d *schema.ResourceData, meta interface{}) error 
 func resourceFirewallRuleRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Retrieving firewall rule with ID [%s]", d.Id())
+	log.Printf("[INFO] Retrieving firewall rule with ID [%s]", d.Id())
 	rule, err := service.GetFirewallRule(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -154,7 +158,7 @@ func resourceFirewallRuleRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	log.Printf("Retrieving firewall rule ports for firewall rule with ID [%s]", d.Id())
+	log.Printf("[INFO] Retrieving firewall rule ports for firewall rule with ID [%s]", d.Id())
 	ports, err := service.GetFirewallRuleFirewallRulePorts(d.Id(), connection.APIRequestParameters{})
 	if err != nil {
 		return err
@@ -174,6 +178,10 @@ func resourceFirewallRuleRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceFirewallRuleUpdate(d *schema.ResourceData, meta interface{}) error {
+	firewallPolicyID := d.Get("firewall_policy_id").(string)
+	unlock := lock.LockResource(firewallPolicyID)
+	defer unlock()
+
 	service := meta.(ecloudservice.ECloudService)
 	hasChange := false
 
@@ -240,13 +248,12 @@ func resourceFirewallRuleUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if hasChange {
-		log.Printf("Updating firewall rule with ID [%s]", d.Id())
+		log.Printf("[INFO] Updating firewall rule with ID [%s]", d.Id())
 		err := service.PatchFirewallRule(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating firewall rule with ID [%s]: %w", d.Id(), err)
 		}
 
-		firewallPolicyID := d.Get("firewall_policy_id").(string)
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.SyncStatusComplete.String()},
 			Refresh:    FirewallPolicySyncStatusRefreshFunc(service, firewallPolicyID),
@@ -265,27 +272,30 @@ func resourceFirewallRuleUpdate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceFirewallRuleDelete(d *schema.ResourceData, meta interface{}) error {
+	firewallPolicyID := d.Get("firewall_policy_id").(string)
+	unlock := lock.LockResource(firewallPolicyID)
+	defer unlock()
+
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Removing firewall rule with ID [%s]", d.Id())
+	log.Printf("[INFO] Removing firewall rule with ID [%s]", d.Id())
 	err := service.DeleteFirewallRule(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error removing firewall rule with ID [%s]: %s", d.Id(), err)
 	}
 
-	firewallPolicyID := d.Get("firewall_policy_id").(string)
 	stateConf := &resource.StateChangeConf{
 		Target: []string{"Deleted"},
 		Refresh: func() (interface{}, string, error) {
-			policy, err := service.GetFirewallPolicy(firewallPolicyID)
+			rule, err := service.GetFirewallRule(d.Id())
 			if err != nil {
 				if _, ok := err.(*ecloudservice.FirewallRuleNotFoundError); ok {
-					return policy, "Deleted", nil
+					return rule, "Deleted", nil
 				}
 				return nil, "", err
 			}
 
-			return policy, "", nil
+			return rule, "", nil
 		},
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,

@@ -54,7 +54,7 @@ func dataSourceFirewallPolicyRead(d *schema.ResourceData, meta interface{}) erro
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
 	}
 
-	log.Printf("Retrieving firewall policies with parameters: %+v", params)
+	log.Printf("[DEBUG] Retrieving firewall policies with parameters: %+v", params)
 	policies, err := service.GetFirewallPolicies(params)
 	if err != nil {
 		return fmt.Errorf("Error retrieving active firewall policies: %s", err)

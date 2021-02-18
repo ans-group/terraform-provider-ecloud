@@ -41,9 +41,9 @@ func resourceRouterCreate(d *schema.ResourceData, meta interface{}) error {
 		VPCID: d.Get("vpc_id").(string),
 		Name:  d.Get("name").(string),
 	}
-	log.Printf("Created CreateRouterRequest: %+v", createReq)
+	log.Printf("[DEBUG] Created CreateRouterRequest: %+v", createReq)
 
-	log.Print("Creating Router")
+	log.Print("[INFO] Creating Router")
 	routerID, err := service.CreateRouter(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating router: %s", err)
@@ -70,7 +70,7 @@ func resourceRouterCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceRouterRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Retrieving router with ID [%s]", d.Id())
+	log.Printf("[INFO] Retrieving router with ID [%s]", d.Id())
 	router, err := service.GetRouter(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -96,7 +96,7 @@ func resourceRouterUpdate(d *schema.ResourceData, meta interface{}) error {
 			Name: d.Get("name").(string),
 		}
 
-		log.Printf("Updating router with ID [%s]", d.Id())
+		log.Printf("[INFO] Updating router with ID [%s]", d.Id())
 		err := service.PatchRouter(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating router with ID [%s]: %w", d.Id(), err)
@@ -122,7 +122,7 @@ func resourceRouterUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceRouterDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Removing router with ID [%s]", d.Id())
+	log.Printf("[INFO] Removing router with ID [%s]", d.Id())
 	err := service.DeleteRouter(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error removing router with ID [%s]: %s", d.Id(), err)

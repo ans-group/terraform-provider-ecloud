@@ -47,9 +47,9 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 		Subnet:   d.Get("subnet").(string),
 		Name:     d.Get("name").(string),
 	}
-	log.Printf("Created CreateNetworkRequest: %+v", createReq)
+	log.Printf("[DEBUG] Created CreateNetworkRequest: %+v", createReq)
 
-	log.Print("Creating network")
+	log.Print("[INFO] Creating network")
 	networkID, err := service.CreateNetwork(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating network: %s", err)
@@ -76,7 +76,7 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Retrieving network with ID [%s]", d.Id())
+	log.Printf("[INFO] Retrieving network with ID [%s]", d.Id())
 	network, err := service.GetNetwork(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -103,7 +103,7 @@ func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 			Name: d.Get("name").(string),
 		}
 
-		log.Printf("Updating network with ID [%s]", d.Id())
+		log.Printf("[INFO] Updating network with ID [%s]", d.Id())
 		err := service.PatchNetwork(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating network with ID [%s]: %w", d.Id(), err)
@@ -129,7 +129,7 @@ func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Removing network with ID [%s]", d.Id())
+	log.Printf("[INFO] Removing network with ID [%s]", d.Id())
 	err := service.DeleteNetwork(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error removing network with ID [%s]: %s", d.Id(), err)

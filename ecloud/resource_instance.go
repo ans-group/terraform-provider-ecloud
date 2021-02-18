@@ -99,9 +99,9 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		FloatingIPID:       d.Get("floating_ip_id").(string),
 		RequiresFloatingIP: d.Get("requires_floating_ip").(bool),
 	}
-	log.Printf("Created CreateInstanceRequest: %+v", createReq)
+	log.Printf("[DEBUG] Created CreateInstanceRequest: %+v", createReq)
 
-	log.Print("Creating Instance")
+	log.Print("[INFO] Creating Instance")
 	instanceID, err := service.CreateInstance(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating instance: %s", err)
@@ -128,7 +128,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Retrieving instance with ID [%s]", d.Id())
+	log.Printf("[INFO] Retrieving instance with ID [%s]", d.Id())
 	instance, err := service.GetInstance(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -184,7 +184,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if hasChange {
-		log.Printf("Updating instance with ID [%s]", d.Id())
+		log.Printf("[INFO] Updating instance with ID [%s]", d.Id())
 		err := service.PatchInstance(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating instance with ID [%s]: %w", d.Id(), err)
@@ -205,7 +205,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("volume_capacity") {
-		log.Printf("Updating volume with ID [%s]", d.Get("volume_id").(string))
+		log.Printf("[INFO] Updating volume with ID [%s]", d.Get("volume_id").(string))
 		service.PatchVolume(d.Get("volume_id").(string), ecloudservice.PatchVolumeRequest{
 			Capacity: d.Get("volume_capacity").(int),
 		})
@@ -219,7 +219,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Removing instance with ID [%s]", d.Id())
+	log.Printf("[INFO] Removing instance with ID [%s]", d.Id())
 	err := service.DeleteInstance(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error removing instance with ID [%s]: %s", d.Id(), err)

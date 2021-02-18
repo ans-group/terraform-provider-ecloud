@@ -89,7 +89,7 @@ func dataSourceFirewallRuleRead(d *schema.ResourceData, meta interface{}) error 
 		params.WithFilter(*connection.NewAPIRequestFiltering("enabled", connection.EQOperator, []string{strconv.FormatBool(enabled.(bool))}))
 	}
 
-	log.Printf("Retrieving firewall rules with parameters: %+v", params)
+	log.Printf("[DEBUG] Retrieving firewall rules with parameters: %+v", params)
 	rules, err := service.GetFirewallRules(params)
 	if err != nil {
 		return fmt.Errorf("Error retrieving active firewall rules: %s", err)

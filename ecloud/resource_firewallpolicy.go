@@ -47,9 +47,9 @@ func resourceFirewallPolicyCreate(d *schema.ResourceData, meta interface{}) erro
 		Sequence: d.Get("sequence").(int),
 		Name:     d.Get("name").(string),
 	}
-	log.Printf("Created CreateFirewallPolicyRequest: %+v", createReq)
+	log.Printf("[DEBUG] Created CreateFirewallPolicyRequest: %+v", createReq)
 
-	log.Print("Creating firewall policy")
+	log.Print("[INFO] Creating firewall policy")
 	policyID, err := service.CreateFirewallPolicy(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating firewall policy: %s", err)
@@ -76,7 +76,7 @@ func resourceFirewallPolicyCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceFirewallPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Retrieving FirewallPolicy with ID [%s]", d.Id())
+	log.Printf("[DEBUG] Retrieving FirewallPolicy with ID [%s]", d.Id())
 	policy, err := service.GetFirewallPolicy(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -112,7 +112,7 @@ func resourceFirewallPolicyUpdate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	if hasChange {
-		log.Printf("Updating firewall policy with ID [%s]", d.Id())
+		log.Printf("[INFO] Updating firewall policy with ID [%s]", d.Id())
 		err := service.PatchFirewallPolicy(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating firewall policy with ID [%s]: %w", d.Id(), err)
@@ -138,7 +138,7 @@ func resourceFirewallPolicyUpdate(d *schema.ResourceData, meta interface{}) erro
 func resourceFirewallPolicyDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Removing firewall policy with ID [%s]", d.Id())
+	log.Printf("[INFO] Removing firewall policy with ID [%s]", d.Id())
 	err := service.DeleteFirewallPolicy(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error removing firewall policy with ID [%s]: %s", d.Id(), err)

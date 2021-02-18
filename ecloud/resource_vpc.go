@@ -39,9 +39,9 @@ func resourceVPCCreate(d *schema.ResourceData, meta interface{}) error {
 		RegionID: d.Get("region_id").(string),
 		Name:     d.Get("name").(string),
 	}
-	log.Printf("Created CreateVPCRequest: %+v", createReq)
+	log.Printf("[DEBUG] Created CreateVPCRequest: %+v", createReq)
 
-	log.Print("Creating VPC")
+	log.Print("[INFO] Creating VPC")
 	vpcID, err := service.CreateVPC(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating VPC: %s", err)
@@ -55,7 +55,7 @@ func resourceVPCCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Retrieving VPC with ID [%s]", d.Id())
+	log.Printf("[INFO] Retrieving VPC with ID [%s]", d.Id())
 	vpc, err := service.GetVPC(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -81,7 +81,7 @@ func resourceVPCUpdate(d *schema.ResourceData, meta interface{}) error {
 			Name: d.Get("name").(string),
 		}
 
-		log.Printf("Updating VPC with ID [%s]", d.Id())
+		log.Printf("[INFO] Updating VPC with ID [%s]", d.Id())
 		err := service.PatchVPC(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating VPC with ID [%s]: %w", d.Id(), err)
@@ -94,7 +94,7 @@ func resourceVPCUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceVPCDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("Removing VPC with ID [%s]", d.Id())
+	log.Printf("[INFO] Removing VPC with ID [%s]", d.Id())
 	err := service.DeleteVPC(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error VPC with ID [%s]: %s", d.Id(), err)
