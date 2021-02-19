@@ -57,7 +57,19 @@ Note `UKF_TEST_VPC_REGION_ID` environment is required for executing tests
 
 ### Releasing 
 
-`goreleaser` is used to release the provider on Github:
+`goreleaser` is used to release the provider on Github. First, obtain your GPG fingerprint:
+
+```
+gpg -k
+```
+
+Cache GPG passphrase:
+
+```
+gpg --armor --detach-sign .
+```
+
+Finally tag and invoke `goreleaser`:
 
 ```
 git tag v2.0.0
