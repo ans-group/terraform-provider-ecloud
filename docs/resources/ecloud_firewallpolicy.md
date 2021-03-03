@@ -6,9 +6,9 @@ This resource is for managing eCloud Firewall Policies
 
 ```hcl
 resource "ecloud_firewallpolicy" "firewallpolicy-1" {
-    router_id = "rtr-abcdef12"
-    sequence = 0
-    name = "my-firewallpolicy"
+  router_id = "rtr-abcdef12"
+  sequence  = 0
+  name      = "my-firewallpolicy"
 }
 ```
 

@@ -6,7 +6,7 @@ This resource represents an eCloud Instance
 
 ```hcl
 data "ecloud_instance" "instance-1" {
-    name = "my-instance"
+  name = "my-instance"
 }
 ```
 

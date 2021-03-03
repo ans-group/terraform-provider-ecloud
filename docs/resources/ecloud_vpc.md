@@ -6,8 +6,8 @@ This resource is for managing eCloud VPCs
 
 ```hcl
 resource "ecloud_vpc" "vpc-1" {
-    region_id = "reg-abcdef12"
-    name = "my-vpc"
+  region_id = "reg-abcdef12"
+  name      = "my-vpc"
 }
 ```
 

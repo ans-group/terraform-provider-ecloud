@@ -6,7 +6,7 @@ This resource represents an eCloud Router
 
 ```hcl
 data "ecloud_router" "router-1" {
-    name = "my-router"
+  name = "my-router"
 }
 ```
 

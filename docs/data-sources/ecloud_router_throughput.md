@@ -6,7 +6,7 @@ This resource represents an eCloud Router throughput
 
 ```hcl
 data "ecloud_router_throughput" "throughput-1" {
-    name = "some-throughput"
+  name = "some-throughput"
 }
 ```
 

@@ -6,7 +6,7 @@ This resource represents an eCloud Firewall Policy
 
 ```hcl
 data "ecloud_firewallpolicy" "firewallpolicy-1" {
-    name = "my-policy"
+  name = "my-policy"
 }
 ```
 

@@ -6,8 +6,8 @@ This resource is for managing eCloud Networks
 
 ```hcl
 resource "ecloud_network" "network-1" {
-    router_id = "rtr-abcdef12"
-    subnet    = "10.0.0.0/24"
+  router_id = "rtr-abcdef12"
+  subnet    = "10.0.0.0/24"
 }
 ```
 

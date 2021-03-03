@@ -6,7 +6,7 @@ This resource represents an eCloud VPC
 
 ```hcl
 data "ecloud_vpc" "vpc-1" {
-    name = "my-vpc"
+  name = "my-vpc"
 }
 ```
 

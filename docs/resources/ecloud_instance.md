@@ -1,13 +1,18 @@
-# ecloud_network Resource
+# ecloud_instance Resource
 
 This resource is for managing eCloud Networks
 
 ## Example Usage
 
 ```hcl
-resource "ecloud_network" "network-1" {
-    router_id = "rtr-abcdef12"
-    subnet    = "10.0.0.0/24"
+resource "ecloud_instance" "instance-1" {
+  vpc_id          = "vpc-abcdef12"
+  name            = "my instance"
+  appliance_id    = "c6dd5cb6-530d-459e-a253-bf5aca8c01b1"
+  vcpu_cores      = 2
+  ram_capacity    = 2048
+  volume_capacity = 20
+  network_id      = "net-abcdef12"
 }
 ```
 

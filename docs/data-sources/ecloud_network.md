@@ -6,7 +6,7 @@ This resource represents an eCloud Network
 
 ```hcl
 data "ecloud_network" "network-1" {
-    name = "my-network"
+  name = "my-network"
 }
 ```
 
