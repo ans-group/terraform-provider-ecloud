@@ -23,8 +23,8 @@ resource "ecloud_instance" "instance-1" {
 - `appliance_id`: (Required) ID of appliance
 - `user_script`: Script to execute in-guest
 - `vcpu_cores`: (Required) Count of vCPU cores for instance
-- `ram_capacity`: (Required) Amount of RAM/Memory for instance
-- `volume_capacity`: (Required) Size of volume to allocate for instance
+- `ram_capacity`: (Required) Amount of RAM/Memory (in MiB) for instance
+- `volume_capacity`: (Required) Size of volume (in GiB) to allocate for instance.
 - `locked`: Specifies instance should be locked from update/delete
 - `backup_enabled`: Specifies backup should be enabled
 - `network_id`: (Required) ID of network to attach instance NIC to
