@@ -31,7 +31,7 @@ func resourceInstance() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"appliance_id": {
+			"image_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -88,7 +88,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 	createReq := ecloudservice.CreateInstanceRequest{
 		VPCID:              d.Get("vpc_id").(string),
 		Name:               d.Get("name").(string),
-		ApplianceID:        d.Get("appliance_id").(string),
+		ImageID:            d.Get("image_id").(string),
 		UserScript:         d.Get("user_script").(string),
 		VCPUCores:          d.Get("vcpu_cores").(int),
 		RAMCapacity:        d.Get("ram_capacity").(int),
@@ -142,7 +142,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("vpc_id", instance.VPCID)
 	d.Set("name", instance.Name)
-	d.Set("appliance_id", instance.ApplianceID)
+	d.Set("image_id", instance.ImageID)
 	d.Set("vcpu_cores", instance.VCPUCores)
 	d.Set("ram_capacity", instance.RAMCapacity)
 	d.Set("volume_capacity", instance.VolumeCapacity)

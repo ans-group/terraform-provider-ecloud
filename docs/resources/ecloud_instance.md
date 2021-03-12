@@ -8,7 +8,7 @@ This resource is for managing eCloud Networks
 resource "ecloud_instance" "instance-1" {
   vpc_id          = "vpc-abcdef12"
   name            = "my instance"
-  appliance_id    = "c6dd5cb6-530d-459e-a253-bf5aca8c01b1"
+  image_id        = "img-abcdef"
   vcpu_cores      = 2
   ram_capacity    = 2048
   volume_capacity = 20
@@ -20,7 +20,7 @@ resource "ecloud_instance" "instance-1" {
 
 - `vpc_id`: (Required) ID of instance VPC
 - `name`: Name of instance
-- `appliance_id`: (Required) ID of appliance
+- `image_id`: (Required) ID of image
 - `user_script`: Script to execute in-guest
 - `vcpu_cores`: (Required) Count of vCPU cores for instance
 - `ram_capacity`: (Required) Amount of RAM/Memory (in MiB) for instance

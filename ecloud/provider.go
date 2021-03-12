@@ -29,13 +29,14 @@ func Provider() *schema.Provider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"ecloud_vpc":               dataSourceVPC(),
-			"ecloud_router":            dataSourceRouter(),
-			"ecloud_network":           dataSourceNetwork(),
-			"ecloud_instance":          dataSourceInstance(),
 			"ecloud_firewallpolicy":    dataSourceFirewallPolicy(),
 			"ecloud_firewallrule":      dataSourceFirewallRule(),
+			"ecloud_image":             dataSourceImage(),
+			"ecloud_instance":          dataSourceInstance(),
+			"ecloud_network":           dataSourceNetwork(),
+			"ecloud_router":            dataSourceRouter(),
 			"ecloud_router_throughput": dataSourceRouterThroughput(),
+			"ecloud_vpc":               dataSourceVPC(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":            resourceVPC(),

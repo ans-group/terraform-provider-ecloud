@@ -49,7 +49,7 @@ resource "ecloud_instance" "test-instance" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	network_id = ecloud_network.test-network.id
 	name = "%[2]s"
-	appliance_id = "6e12d729-ca82-49f9-89d2-eec2360c482a"
+	image_id = "img-abcdef12"
 	volume_capacity = 20
 	ram_capacity = 1024
 	vcpu_cores = 1
