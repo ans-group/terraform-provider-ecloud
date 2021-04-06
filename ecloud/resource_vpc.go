@@ -3,7 +3,9 @@ package ecloud
 import (
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
@@ -49,6 +51,19 @@ func resourceVPCCreate(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(vpcID)
 
+	stateConf := &resource.StateChangeConf{
+		Target:     []string{ecloudservice.SyncStatusComplete.String()},
+		Refresh:    VPCSyncStatusRefreshFunc(service, vpcID),
+		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Delay:      5 * time.Second,
+		MinTimeout: 3 * time.Second,
+	}
+
+	_, err = stateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for VPC with ID [%s] to return sync status of [%s]: %s", vpcID, ecloudservice.SyncStatusComplete, err)
+	}
+
 	return resourceVPCRead(d, meta)
 }
 
@@ -86,6 +101,19 @@ func resourceVPCUpdate(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Error updating VPC with ID [%s]: %w", d.Id(), err)
 		}
+
+		stateConf := &resource.StateChangeConf{
+			Target:     []string{ecloudservice.SyncStatusComplete.String()},
+			Refresh:    VPCSyncStatusRefreshFunc(service, d.Id()),
+			Timeout:    d.Timeout(schema.TimeoutCreate),
+			Delay:      5 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+
+		_, err = stateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for VPC with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+		}
 	}
 
 	return resourceVPCRead(d, meta)
@@ -100,5 +128,38 @@ func resourceVPCDelete(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error VPC with ID [%s]: %s", d.Id(), err)
 	}
 
+	stateConf := &resource.StateChangeConf{
+		Target:     []string{"Deleted"},
+		Refresh:    VPCSyncStatusRefreshFunc(service, d.Id()),
+		Timeout:    d.Timeout(schema.TimeoutDelete),
+		Delay:      5 * time.Second,
+		MinTimeout: 3 * time.Second,
+	}
+
+	_, err = stateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for VPC with ID [%s] to be deleted: %s", d.Id(), err)
+	}
+
 	return nil
+}
+
+// VPCSyncStatusRefreshFunc returns a function with StateRefreshFunc signature for use
+// with StateChangeConf
+func VPCSyncStatusRefreshFunc(service ecloudservice.ECloudService, vpcID string) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		vpc, err := service.GetVPC(vpcID)
+		if err != nil {
+			if _, ok := err.(*ecloudservice.VPCNotFoundError); ok {
+				return vpc, "Deleted", nil
+			}
+			return nil, "", err
+		}
+
+		if vpc.Sync == ecloudservice.SyncStatusFailed {
+			return nil, "", fmt.Errorf("Failed to create VPC - review logs")
+		}
+
+		return vpc, vpc.Sync.String(), nil
+	}
 }
