@@ -173,7 +173,7 @@ func FirewallPolicySyncStatusRefreshFunc(service ecloudservice.ECloudService, po
 		}
 
 		if policy.Sync == ecloudservice.SyncStatusFailed {
-			return nil, "", fmt.Errorf("Failed to create firewall policy - review logs")
+			return nil, "", fmt.Errorf("Failed to create/update firewall policy - review logs")
 		}
 
 		return policy, policy.Sync.String(), nil
