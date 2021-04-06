@@ -157,7 +157,7 @@ func VPCSyncStatusRefreshFunc(service ecloudservice.ECloudService, vpcID string)
 		}
 
 		if vpc.Sync == ecloudservice.SyncStatusFailed {
-			return nil, "", fmt.Errorf("Failed to create VPC - review logs")
+			return nil, "", fmt.Errorf("Failed to create/update VPC - review logs")
 		}
 
 		return vpc, vpc.Sync.String(), nil

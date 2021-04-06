@@ -157,7 +157,7 @@ func RouterSyncStatusRefreshFunc(service ecloudservice.ECloudService, routerID s
 		}
 
 		if router.Sync == ecloudservice.SyncStatusFailed {
-			return nil, "", fmt.Errorf("Failed to create router - review logs")
+			return nil, "", fmt.Errorf("Failed to create/update router - review logs")
 		}
 
 		return router, router.Sync.String(), nil
