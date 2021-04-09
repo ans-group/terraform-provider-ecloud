@@ -163,10 +163,10 @@ func NetworkSyncStatusRefreshFunc(service ecloudservice.ECloudService, networkID
 			return nil, "", err
 		}
 
-		if network.Sync == ecloudservice.SyncStatusFailed {
+		if network.Sync.Status == ecloudservice.SyncStatusFailed {
 			return nil, "", fmt.Errorf("Failed to create/update network - review logs")
 		}
 
-		return network, network.Sync.String(), nil
+		return network, network.Sync.Status.String(), nil
 	}
 }

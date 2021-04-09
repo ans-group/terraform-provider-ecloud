@@ -253,10 +253,10 @@ func InstanceSyncStatusRefreshFunc(service ecloudservice.ECloudService, instance
 			return nil, "", err
 		}
 
-		if instance.Sync == ecloudservice.SyncStatusFailed {
+		if instance.Sync.Status == ecloudservice.SyncStatusFailed {
 			return nil, "", fmt.Errorf("Failed to create/update instance - review logs")
 		}
 
-		return instance, instance.Sync.String(), nil
+		return instance, instance.Sync.Status.String(), nil
 	}
 }
