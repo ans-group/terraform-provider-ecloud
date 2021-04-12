@@ -29,6 +29,7 @@ func Provider() *schema.Provider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"ecloud_volume":            dataSourceVolume(),
 			"ecloud_firewallpolicy":    dataSourceFirewallPolicy(),
 			"ecloud_firewallrule":      dataSourceFirewallRule(),
 			"ecloud_image":             dataSourceImage(),
@@ -45,6 +46,7 @@ func Provider() *schema.Provider {
 			"ecloud_instance":       resourceInstance(),
 			"ecloud_firewallpolicy": resourceFirewallPolicy(),
 			"ecloud_firewallrule":   resourceFirewallRule(),
+			"ecloud_volume":         resourceVolume(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
