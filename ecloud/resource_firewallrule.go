@@ -285,26 +285,16 @@ func resourceFirewallRuleDelete(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	stateConf := &resource.StateChangeConf{
-		Target: []string{"Deleted"},
-		Refresh: func() (interface{}, string, error) {
-			rule, err := service.GetFirewallRule(d.Id())
-			if err != nil {
-				if _, ok := err.(*ecloudservice.FirewallRuleNotFoundError); ok {
-					return rule, "Deleted", nil
-				}
-				return nil, "", err
-			}
-
-			return rule, "", nil
-		},
-		Timeout:    d.Timeout(schema.TimeoutDelete),
+		Target:     []string{ecloudservice.SyncStatusComplete.String()},
+		Refresh:    FirewallPolicySyncStatusRefreshFunc(service, firewallPolicyID),
+		Timeout:    d.Timeout(schema.TimeoutUpdate),
 		Delay:      5 * time.Second,
-		MinTimeout: 3 * time.Second,
+		MinTimeout: 1 * time.Second,
 	}
 
 	_, err = stateConf.WaitForState()
 	if err != nil {
-		return fmt.Errorf("Error waiting for firewall rule with ID [%s] to be deleted: %s", d.Id(), err)
+		return fmt.Errorf("Error waiting for firewall policy with ID [%s] to return sync status of [%s]: %s", firewallPolicyID, ecloudservice.SyncStatusComplete, err)
 	}
 
 	return nil
