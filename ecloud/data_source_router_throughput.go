@@ -62,7 +62,6 @@ func dataSourceRouterThroughputRead(d *schema.ResourceData, meta interface{}) er
 	d.Set("availability_zone_id", throughputs[0].AvailabilityZoneID)
 	d.Set("name", throughputs[0].Name)
 	d.Set("committed_bandwidth", throughputs[0].CommittedBandwidth)
-	d.Set("burst_size", throughputs[0].BurstSize)
 
 	return nil
 }

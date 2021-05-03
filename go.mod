@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/terraform v0.14.3
 	github.com/stretchr/testify v1.6.1
-	github.com/ukfast/sdk-go v1.3.48
+	github.com/ukfast/sdk-go v1.3.51
 )
 
 // replace github.com/ukfast/sdk-go => ../sdk-go
