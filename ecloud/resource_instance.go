@@ -30,6 +30,7 @@ func resourceInstance() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"image_id": {
 				Type:     schema.TypeString,
@@ -49,21 +50,23 @@ func resourceInstance() *schema.Resource {
 				Type:     schema.TypeInt,
 				Required: true,
 			},
-			"volume_capacity": {
+			"os_volume_capacity": {
 				Type:     schema.TypeInt,
 				Required: true,
 			},
-			"volume_id": {
+			"os_volume_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"locked": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  false,
 			},
 			"backup_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  false,
 			},
 			"network_id": {
 				Type:     schema.TypeString,
@@ -76,6 +79,11 @@ func resourceInstance() *schema.Resource {
 			},
 			"requires_floating_ip": {
 				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"data_volume_ids": {
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
 		},
@@ -92,7 +100,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		UserScript:         d.Get("user_script").(string),
 		VCPUCores:          d.Get("vcpu_cores").(int),
 		RAMCapacity:        d.Get("ram_capacity").(int),
-		VolumeCapacity:     d.Get("volume_capacity").(int),
+		VolumeCapacity:     d.Get("os_volume_capacity").(int),
 		Locked:             d.Get("locked").(bool),
 		BackupEnabled:      d.Get("backup_enabled").(bool),
 		NetworkID:          d.Get("network_id").(string),
@@ -122,6 +130,40 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error waiting for instance with ID [%s] to return sync status of [%s]: %s", instanceID, ecloudservice.SyncStatusComplete, err)
 	}
 
+	rawIDs, ok := d.GetOk("data_volume_ids")
+	if ok {
+		for _, rawID := range rawIDs.(*schema.Set).List() {
+			volumeID := rawID.(string)
+			if len(volumeID) < 1 {
+				continue
+			}
+
+			attachVolumeRequest := ecloudservice.AttachVolumeRequest{
+				InstanceID: instanceID,
+			}
+			log.Printf("[DEBUG] Created AttachVolumeRequest: %+v", attachVolumeRequest)
+
+			log.Print("[INFO] Attaching volume")
+			err = service.AttachVolume(volumeID, attachVolumeRequest)
+			if err != nil {
+				return fmt.Errorf("Error attaching volume: %s", err)
+			}
+
+			volStateConf := &resource.StateChangeConf{
+				Target:     []string{ecloudservice.SyncStatusComplete.String()},
+				Refresh:    VolumeSyncStatusRefreshFunc(service, volumeID),
+				Timeout:    d.Timeout(schema.TimeoutUpdate),
+				Delay:      1 * time.Second,
+				MinTimeout: 3 * time.Second,
+			}
+
+			_, err = volStateConf.WaitForState()
+			if err != nil {
+				return fmt.Errorf("Error waiting for volume with ID [%s] to be deleted: %s", volumeID, err)
+			}
+		}
+	}
+
 	return resourceInstanceRead(d, meta)
 }
 
@@ -140,27 +182,36 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	volumes, err := service.GetInstanceVolumes(d.Id(), connection.APIRequestParameters{})
+	if err != nil {
+		return fmt.Errorf("Failed to retrieve instance volumes: %w", err)
+	}
+
+	//check we have 1 os volume
+	var osVolume []ecloudservice.Volume
+	for _, volume := range volumes {
+		if volume.Type == ecloudservice.VolumeTypeOS {
+			osVolume = append(osVolume, volume)
+		}
+	}
+	if len(osVolume) != 1 {
+		return fmt.Errorf("Unexpected number of OS volumes (%d), expected 1", len(volumes))
+	}
+
 	d.Set("vpc_id", instance.VPCID)
 	d.Set("name", instance.Name)
 	d.Set("image_id", instance.ImageID)
 	d.Set("vcpu_cores", instance.VCPUCores)
 	d.Set("ram_capacity", instance.RAMCapacity)
-	d.Set("volume_capacity", instance.VolumeCapacity)
 	d.Set("locked", instance.Locked)
 	d.Set("backup_enabled", instance.BackupEnabled)
+	d.Set("os_volume_capacity", osVolume[0].Capacity)
 
-	if d.Get("volume_id").(string) == "" {
-		volumes, err := service.GetInstanceVolumes(d.Id(), connection.APIRequestParameters{})
-		if err != nil {
-			return fmt.Errorf("Failed to retrieve instance volumes: %w", err)
-		}
-
-		if len(volumes) != 1 {
-			return fmt.Errorf("Unexpected number of volumes (%d), expected 1", len(volumes))
-		}
-
-		d.Set("volume_id", volumes[0].ID)
+	if d.Get("os_volume_id").(string) == "" {
+		d.Set("os_volume_id", osVolume[0].ID)
 	}
+
+	d.Set("data_volume_ids", flattenInstanceDataVolumes(volumes))
 
 	return nil
 }
@@ -204,13 +255,96 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	if d.HasChange("volume_capacity") {
-		log.Printf("[INFO] Updating volume with ID [%s]", d.Get("volume_id").(string))
-		service.PatchVolume(d.Get("volume_id").(string), ecloudservice.PatchVolumeRequest{
-			Capacity: d.Get("volume_capacity").(int),
+	if d.HasChange("os_volume_capacity") {
+		osVolumeID := d.Get("os_volume_id").(string)
+		log.Printf("[INFO] Updating volume with ID [%s]", osVolumeID)
+		service.PatchVolume(osVolumeID, ecloudservice.PatchVolumeRequest{
+			Capacity: d.Get("os_volume_capacity").(int),
 		})
 
-		// TODO: wait for volume sync
+		volStateConf := &resource.StateChangeConf{
+			Target:     []string{ecloudservice.SyncStatusComplete.String()},
+			Refresh:    VolumeSyncStatusRefreshFunc(service, osVolumeID),
+			Timeout:    d.Timeout(schema.TimeoutUpdate),
+			Delay:      3 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+
+		_, err := volStateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", osVolumeID, ecloudservice.SyncStatusComplete, err)
+		}
+	}
+
+	if d.HasChange("data_volume_ids") {
+		oldRaw, newRaw := d.GetChange("data_volume_ids")
+
+		oldIDs := oldRaw.(*schema.Set).List()
+		newIDs := newRaw.(*schema.Set).List()
+
+		//diff new against old for attach
+		for _, id := range newIDs {
+			volumeID := id.(string)
+			if rawVolumeExistsById(oldIDs, volumeID) {
+				continue
+			}
+
+			attachVolumeRequest := ecloudservice.AttachVolumeRequest{
+				InstanceID: d.Id(),
+			}
+			log.Printf("[DEBUG] Created AttachVolumeRequest: %+v", attachVolumeRequest)
+
+			log.Print("[INFO] Attaching volume")
+			err := service.AttachVolume(volumeID, attachVolumeRequest)
+			if err != nil {
+				return fmt.Errorf("Error attaching volume: %s", err)
+			}
+
+			volStateConf := &resource.StateChangeConf{
+				Target:     []string{ecloudservice.SyncStatusComplete.String()},
+				Refresh:    VolumeSyncStatusRefreshFunc(service, volumeID),
+				Timeout:    d.Timeout(schema.TimeoutUpdate),
+				Delay:      1 * time.Second,
+				MinTimeout: 3 * time.Second,
+			}
+
+			_, err = volStateConf.WaitForState()
+			if err != nil {
+				return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", volumeID, ecloudservice.SyncStatusComplete, err)
+			}
+		}
+
+		//diff old against new for detach
+		for _, id := range oldIDs {
+			volumeID := id.(string)
+			if rawVolumeExistsById(newIDs, volumeID) {
+				continue
+			}
+
+			detachVolumeRequest := ecloudservice.DetachVolumeRequest{
+				InstanceID: d.Id(),
+			}
+			log.Printf("[DEBUG] Created DetachVolumeRequest: %+v", detachVolumeRequest)
+
+			log.Print("[INFO] Detaching volume")
+			err := service.DetachVolume(volumeID, detachVolumeRequest)
+			if err != nil {
+				return fmt.Errorf("Error detaching volume: %s", err)
+			}
+
+			volStateConf := &resource.StateChangeConf{
+				Target:     []string{ecloudservice.SyncStatusComplete.String()},
+				Refresh:    VolumeSyncStatusRefreshFunc(service, volumeID),
+				Timeout:    d.Timeout(schema.TimeoutUpdate),
+				Delay:      1 * time.Second,
+				MinTimeout: 3 * time.Second,
+			}
+
+			_, err = volStateConf.WaitForState()
+			if err != nil {
+				return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", volumeID, ecloudservice.SyncStatusComplete, err)
+			}
+		}
 	}
 
 	return resourceInstanceRead(d, meta)

@@ -102,7 +102,7 @@ resource "ecloud_instance" "test-instance" {
 	network_id = ecloud_network.test-network.id
 	name = "%s"
 	image_id = "img-abcdef"
-	volume_capacity = 20
+	os_volume_capacity = 20
 	ram_capacity = 1024
 	vcpu_cores = 1
 }

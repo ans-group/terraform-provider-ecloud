@@ -62,6 +62,19 @@ func resourceVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(volumeID)
 
+	stateConf := &resource.StateChangeConf{
+		Target:     []string{ecloudservice.SyncStatusComplete.String()},
+		Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id()),
+		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Delay:      2 * time.Second,
+		MinTimeout: 3 * time.Second,
+	}
+
+	_, err = stateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for volume with ID [%s] to be deleted: %s", d.Id(), err)
+	}
+
 	return resourceVolumeRead(d, meta)
 }
 
@@ -135,7 +148,12 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[INFO] Removing volume with ID [%s]", d.Id())
 	err := service.DeleteVolume(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error removing volume with ID [%s]: %s", d.Id(), err)
+		switch err.(type) {
+		case *ecloudservice.VolumeNotFoundError:
+			return nil
+		default:
+			return fmt.Errorf("Error removing volume with ID [%s]: %s", d.Id(), err)
+		}
 	}
 
 	stateConf := &resource.StateChangeConf{
