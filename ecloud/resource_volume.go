@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/ukfast/sdk-go/pkg/connection"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -55,16 +56,16 @@ func resourceVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Created CreateVolumeRequest: %+v", createReq)
 
 	log.Print("[INFO] Creating Volume")
-	volumeID, err := service.CreateVolume(createReq)
+	taskRef, err := service.CreateVolume(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating volume: %s", err)
 	}
 
-	d.SetId(volumeID)
+	d.SetId(taskRef.ResourceID)
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id()),
+		Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id(), taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      2 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -121,14 +122,14 @@ func resourceVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if hasChange {
 		log.Printf("[INFO] Updating volume with ID [%s]", d.Id())
-		err := service.PatchVolume(d.Id(), patchReq)
+		taskID, err := service.PatchVolume(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating volume with ID [%s]: %w", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.SyncStatusComplete.String()},
-			Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id()),
+			Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id(), taskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -146,7 +147,7 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing volume with ID [%s]", d.Id())
-	err := service.DeleteVolume(d.Id())
+	taskID, err := service.DeleteVolume(d.Id())
 	if err != nil {
 		switch err.(type) {
 		case *ecloudservice.VolumeNotFoundError:
@@ -158,7 +159,7 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{"Deleted"},
-		Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id()),
+		Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id(), taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -172,8 +173,9 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func VolumeSyncStatusRefreshFunc(service ecloudservice.ECloudService, volumeID string) resource.StateRefreshFunc {
+func VolumeSyncStatusRefreshFunc(service ecloudservice.ECloudService, volumeID, taskID string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
+		//check resource exists first
 		volume, err := service.GetVolume(volumeID)
 		if err != nil {
 			if _, ok := err.(*ecloudservice.VolumeNotFoundError); ok {
@@ -182,10 +184,28 @@ func VolumeSyncStatusRefreshFunc(service ecloudservice.ECloudService, volumeID s
 			return nil, "", err
 		}
 
-		if volume.Sync.Status == ecloudservice.SyncStatusFailed {
-			return nil, "", fmt.Errorf("Failed to create volume - review logs")
+		//check task status on resource
+		log.Printf("[DEBUG] Retrieving task status for taskID: [%s]", taskID)
+		tasks, err := service.GetVolumeTasks(volumeID, *connection.NewAPIRequestParameters().WithFilter(
+			connection.APIRequestFiltering{
+				Property: "id",
+				Operator: connection.EQOperator,
+				Value: []string{taskID},
+			},
+		))
+		if err != nil {
+			return nil, "", err
+		}
+		if len(tasks) != 1 {
+			return nil, "", fmt.Errorf("Expected 1 task, got %d", len(tasks))
 		}
 
-		return volume, volume.Sync.Status.String(), nil
+		log.Printf("[DEBUG] TaskID: %s has status: %s", tasks[0].ID, tasks[0].Status)
+
+		if tasks[0].Status == ecloudservice.TaskStatusFailed {
+			return nil, "", fmt.Errorf("Task with ID: %s has status of %s", tasks[0].ID, tasks[0].Status)
+		}
+
+		return volume, tasks[0].Status.String(), nil
 	}
 }

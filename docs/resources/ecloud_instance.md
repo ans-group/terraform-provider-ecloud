@@ -11,7 +11,7 @@ resource "ecloud_instance" "instance-1" {
   image_id        = "img-abcdef"
   vcpu_cores      = 2
   ram_capacity    = 2048
-  os_volume_capacity = 20
+  volume_capacity = 20
   network_id      = "net-abcdef12"
 
   data_volume_ids = [
@@ -28,7 +28,7 @@ resource "ecloud_instance" "instance-1" {
 - `user_script`: Script to execute in-guest
 - `vcpu_cores`: (Required) Count of vCPU cores for instance
 - `ram_capacity`: (Required) Amount of RAM/Memory (in MiB) for instance
-- `os_volume_capacity`: (Required) Size of volume (in GiB) to allocate for instance.
+- `volume_capacity`: (Required) Size of volume (in GiB) to allocate for instance.
 - `locked`: Specifies instance should be locked from update/delete
 - `backup_enabled`: Specifies backup should be enabled
 - `network_id`: (Required) ID of network to attach instance NIC to

@@ -19,10 +19,11 @@ func flattenInstanceDataVolumes(instanceVolumes []ecloudservice.Volume) *schema.
 	return dataVolumes
 }
 
+//rawVolumeExistsById returns true if value is in slice
 func rawVolumeExistsById(rawVolumes []interface{}, value string) bool {
 	for _, rawVolume := range rawVolumes {
-		volume := rawVolume.(map[string]string)
-		if volume["id"] == value {
+		volume := rawVolume.(string)
+		if volume == value {
 			return true
 		}
 	}
