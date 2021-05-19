@@ -219,7 +219,7 @@ func resourceFirewallRuleUpdate(d *schema.ResourceData, meta interface{}) error 
 		patchReq.Action = actionParsed
 	}
 
-	if d.HasChange("action") {
+	if d.HasChange("direction") {
 		hasChange = true
 
 		direction := d.Get("direction").(string)
