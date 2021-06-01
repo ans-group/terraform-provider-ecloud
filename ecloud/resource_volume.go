@@ -174,6 +174,7 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	stateConf := &resource.StateChangeConf{
+		Target:     []string{ecloudservice.TaskStatusComplete.String()},
 		Refresh:    TaskStatusRefreshFunc(service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
