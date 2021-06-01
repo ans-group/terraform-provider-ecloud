@@ -225,6 +225,35 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("volume_capacity", osVolume[0].Capacity)
 	d.Set("volume_iops", osVolume[0].IOPS)
 
+	if d.Get("floating_ip_id").(string) == "" && d.Get("requires_floating_ip").(bool) {
+		//we need to retrieve the instance nic to find the associated floating ip
+		nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
+		if err != nil {
+			return fmt.Errorf("Failed to retrieve instance nics: %w", err)
+		}
+
+		if len(nics) > 1 {
+			return fmt.Errorf("Unexpected number of instance nics. Unable to lookup floating ip")
+		}
+
+		fips, err := service.GetFloatingIPs(*connection.NewAPIRequestParameters().WithFilter(
+			connection.APIRequestFiltering{
+				Property: "resource_id",
+				Operator: connection.EQOperator,
+				Value:    []string{nics[0].ID},
+			},
+		))
+		if err != nil {
+			return fmt.Errorf("Failed to retrieve floating IPs: %w", err)
+		}
+
+		if len(fips) != 1 {
+			return fmt.Errorf("Unexpected number of fips assigned to instance nic")
+		}
+
+		d.Set("floating_ip_id", fips[0].ID)
+	}
+
 	if d.Get("volume_id").(string) == "" {
 		d.Set("volume_id", osVolume[0].ID)
 	}
@@ -269,12 +298,92 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-		_, err = stateConf.WaitForState()
-		if err != nil {
-			return fmt.Errorf("Error waiting for instance with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+	// manage instance floating ip
+	if d.HasChange("requires_floating_ip") {
+		if d.Get("requires_floating_ip").(bool) && len(d.Get("floating_ip_id").(string)) < 1 {
+			//create and assign floating ip
+			createReq := ecloudservice.CreateFloatingIPRequest{
+				VPCID: d.Get("vpc_id").(string),
+			}
+
+			log.Printf("[DEBUG] Created CreateFloatingIPRequest: %+v", createReq)
+
+			log.Print("[INFO] Creating Floating IP")
+			fipID, err := service.CreateFloatingIP(createReq)
+			if err != nil {
+				return fmt.Errorf("Error creating floating IP: %s", err)
+			}
+
+			d.Set("floating_ip_id", fipID)
+
+			_, err = waitForResourceState(
+				ecloudservice.SyncStatusComplete.String(),
+				FloatingIPSyncStatusRefreshFunc(service, fipID),
+				d.Timeout(schema.TimeoutCreate),
+			)
+			if err != nil {
+				return fmt.Errorf("Error waiting for floating IP with ID [%s] to be created: %s", d.Id(), err)
+			}
+
+			log.Printf("[DEBUG] Assigning floating IP with ID [%s]", d.Id())
+
+			//retrieve instance nics
+			nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
+			if err != nil {
+				return fmt.Errorf("Failed to retrieve instance nics: %w", err)
+			}
+
+			assignFipReq := ecloudservice.AssignFloatingIPRequest{
+				ResourceID: nics[0].ID,
+			}
+			log.Printf("[DEBUG] Created AssignFloatingIPRequest: %+v", assignFipReq)
+
+			err = service.AssignFloatingIP(fipID, assignFipReq)
+			if err != nil {
+				return fmt.Errorf("Error assigning floating IP: %s", err)
+			}
+
+			_, err = waitForResourceState(
+				ecloudservice.SyncStatusComplete.String(),
+				FloatingIPSyncStatusRefreshFunc(service, fipID),
+				d.Timeout(schema.TimeoutUpdate),
+			)
+			if err != nil {
+				return fmt.Errorf("Error waiting for floating IP with ID [%s] to be assigned: %s", d.Id(), err)
+			}
+
+		}
+
+		if !d.Get("requires_floating_ip").(bool) && len(d.Get("floating_ip_id").(string)) > 1 {
+			// delete existing floating ip
+			fip := d.Get("floating_ip_id").(string)
+			log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
+
+			err := service.DeleteFloatingIP(fip)
+			if err != nil {
+				switch err.(type) {
+				case *ecloudservice.FloatingIPNotFoundError:
+					log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
+				default:
+					return fmt.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
+				}
+			}
+
+			_, err = waitForResourceState(
+				"Deleted",
+				FloatingIPSyncStatusRefreshFunc(service, fip),
+				d.Timeout(schema.TimeoutDelete),
+			)
+			if err != nil {
+				return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", d.Id(), err)
+			}
+
+			//unset floating ip
+			d.Set("floating_ip_id", "")
 		}
 	}
 
+	//manage volume capacity
 	if d.HasChange("volume_capacity") {
 		osVolumeID := d.Get("volume_id").(string)
 		log.Printf("[INFO] Updating volume with ID [%s]", osVolumeID)
@@ -384,6 +493,31 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
+
+	//remove floating ip if set
+	if len(d.Get("floating_ip_id").(string)) > 1 {
+		fip := d.Get("floating_ip_id").(string)
+		log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
+
+		err := service.DeleteFloatingIP(fip)
+		if err != nil {
+			switch err.(type) {
+			case *ecloudservice.FloatingIPNotFoundError:
+				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
+			default:
+				return fmt.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
+			}
+		}
+
+		_, err = waitForResourceState(
+			"Deleted",
+			FloatingIPSyncStatusRefreshFunc(service, fip),
+			d.Timeout(schema.TimeoutDelete),
+		)
+		if err != nil {
+			return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", d.Id(), err)
+		}
+	}
 
 	log.Printf("[INFO] Removing instance with ID [%s]", d.Id())
 	err := service.DeleteInstance(d.Id())
