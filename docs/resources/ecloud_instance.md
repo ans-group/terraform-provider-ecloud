@@ -12,6 +12,7 @@ resource "ecloud_instance" "instance-1" {
   vcpu_cores      = 2
   ram_capacity    = 2048
   volume_capacity = 20
+  volume_iops     = 600
   network_id      = "net-abcdef12"
 
   data_volume_ids = [
@@ -29,6 +30,7 @@ resource "ecloud_instance" "instance-1" {
 - `vcpu_cores`: (Required) Count of vCPU cores for instance
 - `ram_capacity`: (Required) Amount of RAM/Memory (in MiB) for instance
 - `volume_capacity`: (Required) Size of volume (in GiB) to allocate for instance.
+- `volume_iops`: IOPs of the operating system volume
 - `locked`: Specifies instance should be locked from update/delete
 - `backup_enabled`: Specifies backup should be enabled
 - `network_id`: (Required) ID of network to attach instance NIC to

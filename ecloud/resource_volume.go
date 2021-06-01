@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/ukfast/sdk-go/pkg/connection"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -38,6 +37,23 @@ func resourceVolume() *schema.Resource {
 			"iops": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					v := val.(int)
+					iops := []int{300, 600, 1200, 2500}
+					intInSlice := func(slice []int, value int) bool {
+						for _, s := range slice {
+							if s == value {
+								return true
+							}
+						}
+						return false
+					}
+
+					if !intInSlice(iops, v) {
+						errs = append(errs, fmt.Errorf("%q must be a valid IOPS value [300, 600, 1200, 2500], got: %d", key, v))
+					}
+					return
+				},
 			},
 		},
 	}
@@ -64,16 +80,16 @@ func resourceVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(taskRef.ResourceID)
 
 	stateConf := &resource.StateChangeConf{
-		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id(), taskRef.TaskID),
+		Target:     []string{ecloudservice.TaskStatusComplete.String()},
+		Refresh:    VolumeTaskStatusRefreshFunc(service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
-		Delay:      2 * time.Second,
+		Delay:      3 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}
 
 	_, err = stateConf.WaitForState()
 	if err != nil {
-		return fmt.Errorf("Error waiting for volume with ID [%s] to be deleted: %s", d.Id(), err)
+		return fmt.Errorf("Error waiting for volume with ID [%s] to be created: %s", d.Id(), err)
 	}
 
 	return resourceVolumeRead(d, meta)
@@ -128,8 +144,8 @@ func resourceVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		stateConf := &resource.StateChangeConf{
-			Target:     []string{ecloudservice.SyncStatusComplete.String()},
-			Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id(), taskID),
+			Target:     []string{ecloudservice.TaskStatusComplete.String()},
+			Refresh:    VolumeTaskStatusRefreshFunc(service, taskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -147,7 +163,7 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing volume with ID [%s]", d.Id())
-	taskID, err := service.DeleteVolume(d.Id())
+	_, err := service.DeleteVolume(d.Id())
 	if err != nil {
 		switch err.(type) {
 		case *ecloudservice.VolumeNotFoundError:
@@ -158,8 +174,7 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	stateConf := &resource.StateChangeConf{
-		Target:     []string{"Deleted"},
-		Refresh:    VolumeSyncStatusRefreshFunc(service, d.Id(), taskID),
+		Refresh:    VolumeNotFoundRefreshFunc(service, d.Id()),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -173,39 +188,36 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func VolumeSyncStatusRefreshFunc(service ecloudservice.ECloudService, volumeID, taskID string) resource.StateRefreshFunc {
+func VolumeTaskStatusRefreshFunc(service ecloudservice.ECloudService, taskID string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
-		//check resource exists first
-		volume, err := service.GetVolume(volumeID)
+		//check task status
+		log.Printf("[DEBUG] Retrieving task status for taskID: [%s]", taskID)
+		task, err := service.GetTask(taskID)
+		if err != nil {
+			return nil, "", err
+		}
+
+		log.Printf("[DEBUG] TaskID: %s has status: %s", task.ID, task.Status)
+
+		if task.Status == ecloudservice.TaskStatusFailed {
+			return nil, "", fmt.Errorf("Task with ID: %s has status of %s", task.ID, task.Status)
+		}
+
+		return "", task.Status.String(), nil
+	}
+}
+
+func VolumeNotFoundRefreshFunc(service ecloudservice.ECloudService, volumeID string) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		//check for 404
+		_, err := service.GetVolume(volumeID)
 		if err != nil {
 			if _, ok := err.(*ecloudservice.VolumeNotFoundError); ok {
-				return volume, "Deleted", nil
+				return nil, "Deleted", nil
 			}
 			return nil, "", err
 		}
 
-		//check task status on resource
-		log.Printf("[DEBUG] Retrieving task status for taskID: [%s]", taskID)
-		tasks, err := service.GetVolumeTasks(volumeID, *connection.NewAPIRequestParameters().WithFilter(
-			connection.APIRequestFiltering{
-				Property: "id",
-				Operator: connection.EQOperator,
-				Value: []string{taskID},
-			},
-		))
-		if err != nil {
-			return nil, "", err
-		}
-		if len(tasks) != 1 {
-			return nil, "", fmt.Errorf("Expected 1 task, got %d", len(tasks))
-		}
-
-		log.Printf("[DEBUG] TaskID: %s has status: %s", tasks[0].ID, tasks[0].Status)
-
-		if tasks[0].Status == ecloudservice.TaskStatusFailed {
-			return nil, "", fmt.Errorf("Task with ID: %s has status of %s", tasks[0].ID, tasks[0].Status)
-		}
-
-		return volume, tasks[0].Status.String(), nil
+		return nil, "", nil
 	}
 }

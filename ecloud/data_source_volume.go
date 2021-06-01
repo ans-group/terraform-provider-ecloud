@@ -63,7 +63,7 @@ func dataSourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if len(volumes) > 1 {
-		return errors.New("More than 1 image found with provided arguments")
+		return errors.New("More than 1 volume found with provided arguments")
 	}
 
 	d.SetId(volumes[0].ID)

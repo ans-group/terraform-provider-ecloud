@@ -7,7 +7,7 @@ import (
 
 //flattenInstanceDataVolumes flattens instance volumes into a set
 func flattenInstanceDataVolumes(instanceVolumes []ecloudservice.Volume) *schema.Set {
-	dataVolumes := schema.NewSet(schema.HashString, []interface{}{}) 
+	dataVolumes := schema.NewSet(schema.HashString, []interface{}{})
 	for _, volume := range instanceVolumes {
 		if volume.Type == ecloudservice.VolumeTypeOS {
 			continue
