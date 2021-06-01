@@ -172,7 +172,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 
 			_, err = waitForResourceState(
 				ecloudservice.TaskStatusComplete.String(),
-				InstanceTaskStatusRefreshFunc(service, taskID),
+				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
@@ -396,7 +396,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		_, err = waitForResourceState(
 			ecloudservice.TaskStatusComplete.String(),
-			VolumeTaskStatusRefreshFunc(service, taskID),
+			TaskStatusRefreshFunc(service, taskID),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
@@ -416,7 +416,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		_, err = waitForResourceState(
 			ecloudservice.TaskStatusComplete.String(),
-			VolumeTaskStatusRefreshFunc(service, taskID),
+			TaskStatusRefreshFunc(service, taskID),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
@@ -451,7 +451,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 			_, err = waitForResourceState(
 				ecloudservice.TaskStatusComplete.String(),
-				InstanceTaskStatusRefreshFunc(service, taskID),
+				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
@@ -479,7 +479,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 			_, err = waitForResourceState(
 				ecloudservice.TaskStatusComplete.String(),
-				InstanceTaskStatusRefreshFunc(service, taskID),
+				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
@@ -554,26 +554,6 @@ func InstanceSyncStatusRefreshFunc(service ecloudservice.ECloudService, instance
 		}
 
 		return instance, instance.Sync.Status.String(), nil
-	}
-}
-
-// InstanceTaskStatusRefreshFunc returns a function with StateRefreshFunc signature for use
-// with StateChangeConf
-func InstanceTaskStatusRefreshFunc(service ecloudservice.ECloudService, taskID string) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
-		log.Printf("[DEBUG] Retrieving task status for taskID: [%s]", taskID)
-
-		task, err := service.GetTask(taskID)
-		if err != nil {
-			return nil, "", err
-		}
-		log.Printf("[DEBUG] TaskID: %s has status: %s", task.ID, task.Status)
-
-		if task.Status == ecloudservice.TaskStatusFailed {
-			return nil, "", fmt.Errorf("Task with ID: %s has status of %s", task.ID, task.Status)
-		}
-
-		return "", task.Status.String(), nil
 	}
 }
 

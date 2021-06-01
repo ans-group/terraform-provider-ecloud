@@ -81,7 +81,7 @@ func resourceVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    VolumeTaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      3 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -145,7 +145,7 @@ func resourceVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    VolumeTaskStatusRefreshFunc(service, taskID),
+			Refresh:    TaskStatusRefreshFunc(service, taskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -163,7 +163,7 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing volume with ID [%s]", d.Id())
-	_, err := service.DeleteVolume(d.Id())
+	taskID, err := service.DeleteVolume(d.Id())
 	if err != nil {
 		switch err.(type) {
 		case *ecloudservice.VolumeNotFoundError:
@@ -174,7 +174,7 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	stateConf := &resource.StateChangeConf{
-		Refresh:    VolumeNotFoundRefreshFunc(service, d.Id()),
+		Refresh:    TaskStatusRefreshFunc(service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -188,7 +188,7 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func VolumeTaskStatusRefreshFunc(service ecloudservice.ECloudService, taskID string) resource.StateRefreshFunc {
+func TaskStatusRefreshFunc(service ecloudservice.ECloudService, taskID string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		//check task status
 		log.Printf("[DEBUG] Retrieving task status for taskID: [%s]", taskID)
@@ -204,20 +204,5 @@ func VolumeTaskStatusRefreshFunc(service ecloudservice.ECloudService, taskID str
 		}
 
 		return "", task.Status.String(), nil
-	}
-}
-
-func VolumeNotFoundRefreshFunc(service ecloudservice.ECloudService, volumeID string) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
-		//check for 404
-		_, err := service.GetVolume(volumeID)
-		if err != nil {
-			if _, ok := err.(*ecloudservice.VolumeNotFoundError); ok {
-				return nil, "Deleted", nil
-			}
-			return nil, "", err
-		}
-
-		return nil, "", nil
 	}
 }
