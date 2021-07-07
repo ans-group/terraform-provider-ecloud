@@ -37,6 +37,11 @@ func resourceInstance() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"image_data": {
+				Type:    schema.TypeMap,
+				Optional:   true,
+				ForceNew:   true,
+			},
 			"user_script": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -95,6 +100,10 @@ func resourceInstance() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"nic_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"floating_ip_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -103,6 +112,7 @@ func resourceInstance() *schema.Resource {
 			"requires_floating_ip": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default: false,
 			},
 			"data_volume_ids": {
 				Type:     schema.TypeSet,
@@ -121,6 +131,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		VPCID:              d.Get("vpc_id").(string),
 		Name:               d.Get("name").(string),
 		ImageID:            d.Get("image_id").(string),
+		ImageData:          expandCreateInstanceRequestImageData(d.Get("image_data").(map[string]interface{})),
 		UserScript:         d.Get("user_script").(string),
 		VCPUCores:          d.Get("vcpu_cores").(int),
 		RAMCapacity:        d.Get("ram_capacity").(int),
@@ -225,8 +236,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("volume_capacity", osVolume[0].Capacity)
 	d.Set("volume_iops", osVolume[0].IOPS)
 
-	if d.Get("floating_ip_id").(string) == "" && d.Get("requires_floating_ip").(bool) {
-		//we need to retrieve the instance nic to find the associated floating ip
+	if d.Get("nic_id").(string) == "" {
 		nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
 		if err != nil {
 			return fmt.Errorf("Failed to retrieve instance nics: %w", err)
@@ -236,11 +246,16 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("Unexpected number of instance nics. Unable to lookup floating ip")
 		}
 
+		d.Set("nic_id", nics[0].ID)
+	}
+
+	if d.Get("floating_ip_id").(string) == "" && d.Get("requires_floating_ip").(bool) {
+		//we need to retrieve the instance nic to find the associated floating ip
 		fips, err := service.GetFloatingIPs(*connection.NewAPIRequestParameters().WithFilter(
 			connection.APIRequestFiltering{
 				Property: "resource_id",
 				Operator: connection.EQOperator,
-				Value:    []string{nics[0].ID},
+				Value:    []string{d.Get("nic_id").(string)},
 			},
 		))
 		if err != nil {
@@ -327,14 +342,8 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 			log.Printf("[DEBUG] Assigning floating IP with ID [%s]", d.Id())
 
-			//retrieve instance nics
-			nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
-			if err != nil {
-				return fmt.Errorf("Failed to retrieve instance nics: %w", err)
-			}
-
 			assignFipReq := ecloudservice.AssignFloatingIPRequest{
-				ResourceID: nics[0].ID,
+				ResourceID: d.Get("nic_id").(string),
 			}
 			log.Printf("[DEBUG] Created AssignFloatingIPRequest: %+v", assignFipReq)
 
@@ -387,7 +396,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("volume_capacity") {
 		osVolumeID := d.Get("volume_id").(string)
 		log.Printf("[INFO] Updating volume with ID [%s]", osVolumeID)
-		taskID, err := service.PatchVolume(osVolumeID, ecloudservice.PatchVolumeRequest{
+		task, err := service.PatchVolume(osVolumeID, ecloudservice.PatchVolumeRequest{
 			Capacity: d.Get("volume_capacity").(int),
 		})
 		if err != nil {
@@ -396,7 +405,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		_, err = waitForResourceState(
 			ecloudservice.TaskStatusComplete.String(),
-			TaskStatusRefreshFunc(service, taskID),
+			TaskStatusRefreshFunc(service, task.TaskID),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
@@ -407,7 +416,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("volume_iops") {
 		osVolumeID := d.Get("volume_id").(string)
 		log.Printf("[INFO] Updating volume with ID [%s]", osVolumeID)
-		taskID, err := service.PatchVolume(osVolumeID, ecloudservice.PatchVolumeRequest{
+		task, err := service.PatchVolume(osVolumeID, ecloudservice.PatchVolumeRequest{
 			IOPS: d.Get("volume_iops").(int),
 		})
 		if err != nil {
@@ -416,7 +425,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		_, err = waitForResourceState(
 			ecloudservice.TaskStatusComplete.String(),
-			TaskStatusRefreshFunc(service, taskID),
+			TaskStatusRefreshFunc(service, task.TaskID),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {

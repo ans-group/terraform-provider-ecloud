@@ -37,3 +37,4 @@ resource "ecloud_instance" "instance-1" {
 - `floating_ip_id`: ID of floating IP address to assign to instance NIC
 - `requires_floating_ip`: Specifies floating IP should be allocated and/or assigned
 - `data_volume_ids`: IDs of volumes to attach to the instance
+- `image_data`: Any parameters needed for deploying an image 
