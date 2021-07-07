@@ -120,12 +120,12 @@ func resourceFirewallRuleCreate(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG] Created CreateFirewallRuleRequest: %+v", createReq)
 
 	log.Print("[INFO] Creating firewall rule")
-	ruleID, err := service.CreateFirewallRule(createReq)
+	rule, err := service.CreateFirewallRule(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating firewall rule: %s", err)
 	}
 
-	d.SetId(ruleID)
+	d.SetId(rule.ResourceID)
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
@@ -249,7 +249,7 @@ func resourceFirewallRuleUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	if hasChange {
 		log.Printf("[INFO] Updating firewall rule with ID [%s]", d.Id())
-		err := service.PatchFirewallRule(d.Id(), patchReq)
+		_, err := service.PatchFirewallRule(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating firewall rule with ID [%s]: %w", d.Id(), err)
 		}
@@ -279,7 +279,7 @@ func resourceFirewallRuleDelete(d *schema.ResourceData, meta interface{}) error 
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing firewall rule with ID [%s]", d.Id())
-	err := service.DeleteFirewallRule(d.Id())
+	_, err := service.DeleteFirewallRule(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error removing firewall rule with ID [%s]: %s", d.Id(), err)
 	}

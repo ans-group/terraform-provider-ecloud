@@ -138,14 +138,14 @@ func resourceVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if hasChange {
 		log.Printf("[INFO] Updating volume with ID [%s]", d.Id())
-		taskID, err := service.PatchVolume(d.Id(), patchReq)
+		task, err := service.PatchVolume(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating volume with ID [%s]: %w", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskID),
+			Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -187,23 +187,4 @@ func resourceVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
-}
-
-func TaskStatusRefreshFunc(service ecloudservice.ECloudService, taskID string) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
-		//check task status
-		log.Printf("[DEBUG] Retrieving task status for taskID: [%s]", taskID)
-		task, err := service.GetTask(taskID)
-		if err != nil {
-			return nil, "", err
-		}
-
-		log.Printf("[DEBUG] TaskID: %s has status: %s", task.ID, task.Status)
-
-		if task.Status == ecloudservice.TaskStatusFailed {
-			return nil, "", fmt.Errorf("Task with ID: %s has status of %s", task.ID, task.Status)
-		}
-
-		return "", task.Status.String(), nil
-	}
 }

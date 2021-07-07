@@ -50,16 +50,16 @@ func resourceFirewallPolicyCreate(d *schema.ResourceData, meta interface{}) erro
 	log.Printf("[DEBUG] Created CreateFirewallPolicyRequest: %+v", createReq)
 
 	log.Print("[INFO] Creating firewall policy")
-	policyID, err := service.CreateFirewallPolicy(createReq)
+	policy, err := service.CreateFirewallPolicy(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating firewall policy: %s", err)
 	}
 
-	d.SetId(policyID)
+	d.SetId(policy.ResourceID)
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    FirewallPolicySyncStatusRefreshFunc(service, policyID),
+		Refresh:    FirewallPolicySyncStatusRefreshFunc(service, policy.ResourceID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 1 * time.Second,
@@ -67,7 +67,7 @@ func resourceFirewallPolicyCreate(d *schema.ResourceData, meta interface{}) erro
 
 	_, err = stateConf.WaitForState()
 	if err != nil {
-		return fmt.Errorf("Error waiting for firewall policy with ID [%s] to return sync status of [%s]: %s", policyID, ecloudservice.SyncStatusComplete, err)
+		return fmt.Errorf("Error waiting for firewall policy with ID [%s] to return sync status of [%s]: %s", policy.ResourceID, ecloudservice.SyncStatusComplete, err)
 	}
 
 	return resourceFirewallPolicyRead(d, meta)
@@ -113,7 +113,7 @@ func resourceFirewallPolicyUpdate(d *schema.ResourceData, meta interface{}) erro
 
 	if hasChange {
 		log.Printf("[INFO] Updating firewall policy with ID [%s]", d.Id())
-		err := service.PatchFirewallPolicy(d.Id(), patchReq)
+		_, err := service.PatchFirewallPolicy(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating firewall policy with ID [%s]: %w", d.Id(), err)
 		}
@@ -139,7 +139,7 @@ func resourceFirewallPolicyDelete(d *schema.ResourceData, meta interface{}) erro
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing firewall policy with ID [%s]", d.Id())
-	err := service.DeleteFirewallPolicy(d.Id())
+	_, err := service.DeleteFirewallPolicy(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error removing firewall policy with ID [%s]: %s", d.Id(), err)
 	}
