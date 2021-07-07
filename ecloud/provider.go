@@ -39,6 +39,7 @@ func Provider() *schema.Provider {
 			"ecloud_router_throughput": dataSourceRouterThroughput(),
 			"ecloud_vpc":               dataSourceVPC(),
 			"ecloud_floatingip":        dataSourceFloatingIP(),
+			"ecloud_nic":               dataSourceNic(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":            resourceVPC(),
