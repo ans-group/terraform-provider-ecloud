@@ -120,6 +120,13 @@ func resourceInstance() *schema.Resource {
 				Optional: true,
 				Set:      schema.HashString,
 			},
+			"ssh_keypair_ids": {
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Set:      schema.HashString,
+				Optional: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -142,6 +149,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		NetworkID:          d.Get("network_id").(string),
 		FloatingIPID:       d.Get("floating_ip_id").(string),
 		RequiresFloatingIP: d.Get("requires_floating_ip").(bool),
+		SSHKeyPairIDs:      expandSshKeyPairIds(d.Get("ssh_keypair_ids").(*schema.Set).List()),
 	}
 	log.Printf("[DEBUG] Created CreateInstanceRequest: %+v", createReq)
 

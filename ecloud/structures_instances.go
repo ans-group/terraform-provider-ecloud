@@ -13,3 +13,15 @@ func expandCreateInstanceRequestImageData(rawData map[string]interface{}) map[st
 
 	return imageData
 }
+
+func expandSshKeyPairIds(rawKeys []interface{}) []string {
+	keyPairs := make([]string, len(rawKeys))
+
+	for _, v := range rawKeys {
+		keyPairs = append(keyPairs, v.(string))
+	}
+
+	log.Printf("[INFO] SSH key pairs: [%+v]", keyPairs)
+
+	return keyPairs
+}
