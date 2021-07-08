@@ -39,6 +39,11 @@ func Provider() *schema.Provider {
 			"ecloud_router_throughput": dataSourceRouterThroughput(),
 			"ecloud_vpc":               dataSourceVPC(),
 			"ecloud_floatingip":        dataSourceFloatingIP(),
+			"ecloud_nic":               dataSourceNic(),
+			"ecloud_hostspec":          dataSourceHostSpec(),
+			"ecloud_hostgroup":         dataSourceHostGroup(),
+			"ecloud_host":              dataSourceHost(),
+			"ecloud_ssh_keypair":       dataSourceSshKeyPair(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":            resourceVPC(),
@@ -49,6 +54,9 @@ func Provider() *schema.Provider {
 			"ecloud_firewallrule":   resourceFirewallRule(),
 			"ecloud_volume":         resourceVolume(),
 			"ecloud_floatingip":     resourceFloatingIP(),
+			"ecloud_hostgroup":      resourceHostGroup(),
+			"ecloud_host":           resourceHost(),
+			"ecloud_ssh_keypair":    resourceSshKeyPair(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
