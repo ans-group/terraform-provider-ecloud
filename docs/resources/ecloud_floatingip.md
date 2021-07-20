@@ -27,6 +27,7 @@ resource "ecloud_floatingip" "fip-1" {
 
 ## Attribute Reference
 
+- `id`: ID of the floating IP
 - `vpc_id`: ID of VPC the floating IP 
 - `name`: Name of floating ip
 - `ip_address`: IP Address of the resource

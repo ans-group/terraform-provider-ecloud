@@ -35,6 +35,6 @@ resource "ecloud_host" "tf-host-1" {
 
 ## Attributes Reference
 
-- `host_id`: ID of host
+- `id`: ID of host
 - `name`: Name of host
 - `host_group_id`: ID of the host group used by the host group

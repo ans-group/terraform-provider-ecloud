@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/ukfast/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -30,6 +31,12 @@ func resourceVPC() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"advanced_networking": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -40,6 +47,7 @@ func resourceVPCCreate(d *schema.ResourceData, meta interface{}) error {
 	createReq := ecloudservice.CreateVPCRequest{
 		RegionID: d.Get("region_id").(string),
 		Name:     d.Get("name").(string),
+		AdvancedNetworking: ptr.Bool(d.Get("advanced_networking").(bool)),
 	}
 	log.Printf("[DEBUG] Created CreateVPCRequest: %+v", createReq)
 
@@ -84,6 +92,7 @@ func resourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("region_id", vpc.RegionID)
 	d.Set("name", vpc.Name)
+	d.Set("advanced_networking", vpc.AdvancedNetworking)
 
 	return nil
 }
