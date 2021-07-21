@@ -33,7 +33,7 @@ resource "ecloud_hostgroup" "hg-1" {
 
 ## Attributes Reference
 
-- `host_group_id`: ID of host group
+- `id`: ID of host group
 - `vpc_id`: ID of VPC
 - `name`: Name of host group
 - `host_spec_id`: ID of the host spec used by the host group
