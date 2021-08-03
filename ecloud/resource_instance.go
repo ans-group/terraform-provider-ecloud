@@ -112,7 +112,7 @@ func resourceInstance() *schema.Resource {
 			"requires_floating_ip": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: false,
+				Default:  false,
 			},
 			"data_volume_ids": {
 				Type:     schema.TypeSet,
@@ -332,37 +332,37 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			log.Printf("[DEBUG] Created CreateFloatingIPRequest: %+v", createReq)
 
 			log.Print("[INFO] Creating Floating IP")
-			fipID, err := service.CreateFloatingIP(createReq)
+			taskRef, err := service.CreateFloatingIP(createReq)
 			if err != nil {
 				return fmt.Errorf("Error creating floating IP: %s", err)
 			}
 
-			d.Set("floating_ip_id", fipID)
+			d.Set("floating_ip_id", taskRef.ResourceID)
 
 			_, err = waitForResourceState(
-				ecloudservice.SyncStatusComplete.String(),
-				FloatingIPSyncStatusRefreshFunc(service, fipID),
+				ecloudservice.TaskStatusComplete.String(),
+				TaskStatusRefreshFunc(service, taskRef.TaskID),
 				d.Timeout(schema.TimeoutCreate),
 			)
 			if err != nil {
 				return fmt.Errorf("Error waiting for floating IP with ID [%s] to be created: %s", d.Id(), err)
 			}
 
-			log.Printf("[DEBUG] Assigning floating IP with ID [%s]", d.Id())
+			log.Printf("[DEBUG] Assigning floating IP with ID [%s]", taskRef.ResourceID)
 
 			assignFipReq := ecloudservice.AssignFloatingIPRequest{
 				ResourceID: d.Get("nic_id").(string),
 			}
 			log.Printf("[DEBUG] Created AssignFloatingIPRequest: %+v", assignFipReq)
 
-			err = service.AssignFloatingIP(fipID, assignFipReq)
+			taskID, err := service.AssignFloatingIP(taskRef.ResourceID, assignFipReq)
 			if err != nil {
 				return fmt.Errorf("Error assigning floating IP: %s", err)
 			}
 
 			_, err = waitForResourceState(
-				ecloudservice.SyncStatusComplete.String(),
-				FloatingIPSyncStatusRefreshFunc(service, fipID),
+				ecloudservice.TaskStatusComplete.String(),
+				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
@@ -376,7 +376,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			fip := d.Get("floating_ip_id").(string)
 			log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
 
-			err := service.DeleteFloatingIP(fip)
+			taskID, err := service.DeleteFloatingIP(fip)
 			if err != nil {
 				switch err.(type) {
 				case *ecloudservice.FloatingIPNotFoundError:
@@ -387,12 +387,12 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 
 			_, err = waitForResourceState(
-				"Deleted",
-				FloatingIPSyncStatusRefreshFunc(service, fip),
+				ecloudservice.TaskStatusComplete.String(),
+				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutDelete),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", d.Id(), err)
+				return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", fip, err)
 			}
 
 			//unset floating ip
@@ -516,7 +516,7 @@ func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 		fip := d.Get("floating_ip_id").(string)
 		log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
 
-		err := service.DeleteFloatingIP(fip)
+		taskID, err := service.DeleteFloatingIP(fip)
 		if err != nil {
 			switch err.(type) {
 			case *ecloudservice.FloatingIPNotFoundError:
@@ -527,8 +527,8 @@ func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		_, err = waitForResourceState(
-			"Deleted",
-			FloatingIPSyncStatusRefreshFunc(service, fip),
+			ecloudservice.TaskStatusComplete.String(),
+			TaskStatusRefreshFunc(service, taskID),
 			d.Timeout(schema.TimeoutDelete),
 		)
 		if err != nil {
