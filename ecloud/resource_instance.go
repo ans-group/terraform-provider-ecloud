@@ -106,7 +106,6 @@ func resourceInstance() *schema.Resource {
 			},
 			"floating_ip_id": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 			"requires_floating_ip": {

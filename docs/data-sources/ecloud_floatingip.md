@@ -11,7 +11,9 @@ data "ecloud_floatingip" "fip-1" {
 
 ## Argument Reference
 
+- `floating_ip_id`: ID of floating IP resource
 - `vpc_id`: ID of VPC
+- `availability_zone_id`: ID of availability zone
 - `name`: Name of floating IP resource
 - `ip_address`: IP Address belonging to the floating IP.
 
@@ -20,5 +22,6 @@ data "ecloud_floatingip" "fip-1" {
 `id` is set to floating IP ID
 
 - `vpc_id`: ID of VPC
+- `availability_zone_id`: ID of availability zone
 - `name`: Name of floating IP
 - `ip_address`: IP Address belonging to the floating IP.

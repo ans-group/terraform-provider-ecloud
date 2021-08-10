@@ -3,11 +3,11 @@ package ecloud
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/ukfast/sdk-go/pkg/connection"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -30,9 +30,27 @@ func resourceFloatingIP() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"instance_id": {
+			"resource_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					id := val.(string)
+					fipAssignableResources := []string{"nic-"}
+
+					prefixInSlice := func (slice []string, value string) bool {
+						for _, s := range slice {
+							if strings.HasPrefix(value, s) {
+								return true
+							}
+						}
+						return false
+					}
+
+					if !prefixInSlice(fipAssignableResources, id) {
+						errs = append(errs, fmt.Errorf("%q must be a valid resource that supports floating ip assignment. got: %s", key, id))
+					}
+					return
+				},
 			},
 			"ip_address": {
 				Type:     schema.TypeString,
@@ -78,17 +96,11 @@ func resourceFloatingIPCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error waiting for floating IP with ID [%s] to be created: %s", d.Id(), err)
 	}
 
-	if r, ok := d.GetOk("instance_id"); ok {
-		log.Printf("[DEBUG] Assigning floating IP with ID [%s]", d.Id())
-
-		//retrieve instance nics
-		nics, err := service.GetInstanceNICs(r.(string), connection.APIRequestParameters{})
-		if err != nil {
-			return fmt.Errorf("Failed to retrieve instance nics: %w", err)
-		}
+	if r, ok := d.GetOk("resource_id"); ok {
+		log.Printf("[DEBUG] Assigning floating IP with ID [%s] to resource [%s]", d.Id(), r.(string))
 
 		assignFipReq := ecloudservice.AssignFloatingIPRequest{
-			ResourceID: nics[0].ID,
+			ResourceID: r.(string),
 		}
 		log.Printf("[DEBUG] Created AssignFloatingIPRequest: %+v", assignFipReq)
 
@@ -132,6 +144,7 @@ func resourceFloatingIPRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", fip.Name)
 	d.Set("ip_address", fip.IPAddress)
 	d.Set("availability_zone_id", fip.AvailabilityZoneID)
+	d.Set("resource_id", fip.ResourceID)
 
 	return nil
 }
@@ -160,14 +173,14 @@ func resourceFloatingIPUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		_, err = stateConf.WaitForState()
 		if err != nil {
-			return fmt.Errorf("Error waiting for floating ip with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+			return fmt.Errorf("Error waiting for floating ip with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	if d.HasChange("instance_id") {
+	if d.HasChange("resource_id") {
 		log.Printf("[INFO] Updating floating ip with ID [%s]", d.Id())
 
-		oldVal, newVal := d.GetChange("instance_id")
+		oldVal, newVal := d.GetChange("resource_id")
 
 		//if oldVal wasn't empty then floating ip needs unassigned first
 		if oldVal.(string) != "" {
@@ -193,16 +206,10 @@ func resourceFloatingIPUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		//Assign floating ip to new instance value if set
 		if len(newVal.(string)) > 1 {
-			log.Printf("[DEBUG] Assigning floating IP with ID [%s]", d.Id())
-
-			//retrieve instance nics
-			nics, err := service.GetInstanceNICs(newVal.(string), connection.APIRequestParameters{})
-			if err != nil {
-				return fmt.Errorf("Failed to retrieve instance nics: %w", err)
-			}
+			log.Printf("[DEBUG] Assigning floating IP with ID [%s] to resource [%s]", d.Id(), newVal.(string))
 
 			assignFipReq := ecloudservice.AssignFloatingIPRequest{
-				ResourceID: nics[0].ID,
+				ResourceID: newVal.(string),
 			}
 			log.Printf("[DEBUG] Created AssignFloatingIPRequest: %+v", assignFipReq)
 
@@ -232,7 +239,7 @@ func resourceFloatingIPDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	//first check if floating ip is assigned
-	if _, ok := d.GetOk("instance_id"); ok {
+	if _, ok := d.GetOk("resource_id"); ok {
 		taskID, err := service.UnassignFloatingIP(d.Id())
 		if err != nil {
 			return fmt.Errorf("Error unassigning floating ip with ID [%s]: %w", d.Id(), err)
