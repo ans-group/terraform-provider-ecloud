@@ -46,6 +46,7 @@ func Provider() *schema.Provider {
 			"ecloud_ssh_keypair":       dataSourceSshKeyPair(),
 			"ecloud_networkpolicy":     dataSourceNetworkPolicy(),
 			"ecloud_networkrule":       dataSourceNetworkRule(),
+			"ecloud_availability_zone": dataSourceAvailabilityZone(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":            resourceVPC(),
