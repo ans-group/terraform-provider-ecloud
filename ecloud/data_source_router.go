@@ -26,6 +26,14 @@ func dataSourceRouter() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"availability_zone_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"router_throughput_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -44,6 +52,12 @@ func dataSourceRouterRead(d *schema.ResourceData, meta interface{}) error {
 	if name, ok := d.GetOk("name"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
 	}
+	if azID, ok := d.GetOk("availability_zone_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("availability_zone_id", connection.EQOperator, []string{azID.(string)}))
+	}
+	if throughputID, ok := d.GetOk("router_throughput_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("router_throughput_id", connection.EQOperator, []string{throughputID.(string)}))
+	}
 
 	routers, err := service.GetRouters(params)
 	if err != nil {
@@ -61,6 +75,8 @@ func dataSourceRouterRead(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(routers[0].ID)
 	d.Set("vpc_id", routers[0].VPCID)
 	d.Set("name", routers[0].Name)
+	d.Set("availability_zone_id", routers[0].AvailabilityZoneID)
+	d.Set("router_throughput_id", routers[0].RouterThroughputID)
 
 	return nil
 }

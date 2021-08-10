@@ -28,10 +28,13 @@ func TestAccDataSourceRouterThroughput_basic(t *testing.T) {
 
 func testAccDataSourceRouterThroughputConfig_basic(routerName string) string {
 	return fmt.Sprintf(`
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
 data "ecloud_router_throughput" "test-throughput" {
-	# Hard code AZ ID whilst we currently do not expose via API
-	availability_zone_id = "az-4fcc2a10"
-    name = "%s"
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
+	name = "%s"
 }
 `, routerName)
 }

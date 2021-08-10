@@ -14,7 +14,10 @@ data "ecloud_volume" "volume-1" {
 
 - `volume_id`: ID of volume
 - `vpc_id`: ID of volume VPC
+- `availability_zone_id`: ID of volume availability zone
 - `name`: Name of volume
+- `capacity`: Capacity of volume
+- `iops`: IOPs of volume
 
 ## Attributes Reference
 
@@ -22,3 +25,6 @@ data "ecloud_volume" "volume-1" {
 
 - `vpc_id`: ID of volume VPC
 - `name`: Name of volume
+- `availability_zone_id`: ID of volume availability zone
+- `capacity`: Capacity of volume
+- `iops`: IOPs of volume

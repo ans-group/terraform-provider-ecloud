@@ -15,6 +15,8 @@ data "ecloud_router" "router-1" {
 - `router_id`: ID of router
 - `vpc_id`: ID of router VPC
 - `name`: Name of router
+- `availability_zone_id`: ID of router availability zone
+- `router_throughput_id`: ID of router throughput
 
 ## Attributes Reference
 
@@ -22,3 +24,5 @@ data "ecloud_router" "router-1" {
 
 - `vpc_id`: ID of router VPC
 - `name`: Name of router
+- `availability_zone_id`: ID of router availability zone
+- `router_throughput_id`: ID of router throughput

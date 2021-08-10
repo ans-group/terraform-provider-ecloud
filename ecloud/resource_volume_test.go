@@ -87,8 +87,13 @@ resource "ecloud_vpc" "test-vpc" {
 	name = "test-vpc"
 }
 
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
 resource "ecloud_volume" "test-volume-resource" {
     vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
     capacity = 1
     name = "%[2]s"
     iops = 300
