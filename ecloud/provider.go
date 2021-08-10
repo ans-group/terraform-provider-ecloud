@@ -47,6 +47,7 @@ func Provider() *schema.Provider {
 			"ecloud_networkpolicy":     dataSourceNetworkPolicy(),
 			"ecloud_networkrule":       dataSourceNetworkRule(),
 			"ecloud_availability_zone": dataSourceAvailabilityZone(),
+			"ecloud_region":            dataSourceRegion(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":            resourceVPC(),

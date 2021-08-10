@@ -1,4 +1,4 @@
-# ecloud_nic Data Source
+# ecloud_availability_zone Data Source
 
 This resource represents an eCloud Availability Zone. This data source can be used to retrieve the resource ID of a particular AZ by name.
 
