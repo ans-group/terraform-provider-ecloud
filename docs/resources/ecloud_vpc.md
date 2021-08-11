@@ -6,8 +6,9 @@ This resource is for managing eCloud VPCs
 
 ```hcl
 resource "ecloud_vpc" "vpc-1" {
-  region_id = "reg-abcdef12"
-  name      = "my-vpc"
+  region_id           = "reg-abcdef12"
+  name                = "my-vpc"
+  advanced_networking = false
 }
 ```
 
@@ -15,3 +16,4 @@ resource "ecloud_vpc" "vpc-1" {
 
 - `region_id`: (Required) ID of VPC region
 - `name`: Name of VPC
+- `advanced_networking`: Whether advanced networking is enabled or disabled for the VPC. Can only be set during VPC creation. When enabled, network policies and rules can be applied to restrict East-West traffic flow between networks.

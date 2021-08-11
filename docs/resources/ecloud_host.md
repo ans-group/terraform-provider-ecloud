@@ -14,10 +14,14 @@ data "ecloud_hostspec" "hs-1" {
   name = "DUAL-E5-2620--32GB"
 }
 
+data "ecloud_availability_zone" "az-man4" {
+  name = "Manchester West"
+}
+
 resource "ecloud_hostgroup" "hg-1" {
   vpc_id = ecloud_vpc.vpc-1.id
   host_spec_id = data.ecloud_hostspec.hs-1.id
-  availability_zone_id = "az-abcd1234"
+  availability_zone_id = data.ecloud_availability_zone.az-man4.id
   name = "example-hostgroup"
   windows_enabled = false
 }
@@ -25,7 +29,7 @@ resource "ecloud_hostgroup" "hg-1" {
 resource "ecloud_host" "tf-host-1" {
   host_group_id = ecloud_hostgroup.hg-1.id
   name = "example-host"
-# }
+}
 ```
 
 ## Argument Reference

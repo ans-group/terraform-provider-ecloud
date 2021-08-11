@@ -19,6 +19,14 @@ func dataSourceVolume() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"vpc_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"availability_zone_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -42,6 +50,12 @@ func dataSourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	if id, ok := d.GetOk("volume_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
+	}
+	if vpcID, ok := d.GetOk("vpc_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("vpc_id", connection.EQOperator, []string{vpcID.(string)}))
+	}
+	if azID, ok := d.GetOk("availability_zone_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("availability_zone_id", connection.EQOperator, []string{azID.(string)}))
 	}
 	if name, ok := d.GetOk("name"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
@@ -70,6 +84,8 @@ func dataSourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", volumes[0].Name)
 	d.Set("capacity", volumes[0].Capacity)
 	d.Set("iops", volumes[0].IOPS)
+	d.Set("vpc_id", volumes[0].VPCID)
+	d.Set("availability_zone_id", volumes[0].AvailabilityZoneID)
 
 	return nil
 }

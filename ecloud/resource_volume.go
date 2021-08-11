@@ -26,6 +26,11 @@ func resourceVolume() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"availability_zone_id": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -63,10 +68,11 @@ func resourceVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateVolumeRequest{
-		VPCID:    d.Get("vpc_id").(string),
-		Name:     d.Get("name").(string),
-		Capacity: d.Get("capacity").(int),
-		IOPS:     d.Get("iops").(int),
+		VPCID:              d.Get("vpc_id").(string),
+		Name:               d.Get("name").(string),
+		Capacity:           d.Get("capacity").(int),
+		IOPS:               d.Get("iops").(int),
+		AvailabilityZoneID: d.Get("availability_zone_id").(string),
 	}
 
 	log.Printf("[DEBUG] Created CreateVolumeRequest: %+v", createReq)
@@ -114,6 +120,7 @@ func resourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", volume.Name)
 	d.Set("capacity", volume.Capacity)
 	d.Set("iops", volume.IOPS)
+	d.Set("availability_zone_id", volume.AvailabilityZoneID)
 
 	return nil
 }

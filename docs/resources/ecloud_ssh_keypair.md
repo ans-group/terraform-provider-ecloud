@@ -18,5 +18,6 @@ resource "ecloud_ssh_keypair" "test-keypair" {
 
 ## Attributes Reference
 
+- `id`: ID of SSH key pair
 - `name`: Name of SSH key pair
 - `public_key`: The public key string for the SSH key pair

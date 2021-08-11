@@ -22,6 +22,10 @@ func dataSourceFloatingIP() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"availability_zone_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -45,6 +49,9 @@ func dataSourceFloatingIPRead(d *schema.ResourceData, meta interface{}) error {
 	if vpcID, ok := d.GetOk("vpc_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("vpc_id", connection.EQOperator, []string{vpcID.(string)}))
 	}
+	if azID, ok := d.GetOk("availability_zone_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("availability_zone_id", connection.EQOperator, []string{azID.(string)}))
+	}
 	if name, ok := d.GetOk("name"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
 	}
@@ -67,6 +74,7 @@ func dataSourceFloatingIPRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(fips[0].ID)
 	d.Set("vpc_id", fips[0].VPCID)
+	d.Set("availability_zone_id", fips[0].AvailabilityZoneID)
 	d.Set("name", fips[0].Name)
 	d.Set("ip_address", fips[0].IPAddress)
 

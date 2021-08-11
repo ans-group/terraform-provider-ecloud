@@ -30,6 +30,16 @@ func resourceRouter() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"availability_zone_id": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"router_throughput_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -38,8 +48,10 @@ func resourceRouterCreate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateRouterRequest{
-		VPCID: d.Get("vpc_id").(string),
-		Name:  d.Get("name").(string),
+		VPCID:              d.Get("vpc_id").(string),
+		Name:               d.Get("name").(string),
+		AvailabilityZoneID: d.Get("availability_zone_id").(string),
+		RouterThroughputID: d.Get("router_throughput_id").(string),
 	}
 	log.Printf("[DEBUG] Created CreateRouterRequest: %+v", createReq)
 
@@ -84,6 +96,8 @@ func resourceRouterRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("vpc_id", router.VPCID)
 	d.Set("name", router.Name)
+	d.Set("availability_zone_id", router.AvailabilityZoneID)
+	d.Set("router_throughput_id", router.RouterThroughputID)
 
 	return nil
 }
