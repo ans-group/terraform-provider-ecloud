@@ -18,6 +18,6 @@ data "ecloud_region" "man-region" {
 
 ## Attributes Reference
 
-`id` is set to Availability Zone ID
+`id` is set to Region ID
 
 - `name`: Name of region
