@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/ukfast/sdk-go/pkg/connection"
+	"github.com/ukfast/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -38,9 +39,9 @@ func resourceInstance() *schema.Resource {
 				ForceNew: true,
 			},
 			"image_data": {
-				Type:    schema.TypeMap,
-				Optional:   true,
-				ForceNew:   true,
+				Type:     schema.TypeMap,
+				Optional: true,
+				ForceNew: true,
 			},
 			"user_script": {
 				Type:     schema.TypeString,
@@ -126,6 +127,10 @@ func resourceInstance() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"host_group_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -148,6 +153,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		NetworkID:          d.Get("network_id").(string),
 		FloatingIPID:       d.Get("floating_ip_id").(string),
 		RequiresFloatingIP: d.Get("requires_floating_ip").(bool),
+		HostGroupID:        d.Get("host_group_id").(string),
 		SSHKeyPairIDs:      expandSshKeyPairIds(d.Get("ssh_keypair_ids").(*schema.Set).List()),
 	}
 	log.Printf("[DEBUG] Created CreateInstanceRequest: %+v", createReq)
@@ -240,6 +246,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("ram_capacity", instance.RAMCapacity)
 	d.Set("locked", instance.Locked)
 	d.Set("backup_enabled", instance.BackupEnabled)
+	d.Set("host_group_id", instance.HostGroupID)
 	d.Set("volume_capacity", osVolume[0].Capacity)
 	d.Set("volume_iops", osVolume[0].IOPS)
 
@@ -501,6 +508,29 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			if err != nil {
 				return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", volumeID, ecloudservice.TaskStatusComplete, err)
 			}
+		}
+	}
+
+	// Handle host groups
+	if d.HasChange("host_group_id") {
+		hostGroupID := d.Get("host_group_id").(string)
+		migrateReq := ecloud.MigrateInstanceRequest{
+			HostGroupID: hostGroupID,
+		}
+
+		log.Printf("[INFO] Migrating instance [%s] to host group [%s]", d.Id(), hostGroupID)
+		taskID, err := service.MigrateInstance(d.Id(), migrateReq)
+		if err != nil {
+			return fmt.Errorf("Error migrating instance: %s", err)
+		}
+
+		_, err = waitForResourceState(
+			ecloudservice.TaskStatusComplete.String(),
+			TaskStatusRefreshFunc(service, taskID),
+			d.Timeout(schema.TimeoutUpdate),
+		)
+		if err != nil {
+			return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
