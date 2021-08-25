@@ -72,3 +72,4 @@ If `requires_floating_ip` is set to `true` for an instance resource, **do not** 
 - `floating_ip_id`: ID of assigned floating ip address
 - `data_volume_ids`: IDs of attached data volumes
 - `ssh_keypair_ids`: IDs of instance ssh keypairs 
+- `host_group_id`: ID of host group
