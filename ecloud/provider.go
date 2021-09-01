@@ -48,6 +48,7 @@ func Provider() *schema.Provider {
 			"ecloud_networkrule":       dataSourceNetworkRule(),
 			"ecloud_availability_zone": dataSourceAvailabilityZone(),
 			"ecloud_region":            dataSourceRegion(),
+			"ecloud_vpn_service":       dataSourceVPNService(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":            resourceVPC(),
@@ -63,6 +64,7 @@ func Provider() *schema.Provider {
 			"ecloud_ssh_keypair":    resourceSshKeyPair(),
 			"ecloud_networkpolicy":  resourceNetworkPolicy(),
 			"ecloud_networkrule":    resourceNetworkRule(),
+			"ecloud_vpn_service":    resourceVPNService(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
