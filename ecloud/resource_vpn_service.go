@@ -143,23 +143,3 @@ func resourceVPNServiceDelete(d *schema.ResourceData, meta interface{}) error {
 
 	return nil
 }
-
-// VPNServiceSyncStatusRefreshFunc returns a function with StateRefreshFunc signature for use
-// with StateChangeConf
-func VPNServiceSyncStatusRefreshFunc(service ecloudservice.ECloudService, vpnServiceID string) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
-		vpc, err := service.GetVPNService(vpnServiceID)
-		if err != nil {
-			if _, ok := err.(*ecloudservice.VPNServiceNotFoundError); ok {
-				return vpc, "Deleted", nil
-			}
-			return nil, "", err
-		}
-
-		if vpc.Sync.Status == ecloudservice.SyncStatusFailed {
-			return nil, "", fmt.Errorf("Failed to create/update VPNService - review logs")
-		}
-
-		return vpc, vpc.Sync.Status.String(), nil
-	}
-}

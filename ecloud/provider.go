@@ -49,6 +49,8 @@ func Provider() *schema.Provider {
 			"ecloud_availability_zone": dataSourceAvailabilityZone(),
 			"ecloud_region":            dataSourceRegion(),
 			"ecloud_vpn_service":       dataSourceVPNService(),
+			"ecloud_vpn_endpoint":      dataSourceVPNEndpoint(),
+			"ecloud_vpn_session":       dataSourceVPNSession(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":            resourceVPC(),
@@ -65,6 +67,8 @@ func Provider() *schema.Provider {
 			"ecloud_networkpolicy":  resourceNetworkPolicy(),
 			"ecloud_networkrule":    resourceNetworkRule(),
 			"ecloud_vpn_service":    resourceVPNService(),
+			"ecloud_vpn_endpoint":   resourceVPNEndpoint(),
+			"ecloud_vpn_session":    resourceVPNSession(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
