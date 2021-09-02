@@ -38,6 +38,14 @@ func dataSourceVPNSession() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"remote_networks": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"local_networks": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -85,6 +93,8 @@ func dataSourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("vpn_endpoint_id", vpnSessions[0].VPNEndpointID)
 	d.Set("remote_ip", vpnSessions[0].RemoteIP)
 	d.Set("name", vpnSessions[0].Name)
+	d.Set("remote_networks", vpnSessions[0].RemoteNetworks)
+	d.Set("local_networks", vpnSessions[0].LocalNetworks)
 
 	return nil
 }

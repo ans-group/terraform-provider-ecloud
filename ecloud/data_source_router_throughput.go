@@ -26,6 +26,10 @@ func dataSourceRouterThroughput() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"committed_bandwidth": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 		},
 	}
 }
