@@ -20,7 +20,7 @@ data "ecloud_vpn_endpoint" "endpoint-1" {
 
 ## Attributes Reference
 
-`id` is set to vpn endpoint ID
+`id` is set to VPN endpoint ID
 
 - `availability_zone_id`: ID of availability zone
 - `name`: Name of VPN endpoint

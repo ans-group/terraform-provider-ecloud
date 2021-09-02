@@ -14,7 +14,8 @@ import (
 var testAccProviders map[string]terraform.ResourceProvider
 var testAccProvider *schema.Provider
 var (
-	UKF_TEST_VPC_REGION_ID = os.Getenv("UKF_TEST_VPC_REGION_ID")
+	UKF_TEST_VPC_REGION_ID        = os.Getenv("UKF_TEST_VPC_REGION_ID")
+	UKF_TEST_VPN_PROFILE_GROUP_ID = os.Getenv("UKF_TEST_VPN_PROFILE_GROUP_ID")
 )
 
 func init() {

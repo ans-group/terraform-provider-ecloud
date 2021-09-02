@@ -21,7 +21,7 @@ data "ecloud_vpn_session" "session-1" {
 
 ## Attributes Reference
 
-`id` is set to vpn session ID
+`id` is set to VPN session ID
 
 - `vpn_service_id`: ID of VPN service
 - `vpn_profile_group_id`: ID of profile group

@@ -48,6 +48,7 @@ func Provider() *schema.Provider {
 			"ecloud_networkrule":       dataSourceNetworkRule(),
 			"ecloud_availability_zone": dataSourceAvailabilityZone(),
 			"ecloud_region":            dataSourceRegion(),
+			"ecloud_vpn_profile_group": dataSourceVPNProfileGroup(),
 			"ecloud_vpn_service":       dataSourceVPNService(),
 			"ecloud_vpn_endpoint":      dataSourceVPNEndpoint(),
 			"ecloud_vpn_session":       dataSourceVPNSession(),

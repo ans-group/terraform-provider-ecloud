@@ -19,7 +19,7 @@ data "ecloud_vpn_service" "service-1" {
 
 ## Attributes Reference
 
-`id` is set to vpn service ID
+`id` is set to VPN service ID
 
 - `name`: Name of VPN service
 - `vpc_id`: ID of VPC
