@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/sdk-go/pkg/client"
 	"github.com/ukfast/sdk-go/pkg/connection"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
@@ -13,7 +13,7 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"api_key": &schema.Schema{
+			"api_key": {
 				Type:      schema.TypeString,
 				Optional:  true,
 				Sensitive: true,
@@ -29,22 +29,47 @@ func Provider() *schema.Provider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"ecloud_datastore":         dataSourceDatastore(),
-			"ecloud_site":              dataSourceSite(),
-			"ecloud_solution":          dataSourceSolution(),
+			"ecloud_volume":            dataSourceVolume(),
+			"ecloud_firewallpolicy":    dataSourceFirewallPolicy(),
+			"ecloud_firewallrule":      dataSourceFirewallRule(),
+			"ecloud_image":             dataSourceImage(),
+			"ecloud_instance":          dataSourceInstance(),
 			"ecloud_network":           dataSourceNetwork(),
-			"ecloud_pod":               dataSourcePod(),
-			"ecloud_template":          dataSourceTemplate(),
-			"ecloud_solution_template": dataSourceSolutionTemplate(),
-			"ecloud_appliance":         dataSourceAppliance(),
-			"ecloud_pod_appliance":     dataSourcePodAppliance(),
-			"ecloud_active_directory":  dataSourceActiveDirectory(),
+			"ecloud_router":            dataSourceRouter(),
+			"ecloud_router_throughput": dataSourceRouterThroughput(),
+			"ecloud_vpc":               dataSourceVPC(),
+			"ecloud_floatingip":        dataSourceFloatingIP(),
+			"ecloud_nic":               dataSourceNic(),
+			"ecloud_hostspec":          dataSourceHostSpec(),
+			"ecloud_hostgroup":         dataSourceHostGroup(),
+			"ecloud_host":              dataSourceHost(),
+			"ecloud_ssh_keypair":       dataSourceSshKeyPair(),
+			"ecloud_networkpolicy":     dataSourceNetworkPolicy(),
+			"ecloud_networkrule":       dataSourceNetworkRule(),
+			"ecloud_availability_zone": dataSourceAvailabilityZone(),
+			"ecloud_region":            dataSourceRegion(),
+			"ecloud_vpn_profile_group": dataSourceVPNProfileGroup(),
+			"ecloud_vpn_service":       dataSourceVPNService(),
+			"ecloud_vpn_endpoint":      dataSourceVPNEndpoint(),
+			"ecloud_vpn_session":       dataSourceVPNSession(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"ecloud_virtualmachine":     resourceVirtualMachine(),
-			"ecloud_virtualmachine_tag": resourceVirtualMachineTag(),
-			"ecloud_solution_tag":       resourceSolutionTag(),
-			"ecloud_solution_template":  resourceSolutionTemplate(),
+			"ecloud_vpc":            resourceVPC(),
+			"ecloud_router":         resourceRouter(),
+			"ecloud_network":        resourceNetwork(),
+			"ecloud_instance":       resourceInstance(),
+			"ecloud_firewallpolicy": resourceFirewallPolicy(),
+			"ecloud_firewallrule":   resourceFirewallRule(),
+			"ecloud_volume":         resourceVolume(),
+			"ecloud_floatingip":     resourceFloatingIP(),
+			"ecloud_hostgroup":      resourceHostGroup(),
+			"ecloud_host":           resourceHost(),
+			"ecloud_ssh_keypair":    resourceSshKeyPair(),
+			"ecloud_networkpolicy":  resourceNetworkPolicy(),
+			"ecloud_networkrule":    resourceNetworkRule(),
+			"ecloud_vpn_service":    resourceVPNService(),
+			"ecloud_vpn_endpoint":   resourceVPNEndpoint(),
+			"ecloud_vpn_session":    resourceVPNSession(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

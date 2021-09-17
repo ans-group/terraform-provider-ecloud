@@ -11,7 +11,7 @@ terraform {
   required_providers {
     ecloud = {
       source  = "ukfast/ecloud"
-      version = "~> 1.0"
+      version = "~> 2.0"
     }
   }
 }
@@ -40,3 +40,41 @@ terraform apply
 ## Documentation
 
 Documentation is located within this repository at `/docs`, and is published in the [Terraform Registry](https://registry.terraform.io/providers/ukfast/ecloud/latest/docs)
+
+## Development
+
+### Testing
+
+Acceptance tests can be executed using `make` as below:
+
+```
+export UKF_TEST_VPC_REGION_ID=<region_id>
+make testacc TEST=VPC_basic
+```
+
+Note `UKF_TEST_VPC_REGION_ID` environment is required for executing tests
+
+
+### Releasing 
+
+`goreleaser` is used to release the provider on Github. First, obtain your GPG fingerprint:
+
+```
+gpg -k
+```
+
+Cache GPG passphrase:
+
+```
+gpg --armor --detach-sign .
+```
+
+Finally tag and invoke `goreleaser`:
+
+```
+git tag v2.0.0
+git push --tags
+export GITHUB_TOKEN=<token>
+export GPG_FINGERPRINT=<fingerprint>
+goreleaser --rm-dist
+```

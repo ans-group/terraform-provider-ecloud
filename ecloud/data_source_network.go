@@ -1,10 +1,10 @@
 package ecloud
 
 import (
+	"errors"
 	"fmt"
-	"strconv"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/sdk-go/pkg/connection"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
@@ -14,13 +14,21 @@ func dataSourceNetwork() *schema.Resource {
 		Read: dataSourceNetworkRead,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"network_id": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
-			"solution_id": &schema.Schema{
-				Type:     schema.TypeInt,
-				Required: true,
+			"router_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"subnet": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"name": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 		},
 	}
@@ -29,30 +37,37 @@ func dataSourceNetwork() *schema.Resource {
 func dataSourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	name := d.Get("name").(string)
-	solutionID := d.Get("solution_id").(int)
-
 	params := connection.APIRequestParameters{}
-	params.WithFilter(connection.APIRequestFiltering{
-		Property: "name",
-		Operator: connection.EQOperator,
-		Value:    []string{name},
-	})
 
-	networks, err := service.GetSolutionNetworks(solutionID, params)
+	if id, ok := d.GetOk("network_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
+	}
+	if routerID, ok := d.GetOk("router_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("router_id", connection.EQOperator, []string{routerID.(string)}))
+	}
+	if subnet, ok := d.GetOk("subnet"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("subnet", connection.EQOperator, []string{subnet.(string)}))
+	}
+	if name, ok := d.GetOk("name"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
+	}
+
+	networks, err := service.GetNetworks(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving networks: %s", err)
+		return fmt.Errorf("Error retrieving active networks: %s", err)
 	}
 
 	if len(networks) < 1 {
-		return fmt.Errorf("No network found with specified name [%s] and solution_id [%d]", name, solutionID)
+		return errors.New("No networks found with provided arguments")
 	}
 
 	if len(networks) > 1 {
-		return fmt.Errorf("More than one network found with specified name [%s] and solution_id [%d]", name, solutionID)
+		return errors.New("More than 1 network found with provided arguments")
 	}
 
-	d.SetId(strconv.Itoa(networks[0].ID))
+	d.SetId(networks[0].ID)
+	d.Set("router_id", networks[0].RouterID)
+	d.Set("subnet", networks[0].Subnet)
 	d.Set("name", networks[0].Name)
 
 	return nil
