@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceVolume_basic(t *testing.T) {
@@ -34,8 +34,13 @@ resource "ecloud_vpc" "test-vpc" {
 	name      = "test-vpc"
 }
 
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
 resource "ecloud_volume" "test-volume" {
 	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	name = "%[2]s"
 	capacity = 1
 	iops = 300

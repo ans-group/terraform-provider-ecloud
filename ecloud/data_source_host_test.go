@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceHost_basic(t *testing.T) {
@@ -34,17 +34,17 @@ resource "ecloud_vpc" "test-vpc" {
 	name      = "test-vpc"
 }
 
-resource "ecloud_router" "test-router" {
-	vpc_id = ecloud_vpc.test-vpc.id
-	name = "test-router"
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
 }
 
 data "ecloud_hostspec" "test-hostspec" {
-	name = "DUAL-E5-2620--32GB"
+	name = "DUAL-4208--64GB"
 }
 
 resource "ecloud_hostgroup" "test-hostgroup" {
 	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	host_spec_id = data.ecloud_hostspec.test-hostspec.id
 	name = "test-hostgroup"
 }

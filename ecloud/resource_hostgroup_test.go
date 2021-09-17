@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -87,14 +87,8 @@ resource "ecloud_vpc" "test-vpc" {
 	name = "test-vpc"
 }
 
-resource "ecloud_router" "test-router" {
-	vpc_id = ecloud_vpc.test-vpc.id
-	name = "test-router"
-}
-
-resource "ecloud_network" "test-network" {
-	router_id = ecloud_router.test-router.id
-	name = "test-network"
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
 }
 
 data "ecloud_hostspec" "test-hostspec" {
@@ -103,10 +97,10 @@ data "ecloud_hostspec" "test-hostspec" {
 
 resource "ecloud_hostgroup" "test-hostgroup" {
 	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	host_spec_id = data.ecloud_hostspec.test-hostspec.id
 	name = "%[2]s"
 	windows_enabled = false
-	availability_zone_id = az-abcdef12
 }
 `, regionID, hostGroupName)
 }

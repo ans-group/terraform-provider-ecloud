@@ -7,11 +7,10 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var testAccProviders map[string]terraform.ResourceProvider
+var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
 var (
 	UKF_TEST_VPC_REGION_ID        = os.Getenv("UKF_TEST_VPC_REGION_ID")
@@ -20,7 +19,7 @@ var (
 
 func init() {
 	testAccProvider = Provider()
-	testAccProviders = map[string]terraform.ResourceProvider{
+	testAccProviders = map[string]*schema.Provider{
 		"ecloud": testAccProvider,
 	}
 }
@@ -32,7 +31,7 @@ func TestProvider(t *testing.T) {
 }
 
 func TestProvider_impl(t *testing.T) {
-	var _ terraform.ResourceProvider = Provider()
+	var _ *schema.Provider = Provider()
 }
 
 func testAccPreCheck(t *testing.T) {

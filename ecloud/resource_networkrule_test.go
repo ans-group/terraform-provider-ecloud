@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -103,8 +103,13 @@ func testAccResourceNetworkRuleConfig_basic(params map[string]string) string {
 		advanced_networking = true
 	}
 	
+	data "ecloud_availability_zone" "test-az" {
+		name = "Manchester West"
+	}
+
 	resource "ecloud_router" "test-router" {
 		vpc_id = ecloud_vpc.test-vpc.id
+		availability_zone_id = data.ecloud_availability_zone.test-az.id
 		name = "test-router"
 	}
 

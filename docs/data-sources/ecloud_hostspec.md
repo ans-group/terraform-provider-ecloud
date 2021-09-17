@@ -7,7 +7,7 @@ This data source can be used to retrieve the ID of a particular host spec.
 
 ```hcl
 data "ecloud_hostspec" "hs-1" {
-  name = "DUAL-4208--32GB"
+  name = "DUAL-4208--64GB"
 }
 ```
 

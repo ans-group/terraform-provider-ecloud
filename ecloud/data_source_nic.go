@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/sdk-go/pkg/connection"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )

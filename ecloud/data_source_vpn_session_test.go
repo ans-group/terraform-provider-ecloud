@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceVPNSession_basic(t *testing.T) {
@@ -33,9 +33,14 @@ resource "ecloud_vpc" "test-vpc" {
 	region_id = "%[1]s"
 }
 
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	name = "test-router"
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
 }
 
 resource "ecloud_vpn_service" "test-vpnservice" {

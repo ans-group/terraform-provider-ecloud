@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceHostSpec_basic(t *testing.T) {
-	hostSpecName := "DUAL-E5-2620--32GB"
+	hostSpecName := "DUAL-4208--64GB"
 	config := testAccDataSourceHostSpecConfig_basic(hostSpecName)
 	resourceName := "data.ecloud_hostspec.test-hostspec"
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceInstance_basic(t *testing.T) {
@@ -34,9 +34,18 @@ resource "ecloud_vpc" "test-vpc" {
 	name      = "test-vpc"
 }
 
+data "ecloud_image" "centos7" {
+	name = "CentOS 7"
+}
+
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	name = "test-router"
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
 }
 
 resource "ecloud_network" "test-network" {
@@ -49,7 +58,7 @@ resource "ecloud_instance" "test-instance" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	network_id = ecloud_network.test-network.id
 	name = "%[2]s"
-	image_id = "img-abcdef12"
+	image_id = data.ecloud_image.centos7.id
 	volume_capacity = 20
 	ram_capacity = 1024
 	vcpu_cores = 1
