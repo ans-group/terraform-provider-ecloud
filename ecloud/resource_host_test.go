@@ -87,16 +87,20 @@ resource "ecloud_vpc" "test-vpc" {
 	name = "test-vpc"
 }
 
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
 data "ecloud_hostspec" "test-hostspec" {
-	name = "DUAL-E5-2620--32GB"
+	name = "DUAL-4208--64GB"
 }
 
 resource "ecloud_hostgroup" "test-hostgroup" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	host_spec_id = data.ecloud_hostspec.test-hostspec.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	name = "test-hostgroup"
 	windows_enabled = false
-	availability_zone_id = az-abcdef12
 }
 
 resource "ecloud_host" "test-host" {

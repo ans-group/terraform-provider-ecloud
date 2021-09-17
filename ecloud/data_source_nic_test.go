@@ -33,8 +33,17 @@ resource "ecloud_vpc" "test-vpc" {
 	name = "test-vpc"
 }
 
+data "ecloud_image" "centos7" {
+	name = "CentOS 7"
+}
+
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	name = "test-router"
 }
 
@@ -48,7 +57,7 @@ resource "ecloud_instance" "test-instance" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	network_id = ecloud_network.test-network.id
 	name = "test-instance"
-	image_id = "img-4ac43e58"
+	image_id = data.ecloud_image.centos7.id
 	volume_capacity = 20
 	ram_capacity = 1024
 	vcpu_cores = 1

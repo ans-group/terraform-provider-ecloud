@@ -38,8 +38,13 @@ resource "ecloud_vpc" "test-vpc" {
 	name = "test-vpc"
 }
 
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	name = "test-router"
 }
 

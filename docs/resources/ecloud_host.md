@@ -11,7 +11,7 @@ resource "ecloud_vpc" "vpc-1" {
 }
 
 data "ecloud_hostspec" "hs-1" {
-  name = "DUAL-E5-2620--32GB"
+  name = "DUAL-4208--64GB"
 }
 
 data "ecloud_availability_zone" "az-man4" {
