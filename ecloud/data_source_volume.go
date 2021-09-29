@@ -39,6 +39,10 @@ func dataSourceVolume() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"volume_group_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -66,6 +70,9 @@ func dataSourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	if iops, ok := d.GetOk("iops"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("iops", connection.EQOperator, []string{strconv.Itoa(iops.(int))}))
 	}
+	if volumeGroupID, ok := d.GetOk("volume_group_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("volume_group_id", connection.EQOperator, []string{volumeGroupID.(string)}))
+	}
 
 	volumes, err := service.GetVolumes(params)
 	if err != nil {
@@ -86,6 +93,7 @@ func dataSourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("iops", volumes[0].IOPS)
 	d.Set("vpc_id", volumes[0].VPCID)
 	d.Set("availability_zone_id", volumes[0].AvailabilityZoneID)
+	d.Set("volume_group_id", volumes[0].VolumeGroupID)
 
 	return nil
 }
