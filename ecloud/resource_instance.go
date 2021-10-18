@@ -265,19 +265,13 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 
 	if d.Get("floating_ip_id").(string) == "" && d.Get("requires_floating_ip").(bool) {
 		//we need to retrieve the instance nic to find the associated floating ip
-		fips, err := service.GetFloatingIPs(*connection.NewAPIRequestParameters().WithFilter(
-			connection.APIRequestFiltering{
-				Property: "resource_id",
-				Operator: connection.EQOperator,
-				Value:    []string{d.Get("nic_id").(string)},
-			},
-		))
+		fips, err := service.GetInstanceFloatingIPs(d.Id(), connection.APIRequestParameters{})
 		if err != nil {
 			return fmt.Errorf("Failed to retrieve floating IPs: %w", err)
 		}
 
 		if len(fips) != 1 {
-			return fmt.Errorf("Unexpected number of fips assigned to instance nic")
+			return fmt.Errorf("Unexpected number of floating IPs assigned to instance")
 		}
 
 		d.Set("floating_ip_id", fips[0].ID)
