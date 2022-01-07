@@ -293,19 +293,13 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 
 	if d.Get("floating_ip_id").(string) == "" && d.Get("requires_floating_ip").(bool) {
 		//we need to retrieve the instance nic to find the associated floating ip
-		fips, err := service.GetFloatingIPs(*connection.NewAPIRequestParameters().WithFilter(
-			connection.APIRequestFiltering{
-				Property: "resource_id",
-				Operator: connection.EQOperator,
-				Value:    []string{d.Get("nic_id").(string)},
-			},
-		))
+		fips, err := service.GetInstanceFloatingIPs(d.Id(), connection.APIRequestParameters{})
 		if err != nil {
 			return fmt.Errorf("Failed to retrieve floating IPs: %w", err)
 		}
 
 		if len(fips) != 1 {
-			return fmt.Errorf("Unexpected number of fips assigned to instance nic")
+			return fmt.Errorf("Unexpected number of floating IPs assigned to instance")
 		}
 
 		d.Set("floating_ip_id", fips[0].ID)
@@ -575,9 +569,31 @@ func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 	//remove floating ip if set
 	if len(d.Get("floating_ip_id").(string)) > 1 {
 		fip := d.Get("floating_ip_id").(string)
+
+		log.Printf("[DEBUG] Unassigning floating ip with ID [%s]", fip)
+
+		taskID, err := service.UnassignFloatingIP(fip)
+		if err != nil {
+			switch err.(type) {
+			case *ecloudservice.FloatingIPNotFoundError:
+				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping unassign.", fip)
+			default:
+				return fmt.Errorf("Error unassigning floating ip with ID [%s]: %s", fip, err)
+			}
+		}
+
+		_, err = waitForResourceState(
+			ecloudservice.TaskStatusComplete.String(),
+			TaskStatusRefreshFunc(service, taskID),
+			d.Timeout(schema.TimeoutDelete),
+		)
+		if err != nil {
+			return fmt.Errorf("Error waiting for floating ip with ID [%s] to be unassigned: %w", d.Id(), err)
+		}
+
 		log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
 
-		taskID, err := service.DeleteFloatingIP(fip)
+		taskID, err = service.DeleteFloatingIP(fip)
 		if err != nil {
 			switch err.(type) {
 			case *ecloudservice.FloatingIPNotFoundError:
