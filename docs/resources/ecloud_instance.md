@@ -14,6 +14,7 @@ resource "ecloud_instance" "instance-1" {
   volume_capacity = 20
   volume_iops     = 600
   network_id      = "net-abcdef12"
+  backup_enabled  = false
 
   data_volume_ids = [
     "vol-abc12345"
@@ -43,7 +44,7 @@ resource "ecloud_instance" "instance-1" {
 - `data_volume_ids`: IDs of volumes to attach to the instance
 - `image_data`: Any parameters needed for deploying an image 
 - `ssh_keypair_ids`: IDs of any ssh keypairs to be added to the instance during creation 
-
+- `volume_group_id`: ID of the volumegroup to attach to the instance.
 
 
 **Note on Floating IPs** 
@@ -73,3 +74,4 @@ If `requires_floating_ip` is set to `true` for an instance resource, **do not** 
 - `data_volume_ids`: IDs of attached data volumes
 - `ssh_keypair_ids`: IDs of instance ssh keypairs 
 - `host_group_id`: ID of host group
+- `volume_group_id`: ID of the volumegroup attached to the instance.

@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/sdk-go/pkg/connection"
+	"github.com/ukfast/sdk-go/pkg/ptr"
 	"github.com/ukfast/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
@@ -131,6 +132,10 @@ func resourceInstance() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"volume_group_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -175,6 +180,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error waiting for instance with ID [%s] to return sync status of [%s]: %s", instanceID, ecloudservice.SyncStatusComplete, err)
 	}
 
+	//attach data volumes
 	rawIDs, ok := d.GetOk("data_volume_ids")
 	if ok {
 		for _, rawID := range rawIDs.(*schema.Set).List() {
@@ -205,6 +211,27 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	//handle volume group if defined
+	if volumeGroupID, ok := d.GetOk("volume_group_id"); ok {
+		patchReq := ecloudservice.PatchInstanceRequest{
+			VolumeGroupID: ptr.String(volumeGroupID.(string)),
+		}
+		log.Printf("[DEBUG] Created PatchInstanceRequest: %+v", patchReq)
+
+		err := service.PatchInstance(d.Id(), patchReq)
+		if err != nil {
+			return fmt.Errorf("Error attaching volume: %s", err)
+		}
+
+		_, err = waitForResourceState(
+			ecloudservice.SyncStatusComplete.String(),
+			InstanceSyncStatusRefreshFunc(service, d.Id()),
+			d.Timeout(schema.TimeoutUpdate),
+		)
+		if err != nil {
+			return fmt.Errorf("Error waiting for volumegroup with ID [%s] to be attached: %s", volumeGroupID, err)
+		}
+	}
 	return resourceInstanceRead(d, meta)
 }
 
@@ -249,6 +276,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("host_group_id", instance.HostGroupID)
 	d.Set("volume_capacity", osVolume[0].Capacity)
 	d.Set("volume_iops", osVolume[0].IOPS)
+	d.Set("volume_group_id",  instance.VolumeGroupID)
 
 	if d.Get("nic_id").(string) == "" {
 		nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
@@ -302,6 +330,10 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("ram_capacity") {
 		hasChange = true
 		patchReq.RAMCapacity = d.Get("ram_capacity").(int)
+	}
+	if d.HasChange("volume_group_id") {
+		hasChange = true
+		patchReq.VolumeGroupID = ptr.String(d.Get("volume_group_id").(string))
 	}
 
 	if hasChange {

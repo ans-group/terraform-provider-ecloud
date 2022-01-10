@@ -25,6 +25,7 @@ resource "ecloud_volume" "volume-1" {
 - `name`: Name of volume
 - `capacity`: (Required) Volume size in GiB
 - `iops`: IOPS of volume
+- `volume_group_id`: ID of the volumegroup to add volume to
 
 ## Attribute Reference
 
@@ -34,3 +35,4 @@ resource "ecloud_volume" "volume-1" {
 - `name`: Name of volume
 - `capacity`: Volume size in GiB
 - `iops`: IOPS of volume
+- `volume_group_id`: ID of the volumegroup that the volume is a member of

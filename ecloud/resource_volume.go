@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/ukfast/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
@@ -60,6 +61,10 @@ func resourceVolume() *schema.Resource {
 					return
 				},
 			},
+			"volume_group_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -73,6 +78,10 @@ func resourceVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 		Capacity:           d.Get("capacity").(int),
 		IOPS:               d.Get("iops").(int),
 		AvailabilityZoneID: d.Get("availability_zone_id").(string),
+	}
+
+	if volumeGroupID, ok := d.GetOk("volume_group_id"); ok {
+		createReq.VolumeGroupID = volumeGroupID.(string)
 	}
 
 	log.Printf("[DEBUG] Created CreateVolumeRequest: %+v", createReq)
@@ -121,6 +130,7 @@ func resourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("capacity", volume.Capacity)
 	d.Set("iops", volume.IOPS)
 	d.Set("availability_zone_id", volume.AvailabilityZoneID)
+	d.Set("volume_group_id", volume.VolumeGroupID)
 
 	return nil
 }
@@ -142,6 +152,10 @@ func resourceVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
 		hasChange = true
 		patchReq.IOPS = d.Get("iops").(int)
 	}
+	if d.HasChange("volume_group_id") {
+		hasChange = true
+		patchReq.VolumeGroupID = ptr.String(d.Get("volume_group_id").(string))
+	}
 
 	if hasChange {
 		log.Printf("[INFO] Updating volume with ID [%s]", d.Id())
@@ -160,7 +174,7 @@ func resourceVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		_, err = stateConf.WaitForState()
 		if err != nil {
-			return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+			return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 	return resourceVolumeRead(d, meta)
