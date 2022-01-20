@@ -66,7 +66,7 @@ gpg -k
 Cache GPG passphrase:
 
 ```
-gpg --armor --detach-sign .
+gpg --armor --detach-sign -n main.go
 ```
 
 Finally tag and invoke `goreleaser`:
@@ -76,5 +76,6 @@ git tag v2.0.0
 git push --tags
 export GITHUB_TOKEN=<token>
 export GPG_FINGERPRINT=<fingerprint>
+export GPG_TTY=$(tty)
 goreleaser --rm-dist
 ```
