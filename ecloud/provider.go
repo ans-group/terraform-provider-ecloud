@@ -10,6 +10,8 @@ import (
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
+const userAgent = "terraform-provider-ecloud"
+
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
@@ -82,7 +84,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 }
 
 func getClient(apiKey string) client.Client {
-	return client.NewClient(connection.NewAPIKeyCredentialsAPIConnection(apiKey))
+	conn := connection.NewAPIKeyCredentialsAPIConnection(apiKey)
+	conn.UserAgent = userAgent
+
+	return client.NewClient(conn)
 }
 
 func getService(apiKey string) ecloudservice.ECloudService {
