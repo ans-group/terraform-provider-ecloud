@@ -27,6 +27,7 @@ func resourceFirewallRule() *schema.Resource {
 			"firewall_policy_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
