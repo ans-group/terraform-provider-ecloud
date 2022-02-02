@@ -27,6 +27,7 @@ func resourceNetworkRule() *schema.Resource {
 			"network_policy_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
@@ -165,12 +166,12 @@ func resourceNetworkRuleRead(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[INFO] Retrieving network rule ports for network rule with ID [%s]", d.Id())
 	// ports, err := service.GetNetworkRuleNetworkRulePorts(d.Id(), connection.APIRequestParameters{})
-	
-	//using filter parameter in request until dedicated API endpoint is 
+
+	//using filter parameter in request until dedicated API endpoint is
 	//added for service.GetNetworkRuleNetworkRulePorts().
 	params := connection.APIRequestParameters{}
 	params.WithFilter(*connection.NewAPIRequestFiltering("network_rule_id", connection.EQOperator, []string{d.Id()}))
-	
+
 	ports, err := service.GetNetworkRulePorts(params)
 	if err != nil {
 		return err
