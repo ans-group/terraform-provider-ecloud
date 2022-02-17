@@ -24,6 +24,7 @@ func resourceLoadBalancer() *schema.Resource {
 			"vpc_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
@@ -42,6 +43,7 @@ func resourceLoadBalancer() *schema.Resource {
 			"availability_zone_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 		},
 	}
