@@ -67,7 +67,6 @@ func dataSourceLoadBalancerNetworkRead(d *schema.ResourceData, meta interface{})
 
 	d.SetId(lbNetworks[0].ID)
 	d.Set("name", lbNetworks[0].Name)
-	d.Set("config_id", lbNetworks[0].NetworkID)
 	d.Set("load_balancer_id", lbNetworks[0].LoadBalancerID)
 	d.Set("network_id", lbNetworks[0].NetworkID)
 
