@@ -24,6 +24,7 @@ func resourceLoadBalancerNetwork() *schema.Resource {
 			"network_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
@@ -32,6 +33,7 @@ func resourceLoadBalancerNetwork() *schema.Resource {
 			"load_balancer_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 		},
 	}

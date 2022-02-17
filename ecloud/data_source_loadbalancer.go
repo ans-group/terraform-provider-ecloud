@@ -22,10 +22,12 @@ func dataSourceLoadBalancer() *schema.Resource {
 			"vpc_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
 			},
 			"availability_zone_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
