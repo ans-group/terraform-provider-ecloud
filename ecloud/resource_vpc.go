@@ -45,8 +45,8 @@ func resourceVPCCreate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateVPCRequest{
-		RegionID: d.Get("region_id").(string),
-		Name:     d.Get("name").(string),
+		RegionID:           d.Get("region_id").(string),
+		Name:               d.Get("name").(string),
 		AdvancedNetworking: ptr.Bool(d.Get("advanced_networking").(bool)),
 	}
 	log.Printf("[DEBUG] Created CreateVPCRequest: %+v", createReq)
