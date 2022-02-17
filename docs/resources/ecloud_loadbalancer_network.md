@@ -2,6 +2,8 @@
 
 This resource is for managing eCloud LoadBalancer Networks. 
 
+An eCloud LoadBalancer Network resource must reference the IDs of a LoadBalancer resource and an eCloud Network.
+
 ## Example Usage
 
 ```hcl
