@@ -43,12 +43,6 @@ func resourceLoadBalancer() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			// "network_ids": {
-			// 	Type:     schema.TypeSet,
-			// 	Elem:     &schema.Schema{Type: schema.TypeString},
-			// 	Optional: true,
-			// 	Set:      schema.HashString,
-			// },
 		},
 	}
 }
@@ -60,7 +54,6 @@ func resourceLoadBalancerCreate(d *schema.ResourceData, meta interface{}) error 
 		VPCID:              d.Get("vpc_id").(string),
 		AvailabilityZoneID: d.Get("availability_zone_id").(string),
 		LoadBalancerSpecID: d.Get("load_balancer_spec_id").(string),
-	//	NetworkIDs:         expandNetworkIds(d.Get("network_ids").(*schema.Set).List()),
 		Name:               d.Get("name").(string),
 	}
 
