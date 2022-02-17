@@ -57,7 +57,7 @@ resource "ecloud_network" "test-network" {
 resource "ecloud_loadbalancer" "test-lb" {
    vpc_id = ecloud_vpc.test-vpc.id
    availability_zone_id = data.ecloud_availability_zone.test-az.id
-   name = "%[2]s"
+   name = "test-lb"
    load_balancer_spec_id = data.ecloud_loadbalancer_spec.test-lb-medium.id
 }
 
