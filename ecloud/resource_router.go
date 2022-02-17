@@ -105,11 +105,20 @@ func resourceRouterRead(d *schema.ResourceData, meta interface{}) error {
 func resourceRouterUpdate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	if d.HasChange("name") {
-		patchReq := ecloudservice.PatchRouterRequest{
-			Name: d.Get("name").(string),
-		}
+	hasChange := false
+	patchReq := ecloudservice.PatchRouterRequest{}
 
+	if d.HasChange("name") {
+		hasChange = true
+		patchReq.Name = d.Get("name").(string)
+	}
+
+	if d.HasChange("router_throughput_id") {
+		hasChange = true
+		patchReq.RouterThroughputID = d.Get("router_throughput_id").(string)
+	}
+
+	if hasChange {
 		log.Printf("[INFO] Updating router with ID [%s]", d.Id())
 		err := service.PatchRouter(d.Id(), patchReq)
 		if err != nil {
