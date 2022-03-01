@@ -95,11 +95,24 @@ data "ecloud_loadbalancer_spec" "medium-lb" {
 	name = "Medium
 }
 
+resource "ecloud_router" "test-router" {
+	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
+	name = "test-router"
+}
+
+resource "ecloud_network" "test-network" {
+	router_id = ecloud_router.test-router.id
+	name = "test-network"
+	subnet = "10.0.1.0/24"
+}
+
 resource "ecloud_loadbalancer" "test-lb" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	name = "%s"
 	load_balancer_spec_id = data.ecloud_loadbalancer_spec.medium-lb.id
+	network_id = ecloud_network.test-network.id
 }
 `, regionID, lbName)
 }

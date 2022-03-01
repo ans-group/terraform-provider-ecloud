@@ -8,10 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceLoadBalancerNetwork_basic(t *testing.T) {
-	lbNetworkName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceLoadBalancerNetworkConfig_basic(UKF_TEST_VPC_REGION_ID, lbNetworkName)
-	resourceName := "data.ecloud_loadbalancer_network.test-lb-network"
+func TestAccDataSourceLoadBalancerVip_basic(t *testing.T) {
+	lbVipName := acctest.RandomWithPrefix("tftest")
+	config := testAccDataSourceLoadBalancerVipConfig_basic(UKF_TEST_VPC_REGION_ID, lbVipName)
+	resourceName := "data.ecloud_loadbalancer_vip.test-lb-vip"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -20,14 +20,14 @@ func TestAccDataSourceLoadBalancerNetwork_basic(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", lbNetworkName),
+					resource.TestCheckResourceAttr(resourceName, "name", lbVipName),
 				),
 			},
 		},
 	})
 }
 
-func testAccDataSourceLoadBalancerNetworkConfig_basic(regionID string, lbNetworkName string) string {
+func testAccDataSourceLoadBalancerVipConfig_basic(regionID string, lbVipName string) string {
 	return fmt.Sprintf(`
 resource "ecloud_vpc" "test-vpc" {
 	region_id = "%[1]s"
@@ -59,16 +59,16 @@ resource "ecloud_loadbalancer" "test-lb" {
    availability_zone_id = data.ecloud_availability_zone.test-az.id
    name = "test-lb"
    load_balancer_spec_id = data.ecloud_loadbalancer_spec.test-lb-medium.id
+   network_id = ecloud_network.test-network.id
 }
 
-resource "ecloud_loadbalancer_network" "lb-network" {
-	network_id= ecloud_network.test-network.id
+resource "ecloud_loadbalancer_vip" "lb-vip" {
 	name = "%[2]s"
 	load_balancer_id = data.ecloud_loadbalancer.test-lb.id
 }
 
-data "ecloud_loadbalancer_network" "test-lb-network" {
-    name = ecloud_loadbalancer.test-lb-network.name
+data "ecloud_loadbalancer_vip" "test-lb-vip" {
+    name = ecloud_loadbalancer.lb-vip.name
 }
-`, regionID, lbNetworkName)
+`, regionID, lbVipName)
 }

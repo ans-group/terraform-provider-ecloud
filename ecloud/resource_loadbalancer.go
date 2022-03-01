@@ -45,6 +45,11 @@ func resourceLoadBalancer() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"network_id": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -57,6 +62,7 @@ func resourceLoadBalancerCreate(d *schema.ResourceData, meta interface{}) error 
 		AvailabilityZoneID: d.Get("availability_zone_id").(string),
 		LoadBalancerSpecID: d.Get("load_balancer_spec_id").(string),
 		Name:               d.Get("name").(string),
+		NetworkID:          d.Get("network_id").(string),
 	}
 
 	log.Printf("[DEBUG] Created CreateLoadBalancerRequest: %+v", createReq)
@@ -105,6 +111,7 @@ func resourceLoadBalancerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("config_id", lb.ConfigID)
 	d.Set("availability_zone_id", lb.AvailabilityZoneID)
 	d.Set("load_balancer_spec_id", lb.LoadBalancerSpecID)
+	d.Set("network_id", lb.NetworkID)
 	
 
 	return nil

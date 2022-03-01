@@ -10,21 +10,21 @@ import (
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
-func TestAccLoadBalancerNetwork_basic(t *testing.T) {
-	lbName := acctest.RandomWithPrefix("tftest")
-	resourceName := "ecloud_loadbalancer_network.lb-network"
+func TestAccLoadBalancerVip_basic(t *testing.T) {
+	VIPName := acctest.RandomWithPrefix("tftest")
+	resourceName := "ecloud_loadbalancer_vip.lb-vip"
 	lbResourceName := "ecloud_loadbalancer.test-lb"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLoadBalancerNetworkDestroy,
+		CheckDestroy: testAccCheckLoadBalancerVipDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceLoadBalancerNetworkConfig_basic(UKF_TEST_VPC_REGION_ID, lbName),
+				Config: testAccResourceLoadBalancerVipConfig_basic(UKF_TEST_VPC_REGION_ID, VIPName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLoadBalancerNetworkExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "name", lbName),
+					testAccCheckLoadBalancerVipExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", VIPName),
 					resource.TestCheckResourceAttrPair(lbResourceName, "id", resourceName, "load_balancer_id"),
 				),
 			},
@@ -32,7 +32,7 @@ func TestAccLoadBalancerNetwork_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckLoadBalancerNetworkExists(n string) resource.TestCheckFunc {
+func testAccCheckLoadBalancerVipExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -40,14 +40,14 @@ func testAccCheckLoadBalancerNetworkExists(n string) resource.TestCheckFunc {
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No loadbalancer network ID is set")
+			return fmt.Errorf("No loadbalancer vip ID is set")
 		}
 
 		service := testAccProvider.Meta().(ecloudservice.ECloudService)
 
-		_, err := service.GetLoadBalancerNetwork(rs.Primary.ID)
+		_, err := service.GetVIP(rs.Primary.ID)
 		if err != nil {
-			if _, ok := err.(*ecloudservice.LoadBalancerNetworkNotFoundError); ok {
+			if _, ok := err.(*ecloudservice.VIPNotFoundError); ok {
 				return nil
 			}
 			return err
@@ -57,20 +57,20 @@ func testAccCheckLoadBalancerNetworkExists(n string) resource.TestCheckFunc {
 	}
 }
 
-func testAccCheckLoadBalancerNetworkDestroy(s *terraform.State) error {
+func testAccCheckLoadBalancerVipDestroy(s *terraform.State) error {
 	service := testAccProvider.Meta().(ecloudservice.ECloudService)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "ecloud_loadbalancer_network" {
+		if rs.Type != "ecloud_loadbalancer_vip" {
 			continue
 		}
 
-		_, err := service.GetLoadBalancerNetwork(rs.Primary.ID)
+		_, err := service.GetVIP(rs.Primary.ID)
 		if err == nil {
-			return fmt.Errorf("Loadbalancer network with ID [%s] still exists", rs.Primary.ID)
+			return fmt.Errorf("Loadbalancer vip with ID [%s] still exists", rs.Primary.ID)
 		}
 
-		if _, ok := err.(*ecloudservice.LoadBalancerNetworkNotFoundError); ok {
+		if _, ok := err.(*ecloudservice.VIPNotFoundError); ok {
 			return nil
 		}
 
@@ -80,7 +80,7 @@ func testAccCheckLoadBalancerNetworkDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceLoadBalancerNetworkConfig_basic(regionID string, lbName string) string {
+func testAccResourceLoadBalancerVipConfig_basic(regionID string, VIPName string) string {
 	return fmt.Sprintf(`
 resource "ecloud_vpc" "test-vpc" {
 	region_id = "%[1]s"
@@ -112,12 +112,12 @@ resource "ecloud_loadbalancer" "test-lb" {
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	name = "test-lb"
 	load_balancer_spec_id = data.ecloud_loadbalancer_spec.medium-lb.id
+	network_id = ecloud_network.test-network.id
 }
 
-resource "ecloud_loadbalancer_network" "lb-network" {
-	network_id= ecloud_network.test-network.id
+resource "ecloud_loadbalancer_vip" "lb-vip" {
 	name = "%[2]s"
 	load_balancer_id = data.ecloud_loadbalancer.test-lb.id
 }
-`, regionID, lbName)
+`, regionID, VIPName)
 }

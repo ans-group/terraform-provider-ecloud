@@ -39,6 +39,10 @@ func dataSourceLoadBalancer() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"network_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -66,6 +70,9 @@ func dataSourceLoadBalancerRead(d *schema.ResourceData, meta interface{}) error 
 	if lbSpec, ok := d.GetOk("load_balancer_spec_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("load_balancer_spec_id", connection.EQOperator, []string{lbSpec.(string)}))
 	}
+	if lbNetworkID, ok := d.GetOk("network_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("network_id", connection.EQOperator, []string{lbNetworkID.(string)}))
+	}
 
 	lbs, err := service.GetLoadBalancers(params)
 	if err != nil {
@@ -86,6 +93,7 @@ func dataSourceLoadBalancerRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("name", lbs[0].Name)
 	d.Set("config_id", lbs[0].ConfigID)
 	d.Set("load_balancer_spec_id", lbs[0].LoadBalancerSpecID)
+	d.Set("network_id", lbs[0].NetworkID)
 
 	return nil
 }

@@ -57,7 +57,7 @@ func Provider() *schema.Provider {
 			"ecloud_volumegroup":          dataSourceVolumeGroup(),
 			"ecloud_loadbalancer_spec":    dataSourceLoadBalancerSpec(),
 			"ecloud_loadbalancer":         dataSourceLoadBalancer(),
-			"ecloud_loadbalancer_network": dataSourceLoadBalancerNetwork(),
+			"ecloud_loadbalancer_vip":     dataSourceLoadBalancerVip(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":                  resourceVPC(),
@@ -78,7 +78,7 @@ func Provider() *schema.Provider {
 			"ecloud_vpn_session":          resourceVPNSession(),
 			"ecloud_volumegroup":          resourceVolumeGroup(),
 			"ecloud_loadbalancer":         resourceLoadBalancer(),
-			"ecloud_loadbalancer_network": resourceLoadBalancerNetwork(),
+			"ecloud_loadbalancer_vip":     resourceLoadBalancerVip(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

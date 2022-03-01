@@ -1,7 +1,7 @@
 # ecloud_loadbalancer Data Source
 
 This resource represents an eCloud LoadBalancer. 
-This data source can be used to retrieve the ID of a particular load balancer.
+This data source can be used to retrieve the ID of a particular load-balancer.
 
 ## Example Usage
 
@@ -18,6 +18,7 @@ data "ecloud_loadbalancer" "lb-1" {
 - `vpc_id`: ID of eCloud VPC
 - `availability_zone_id`: ID of eCloud Availabilility Zone
 - `load_balancer_spec_id`: ID of eCloud LoadBalancer Spec
+- `network_id`: ID of eCloud network
 
 ## Attributes Reference
 
@@ -27,3 +28,5 @@ data "ecloud_loadbalancer" "lb-1" {
 - `vpc_id`: ID of eCloud VPC
 - `availability_zone_id`: ID of eCloud Availabilility Zone
 - `load_balancer_spec_id`: ID of eCloud LoadBalancer Spec
+- `network_id`: ID of eCloud network
+- `config_id`: ID of LoadBalancer configuration
