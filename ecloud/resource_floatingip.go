@@ -37,7 +37,7 @@ func resourceFloatingIP() *schema.Resource {
 					id := val.(string)
 					fipAssignableResources := []string{"nic-"}
 
-					prefixInSlice := func (slice []string, value string) bool {
+					prefixInSlice := func(slice []string, value string) bool {
 						for _, s := range slice {
 							if strings.HasPrefix(value, s) {
 								return true
@@ -68,8 +68,8 @@ func resourceFloatingIPCreate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateFloatingIPRequest{
-		Name:  d.Get("name").(string),
-		VPCID: d.Get("vpc_id").(string),
+		Name:               d.Get("name").(string),
+		VPCID:              d.Get("vpc_id").(string),
 		AvailabilityZoneID: d.Get("availability_zone_id").(string),
 	}
 

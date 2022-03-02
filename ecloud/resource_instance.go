@@ -276,7 +276,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("host_group_id", instance.HostGroupID)
 	d.Set("volume_capacity", osVolume[0].Capacity)
 	d.Set("volume_iops", osVolume[0].IOPS)
-	d.Set("volume_group_id",  instance.VolumeGroupID)
+	d.Set("volume_group_id", instance.VolumeGroupID)
 
 	if d.Get("nic_id").(string) == "" {
 		nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})

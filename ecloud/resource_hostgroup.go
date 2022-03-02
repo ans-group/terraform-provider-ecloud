@@ -169,4 +169,3 @@ func resourceHostGroupDelete(d *schema.ResourceData, meta interface{}) error {
 
 	return nil
 }
-

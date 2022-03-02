@@ -49,7 +49,7 @@ func dataSourceHostSpecRead(d *schema.ResourceData, meta interface{}) error {
 	if name, ok := d.GetOk("name"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
 	}
-	
+
 	hostSpecs, err := service.GetHostSpecs(params)
 	if err != nil {
 		return fmt.Errorf("Error retrieving host specs: %s", err)

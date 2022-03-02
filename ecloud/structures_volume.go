@@ -9,7 +9,7 @@ import (
 func flattenInstanceDataVolumes(instanceVolumes []ecloudservice.Volume) *schema.Set {
 	dataVolumes := schema.NewSet(schema.HashString, []interface{}{})
 	for _, volume := range instanceVolumes {
-		if (volume.Type == ecloudservice.VolumeTypeOS || volume.IsShared == true) {
+		if volume.Type == ecloudservice.VolumeTypeOS || volume.IsShared == true {
 			continue
 		}
 
