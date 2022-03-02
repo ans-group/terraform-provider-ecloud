@@ -181,31 +181,6 @@ func resourceLoadBalancerVipDelete(d *schema.ResourceData, meta interface{}) err
 	if len(d.Get("floating_ip_id").(string)) > 1 {
 		fip := d.Get("floating_ip_id").(string)
 
-		log.Printf("[DEBUG] Unassigning floating ip with ID [%s]", fip)
-
-		taskID, err := service.UnassignFloatingIP(fip)
-		if err != nil {
-			switch err.(type) {
-			case *ecloudservice.FloatingIPNotFoundError:
-				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping unassign.", fip)
-			default:
-				return fmt.Errorf("Error unassigning floating ip with ID [%s]: %s", fip, err)
-			}
-		}
-
-		stateConf := &resource.StateChangeConf{
-			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskID),
-			Timeout:    d.Timeout(schema.TimeoutDelete),
-			Delay:      5 * time.Second,
-			MinTimeout: 3 * time.Second,
-		}
-	
-		_, err = stateConf.WaitForState()
-		if err != nil {
-			return fmt.Errorf("Error waiting for floating ip with ID [%s] to be unassigned: %w", d.Id(), err)
-		}
-
 		log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
 
 		taskID, err = service.DeleteFloatingIP(fip)
