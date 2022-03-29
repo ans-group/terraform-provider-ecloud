@@ -34,6 +34,7 @@ func resourceFirewallPolicy() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 		},
 	}
