@@ -95,6 +95,7 @@ func resourceInstance() *schema.Resource {
 			"backup_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				ForceNew: true,
 				Default:  false,
 			},
 			"network_id": {
@@ -119,6 +120,7 @@ func resourceInstance() *schema.Resource {
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
+				Computed: true,
 				Set:      schema.HashString,
 			},
 			"ssh_keypair_ids": {
