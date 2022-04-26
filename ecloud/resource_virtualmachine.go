@@ -33,6 +33,7 @@ func resourceVirtualMachine() *schema.Resource {
 			"template": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 			"template_password": &schema.Schema{
@@ -43,6 +44,7 @@ func resourceVirtualMachine() *schema.Resource {
 			"appliance_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 			"appliance_parameters": {
