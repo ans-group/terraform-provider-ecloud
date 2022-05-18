@@ -99,7 +99,16 @@ func resourceFloatingIPCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if r, ok := d.GetOk("resource_id"); ok {
-		log.Printf("[DEBUG] Assigning floating IP with ID [%s] to resource [%s]", d.Id(), r.(string))
+		resourceID := r.(string)
+		if strings.HasPrefix(resourceID, "nic-") {
+			nicDHCPAddress, err := getNICDHCPAddress(service, resourceID)
+			if err != nil {
+				return fmt.Errorf("Error retrieving DHCP IP address for NIC with ID [%s]: %s", resourceID, err)
+			}
+			resourceID = nicDHCPAddress.ID
+		}
+
+		log.Printf("[DEBUG] Assigning floating IP with ID [%s] to resource [%s]", d.Id(), resourceID)
 
 		assignFipReq := ecloudservice.AssignFloatingIPRequest{
 			ResourceID: r.(string),
