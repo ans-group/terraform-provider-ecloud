@@ -358,5 +358,9 @@ func getNICDHCPAddress(service ecloudservice.ECloudService, nicID string) (eclou
 		return ecloud.IPAddress{}, fmt.Errorf("Error retrieving IP addresses for NIC with ID [%s]: %s", nicID, err)
 	}
 
+	if len(ipAddresses) != 1 {
+		return ecloud.IPAddress{}, fmt.Errorf("Unexpected number of DHCP IP addresses [%d] for NIC with ID [%s], expected 1", len(ipAddresses), nicID)
+	}
+
 	return ipAddresses[0], nil
 }
