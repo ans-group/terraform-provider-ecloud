@@ -217,6 +217,21 @@ func resourceFloatingIPUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 
+		// Handle scenario where user is updating resource from IP to NIC which corresponds to the DHCP address for that NIC.
+		// Here we check whether the provided NIC has a DHCP IP address which matches the ID of the previously defined IP address,
+		// and if so, skip unassign/assign
+		if strings.HasPrefix(oldVal.(string), "ip-") && strings.HasPrefix(newVal.(string), "nic-") {
+			nicID := newVal.(string)
+			nicDHCPAddress, err := getNICDHCPAddress(service, nicID)
+			if err != nil {
+				return fmt.Errorf("Error retrieving DHCP IP address for NIC with ID [%s]: %s", nicID, err)
+			}
+
+			if nicDHCPAddress.ID == oldVal.(string) {
+				assign = false
+			}
+		}
+
 		//if oldVal wasn't empty then floating ip needs unassigned first
 		if assign && oldVal.(string) != "" {
 			log.Printf("[DEBUG] Unassigning floating IP with ID [%s]", d.Id())
