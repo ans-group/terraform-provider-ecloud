@@ -36,6 +36,7 @@ func Provider() *schema.Provider {
 			"ecloud_firewallrule":      dataSourceFirewallRule(),
 			"ecloud_image":             dataSourceImage(),
 			"ecloud_instance":          dataSourceInstance(),
+			"ecloud_ipaddress":         dataSourceIPAddress(),
 			"ecloud_network":           dataSourceNetwork(),
 			"ecloud_router":            dataSourceRouter(),
 			"ecloud_router_throughput": dataSourceRouterThroughput(),
