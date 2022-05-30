@@ -4,17 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/ukfast/sdk-go/pkg/connection"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func TestAccIPAddressNICBinding_basic(t *testing.T) {
-	ipAddressName := acctest.RandomWithPrefix("tftest")
-	ipAddressIPAddressNICBinding := "10.0.0.5"
-	resourceName := "ecloud_ipaddress.test-ipaddress"
-	networkResourceName := "ecloud_network.test-network"
+	nicIPAddressBindingResourceName := "ecloud_ipaddress.test-ipaddress"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -22,12 +19,9 @@ func TestAccIPAddressNICBinding_basic(t *testing.T) {
 		CheckDestroy: testAccCheckIPAddressNICBindingDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceIPAddressNICBindingConfig_basic(UKF_TEST_VPC_REGION_ID, ipAddressName, ipAddressIPAddressNICBinding),
+				Config: testAccResourceIPAddressNICBindingConfig_basic(UKF_TEST_VPC_REGION_ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckIPAddressNICBindingExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "name", ipAddressName),
-					resource.TestCheckResourceAttr(resourceName, "ip_address", ipAddressIPAddressNICBinding),
-					resource.TestCheckResourceAttrPair(networkResourceName, "id", resourceName, "network_id"),
+					testAccCheckIPAddressNICBindingExists(nicIPAddressBindingResourceName),
 				),
 			},
 		},
@@ -47,12 +41,17 @@ func testAccCheckIPAddressNICBindingExists(n string) resource.TestCheckFunc {
 
 		service := testAccProvider.Meta().(ecloudservice.ECloudService)
 
-		_, err := service.GetIPAddressNICBinding(rs.Primary.ID)
+		nicID := rs.Primary.Attributes["nic_id"]
+		ipAddressID := rs.Primary.Attributes["ip_address_id"]
+
+		ipAddresses, err := service.GetNICIPAddresses(nicID, *connection.NewAPIRequestParameters().WithFilter(
+			*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{ipAddressID}),
+		))
 		if err != nil {
-			if _, ok := err.(*ecloudservice.IPAddressNICBindingNotFoundError); ok {
-				return nil
-			}
-			return err
+			return fmt.Errorf("Failed to retrieve IP addresses for NIC: %s", err)
+		}
+		if len(ipAddresses) != 1 {
+			return fmt.Errorf("IP address with ID [%s] still exists", rs.Primary.ID)
 		}
 
 		return nil
@@ -67,22 +66,26 @@ func testAccCheckIPAddressNICBindingDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := service.GetIPAddressNICBinding(rs.Primary.ID)
-		if err == nil {
+		nicID := rs.Primary.Attributes["nic_id"]
+		ipAddressID := rs.Primary.Attributes["ip_address_id"]
+
+		ipAddresses, err := service.GetNICIPAddresses(nicID, *connection.NewAPIRequestParameters().WithFilter(
+			*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{ipAddressID}),
+		))
+		if err != nil {
+			return fmt.Errorf("Failed to retrieve IP addresses for NIC: %s", err)
+		}
+		if len(ipAddresses) != 1 {
 			return fmt.Errorf("IP address with ID [%s] still exists", rs.Primary.ID)
 		}
 
-		if _, ok := err.(*ecloudservice.IPAddressNICBindingNotFoundError); ok {
-			return nil
-		}
-
-		return err
+		return nil
 	}
 
 	return nil
 }
 
-func testAccResourceIPAddressNICBindingConfig_basic(regionID string, ipAddressName string, ipAddressIPAddressNICBinding string) string {
+func testAccResourceIPAddressNICBindingConfig_basic(regionID string) string {
 	return fmt.Sprintf(`
 resource "ecloud_vpc" "test-vpc" {
 	region_id = "%[1]s"
@@ -91,6 +94,10 @@ resource "ecloud_vpc" "test-vpc" {
 
 data "ecloud_availability_zone" "test-az" {
 	name = "Manchester West"
+}
+
+data "ecloud_image" "centos7" {
+	name = "CentOS 7"
 }
 
 resource "ecloud_router" "test-router" {
@@ -104,10 +111,26 @@ resource "ecloud_network" "test-network" {
 	subnet = "10.0.0.0/24"
 }
 
-resource "ecloud_ipaddress" "test-host" {
+resource "ecloud_instance" "test-instance" {
+	vpc_id = ecloud_vpc.test-vpc.id
 	network_id = ecloud_network.test-network.id
-	name = "%[2]s"
-	ip_address = "%[3]s"
+	image_id = data.ecloud_image.centos7.id
+	volume_capacity = 20
+	ram_capacity = 1024
+	vcpu_cores = 1
 }
-`, regionID, ipAddressName, ipAddressIPAddressNICBinding)
+
+data "ecloud_nic" "nic-1" {
+  instance_id = ecloud_instance.instance-1.id
+}
+
+resource "ecloud_ipaddress" "ipaddress-1" {
+	network_id = ecloud_network.test-network.id
+}
+
+resource "ecloud_nic_ipaddress_binding" "ipaddress-1-binding-1" {
+  nic_id = data.ecloud_nic.nic-1.id
+  ip_address_id = ecloud_ipaddress.ipaddress-1.id
+}
+`, regionID)
 }

@@ -77,14 +77,12 @@ func resourceNICIPAddressBindingRead(d *schema.ResourceData, meta interface{}) e
 	nicID := d.Get("nic_id").(string)
 	ipAddressID := d.Get("ip_address_id").(string)
 
-	log.Printf("[INFO] !!!!!!!!!!!!! DEBUG: nicID=[%s] ipAddressID=[%s]", nicID, ipAddressID)
 	ipAddresses, err := service.GetNICIPAddresses(nicID, *connection.NewAPIRequestParameters().WithFilter(
 		*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{ipAddressID}),
 	))
 	if err != nil {
 		return fmt.Errorf("Failed to retrieve IP addresses for NIC: %s", err)
 	}
-	log.Printf("[INFO] !!!!!!!!!!!!! DEBUG: found [%d] addresses", len(ipAddresses))
 
 	retrievedIPAddressID := ""
 	if len(ipAddresses) == 1 {
@@ -103,7 +101,7 @@ func resourceNICIPAddressBindingDelete(d *schema.ResourceData, meta interface{})
 	ipAddressID := d.Get("ip_address_id").(string)
 
 	ipAddresses, err := service.GetNICIPAddresses(nicID, *connection.NewAPIRequestParameters().WithFilter(
-		*connection.NewAPIRequestFiltering("ip_address_id", connection.EQOperator, []string{ipAddressID}),
+		*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{ipAddressID}),
 	))
 	if err != nil {
 		return fmt.Errorf("Failed to retrieve IP addresses for NIC: %s", err)
