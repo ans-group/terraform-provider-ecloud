@@ -52,6 +52,12 @@ func resourceVPNSession() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"psk": {
+				Type:      schema.TypeString,
+				Optional:  true,
+				Computed:  true,
+				Sensitive: true,
+			},
 		},
 	}
 }
@@ -91,31 +97,63 @@ func resourceVPNSessionCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 	}
 
+	if d.HasChange("psk") {
+		updatePSKReq := ecloudservice.UpdateVPNSessionPreSharedKeyRequest{
+			PSK: d.Get("psk").(string),
+		}
+		log.Printf("[DEBUG] Created UpdateVPNSessionPreSharedKeyRequest: %+v", updatePSKReq)
+
+		taskRef, err := service.UpdateVPNSessionPreSharedKey(taskRef.ResourceID, updatePSKReq)
+		if err != nil {
+			return fmt.Errorf("Error creating VPN session pre-shared key: %s", err)
+		}
+
+		stateConf := &resource.StateChangeConf{
+			Target:     []string{ecloudservice.SyncStatusComplete.String()},
+			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Timeout:    d.Timeout(schema.TimeoutCreate),
+			Delay:      5 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+
+		_, err = stateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+		}
+	}
+
 	return resourceVPNSessionRead(d, meta)
 }
 
 func resourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving VPNSession with ID [%s]", d.Id())
-	vpc, err := service.GetVPNSession(d.Id())
+	log.Printf("[INFO] Retrieving VPN session with ID [%s]", d.Id())
+	session, err := service.GetVPNSession(d.Id())
 	if err != nil {
 		switch err.(type) {
 		case *ecloudservice.VPNSessionNotFoundError:
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return fmt.Errorf("Error retrieving VPN session: %s", err)
 		}
 	}
 
-	d.Set("vpn_service_id", vpc.VPNServiceID)
-	d.Set("vpn_profile_group_id", vpc.VPNProfileGroupID)
-	d.Set("vpn_endpoint_id", vpc.VPNEndpointID)
-	d.Set("remote_ip", vpc.RemoteIP)
-	d.Set("name", vpc.Name)
-	d.Set("remote_networks", vpc.RemoteNetworks)
-	d.Set("local_networks", vpc.LocalNetworks)
+	d.Set("vpn_service_id", session.VPNServiceID)
+	d.Set("vpn_profile_group_id", session.VPNProfileGroupID)
+	d.Set("vpn_endpoint_id", session.VPNEndpointID)
+	d.Set("remote_ip", session.RemoteIP)
+	d.Set("name", session.Name)
+	d.Set("remote_networks", session.RemoteNetworks)
+	d.Set("local_networks", session.LocalNetworks)
+
+	log.Printf("[INFO] Retrieving VPN session pre-shared key with ID [%s]", d.Id())
+	psk, err := service.GetVPNSessionPreSharedKey(d.Id())
+	if err != nil {
+		return fmt.Errorf("Error retrieving VPN service pre-shared key: %s", err)
+	}
+	d.Set("psk", psk.PSK)
 
 	return nil
 }
@@ -151,6 +189,31 @@ func resourceVPNSessionUpdate(d *schema.ResourceData, meta interface{}) error {
 		taskRef, err := service.PatchVPNSession(d.Id(), patchReq)
 		if err != nil {
 			return fmt.Errorf("Error updating VPNSession with ID [%s]: %w", d.Id(), err)
+		}
+
+		stateConf := &resource.StateChangeConf{
+			Target:     []string{ecloudservice.SyncStatusComplete.String()},
+			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Timeout:    d.Timeout(schema.TimeoutCreate),
+			Delay:      5 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+
+		_, err = stateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+		}
+	}
+
+	if d.HasChange("psk") {
+		updatePSKReq := ecloudservice.UpdateVPNSessionPreSharedKeyRequest{
+			PSK: d.Get("psk").(string),
+		}
+		log.Printf("[DEBUG] Created UpdateVPNSessionPreSharedKeyRequest: %+v", updatePSKReq)
+
+		taskRef, err := service.UpdateVPNSessionPreSharedKey(d.Id(), updatePSKReq)
+		if err != nil {
+			return fmt.Errorf("Error creating VPN session pre-shared key: %s", err)
 		}
 
 		stateConf := &resource.StateChangeConf{

@@ -46,6 +46,10 @@ func dataSourceVPNSession() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"psk": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -95,6 +99,12 @@ func dataSourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", vpnSessions[0].Name)
 	d.Set("remote_networks", vpnSessions[0].RemoteNetworks)
 	d.Set("local_networks", vpnSessions[0].LocalNetworks)
+
+	psk, err := service.GetVPNSessionPreSharedKey(vpnSessions[0].ID)
+	if err != nil {
+		return fmt.Errorf("Error retrieving VPN service pre-shared key: %s", err)
+	}
+	d.Set("psk", psk.PSK)
 
 	return nil
 }

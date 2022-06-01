@@ -25,6 +25,7 @@ resource "ecloud_vpn_session" "session-1" {
 - `remote_ip`: IP address of remote
 - `remote_networks`: Comma seperated list of remote network CIDRs
 - `local_networks`: Comma seperated list of local network CIDRs
+- `psk`: Pre-shared key for VPN session
 
 ## Attributes Reference
 
@@ -36,3 +37,4 @@ resource "ecloud_vpn_session" "session-1" {
 - `remote_ip`: IP address of remote
 - `remote_networks`: Comma seperated list of remote network CIDRs
 - `local_networks`: Comma seperated list of local network CIDRs
+- `psk`: Pre-shared key for VPN session
