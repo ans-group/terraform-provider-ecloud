@@ -30,3 +30,4 @@ data "ecloud_vpn_session" "session-1" {
 - `name`: Name of VPN session
 - `remote_networks`: Comma seperated list of remote network CIDRs
 - `local_networks`: Comma seperated list of local network CIDRs
+- `psk`: Pre-shared key for VPN session

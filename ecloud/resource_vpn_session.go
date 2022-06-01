@@ -136,7 +136,7 @@ func resourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return fmt.Errorf("Error retrieving VPN session: %s", err)
 		}
 	}
 
@@ -151,7 +151,7 @@ func resourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[INFO] Retrieving VPN session pre-shared key with ID [%s]", d.Id())
 	psk, err := service.GetVPNSessionPreSharedKey(d.Id())
 	if err != nil {
-		return err
+		return fmt.Errorf("Error retrieving VPN service pre-shared key: %s", err)
 	}
 	d.Set("psk", psk.PSK)
 
