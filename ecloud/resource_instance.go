@@ -11,6 +11,7 @@ import (
 	"github.com/ukfast/sdk-go/pkg/ptr"
 	"github.com/ukfast/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
+	"github.com/ukfast/terraform-provider-ecloud/pkg/lock"
 )
 
 func resourceInstance() *schema.Resource {
@@ -109,12 +110,21 @@ func resourceInstance() *schema.Resource {
 			},
 			"floating_ip_id": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Optional: true,
+				ConflictsWith: []string{"requires_floating_ip"},
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					if d.Get("requires_floating_ip").(bool) {
+						return true
+					}
+					return oldValue == newValue && newValue == ""
+				},
 			},
 			"requires_floating_ip": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
+				ForceNew: true,
+				ConflictsWith: []string{"floating_ip_id"},
 			},
 			"data_volume_ids": {
 				Type:     schema.TypeSet,
@@ -293,7 +303,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("nic_id", nics[0].ID)
 	}
 
-	if d.Get("floating_ip_id").(string) == "" && d.Get("requires_floating_ip").(bool) {
+	if d.Get("requires_floating_ip").(bool) {
 		//we need to retrieve the instance nic to find the associated floating ip
 		fips, err := service.GetInstanceFloatingIPs(d.Id(), connection.APIRequestParameters{})
 		if err != nil {
@@ -355,41 +365,66 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	// manage instance floating ip
-	if d.HasChange("requires_floating_ip") {
-		if d.Get("requires_floating_ip").(bool) && len(d.Get("floating_ip_id").(string)) < 1 {
-			//create and assign floating ip
-			createReq := ecloudservice.CreateFloatingIPRequest{
-				VPCID: d.Get("vpc_id").(string),
+	if d.HasChange("floating_ip_id") && !d.Get("requires_floating_ip").(bool) {
+
+		oldVal, newVal := d.GetChange("floating_ip_id")
+		oldFip := oldVal.(string)
+		newFip := newVal.(string)
+
+		log.Printf("[DEBUG] ##Floating IP change detected. oldValue: [%s], newValue [%s]", oldFip, newFip)
+
+		if len(newFip) < 1 && oldFip != "" {
+			// lock the fip
+			if len(oldFip) < 1 {
+				return fmt.Errorf("invalid floating ip ID: %s", oldFip)
 			}
+		
+			unlock := lock.LockResource(oldFip)
+			defer unlock()
 
-			log.Printf("[DEBUG] Created CreateFloatingIPRequest: %+v", createReq)
-
-			log.Print("[INFO] Creating Floating IP")
-			taskRef, err := service.CreateFloatingIP(createReq)
+			log.Printf("[DEBUG] Unassigning floating IP with ID [%s]", oldFip)
+			
+			//unassign floating ip but don't delete as it may be managed by another resource
+			taskID, err := service.UnassignFloatingIP(oldFip)
 			if err != nil {
-				return fmt.Errorf("Error creating floating IP: %s", err)
+				switch err.(type) {
+				case *ecloudservice.FloatingIPNotFoundError:
+					log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping unassign.", oldFip)
+				default:
+					return fmt.Errorf("Error unassigning floating ip with ID [%s]: %s", oldFip, err)
+				}
 			}
-
-			d.Set("floating_ip_id", taskRef.ResourceID)
-
+	
 			_, err = waitForResourceState(
 				ecloudservice.TaskStatusComplete.String(),
-				TaskStatusRefreshFunc(service, taskRef.TaskID),
-				d.Timeout(schema.TimeoutCreate),
+				TaskStatusRefreshFunc(service, taskID),
+				d.Timeout(schema.TimeoutDelete),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for floating IP with ID [%s] to be created: %s", d.Id(), err)
+				return fmt.Errorf("Error waiting for floating ip with ID [%s] to be unassigned: %w", oldFip, err)
 			}
 
-			log.Printf("[DEBUG] Assigning floating IP with ID [%s]", taskRef.ResourceID)
+			//unset floating ip
+			d.Set("floating_ip_id", "")	
+		}
+
+		if oldFip == "" && newFip != "" {
+			// lock the fip
+			if len(newFip) < 1 {
+				return fmt.Errorf("invalid floating ip ID: %s", newFip)
+			}
+		
+			unlock := lock.LockResource(newFip)
+			defer unlock()
+
+			log.Printf("[DEBUG] Assigning floating ip with ID [%s]", newFip)
 
 			assignFipReq := ecloudservice.AssignFloatingIPRequest{
 				ResourceID: d.Get("nic_id").(string),
 			}
 			log.Printf("[DEBUG] Created AssignFloatingIPRequest: %+v", assignFipReq)
 
-			taskID, err := service.AssignFloatingIP(taskRef.ResourceID, assignFipReq)
+			taskID, err := service.AssignFloatingIP(newFip, assignFipReq)
 			if err != nil {
 				return fmt.Errorf("Error assigning floating IP: %s", err)
 			}
@@ -400,37 +435,8 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for floating IP with ID [%s] to be assigned: %s", d.Id(), err)
+				return fmt.Errorf("Error waiting for floating IP with ID [%s] to be assigned: %s", newFip, err)
 			}
-
-		}
-
-		if !d.Get("requires_floating_ip").(bool) && len(d.Get("floating_ip_id").(string)) > 1 {
-			// delete existing floating ip
-			fip := d.Get("floating_ip_id").(string)
-			log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
-
-			taskID, err := service.DeleteFloatingIP(fip)
-			if err != nil {
-				switch err.(type) {
-				case *ecloudservice.FloatingIPNotFoundError:
-					log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
-				default:
-					return fmt.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
-				}
-			}
-
-			_, err = waitForResourceState(
-				ecloudservice.TaskStatusComplete.String(),
-				TaskStatusRefreshFunc(service, taskID),
-				d.Timeout(schema.TimeoutDelete),
-			)
-			if err != nil {
-				return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", fip, err)
-			}
-
-			//unset floating ip
-			d.Set("floating_ip_id", "")
 		}
 	}
 
@@ -569,7 +575,7 @@ func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
 
 	//remove floating ip if set
-	if len(d.Get("floating_ip_id").(string)) > 1 {
+	if d.Get("requires_floating_ip").(bool) && len(d.Get("floating_ip_id").(string)) > 1 {
 		fip := d.Get("floating_ip_id").(string)
 
 		log.Printf("[DEBUG] Unassigning floating ip with ID [%s]", fip)

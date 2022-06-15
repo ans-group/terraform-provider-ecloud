@@ -208,8 +208,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/ukfast/go-durationstring v1.1.0 h1:Ki0ubc5jqSt7XuAs+gkPNpHYolIwbcsRW4LS239tIHA=
 github.com/ukfast/go-durationstring v1.1.0/go.mod h1:Ci81n51kfxlKUIaLY9cINIKRO94VTqV+iCGbOMTb0V8=
-github.com/ukfast/sdk-go v1.6.2 h1:7QJJyrTTCM/chZW/lA2wLgokHjKopBBWuGdYWTFexas=
-github.com/ukfast/sdk-go v1.6.2/go.mod h1:NynAokVgvxZNUmUySgSIckA8Kcc43urFM2F2qHFq13s=
+github.com/ukfast/sdk-go v1.6.3 h1:Pz3ufkHpwyTv+MRXo2/7IE4L/NDX5Kys5nF8+UxJ128=
+github.com/ukfast/sdk-go v1.6.3/go.mod h1:NynAokVgvxZNUmUySgSIckA8Kcc43urFM2F2qHFq13s=
 github.com/vmihailenco/msgpack v3.3.3+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
 github.com/vmihailenco/msgpack v4.0.4+incompatible h1:dSLoQfGFAo3F6OoNhwUmLwVgaUXK79GlxNBwueZn0xI=
 github.com/vmihailenco/msgpack v4.0.4+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=

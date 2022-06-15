@@ -156,24 +156,6 @@ func resourceFloatingIPRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("ip_address", fip.IPAddress)
 	d.Set("availability_zone_id", fip.AvailabilityZoneID)
 
-	resourceID := fip.ResourceID
-
-	// Handle scenario where defined resource_id is a NIC, however API is returning corresponding DHCP IP address ID
-	// for that NIC. We override the resource_id in the state with the NIC ID rather than the DHCP IP address ID
-	if strings.HasPrefix(d.Get("resource_id").(string), "nic-") && strings.HasPrefix(resourceID, "ip-") {
-		nicID := d.Get("resource_id").(string)
-		nicDHCPAddress, err := getNICDHCPAddress(service, nicID)
-		if err != nil {
-			return fmt.Errorf("Error retrieving DHCP IP address for NIC with ID [%s]: %s", resourceID, err)
-		}
-
-		if nicDHCPAddress.ID == resourceID {
-			resourceID = nicID
-		}
-	}
-
-	d.Set("resource_id", resourceID)
-
 	return nil
 }
 
