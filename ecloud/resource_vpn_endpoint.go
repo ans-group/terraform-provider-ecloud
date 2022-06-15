@@ -30,10 +30,15 @@ func resourceVPNEndpoint() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+				ForceNew: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
+			},
+			"manage_floating_ip": {
+				Type:     schema.TypeBool,
 				Computed: true,
 			},
 		},
@@ -42,6 +47,13 @@ func resourceVPNEndpoint() *schema.Resource {
 
 func resourceVPNEndpointCreate(d *schema.ResourceData, meta interface{}) error {
 	service := meta.(ecloudservice.ECloudService)
+
+	// if not populated then assume the provider should manage the fip
+	if len(d.Get("floating_ip_id").(string)) < 1 {
+		d.Set("manage_floating_ip", true)
+	} else {
+		d.Set("manage_floating_ip", false)
+	}
 
 	createReq := ecloudservice.CreateVPNEndpointRequest{
 		VPNServiceID: d.Get("vpn_service_id").(string),
@@ -147,6 +159,35 @@ func resourceVPNEndpointDelete(d *schema.ResourceData, meta interface{}) error {
 	_, err = stateConf.WaitForState()
 	if err != nil {
 		return fmt.Errorf("Error waiting for VPNEndpoint with ID [%s] to be deleted: %s", d.Id(), err)
+	}
+
+	//remove floating ip if set
+	if d.Get("manage_floating_ip").(bool) {
+		fip := d.Get("floating_ip_id").(string)
+
+		log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
+
+		taskID, err = service.DeleteFloatingIP(fip)
+		if err != nil {
+			switch err.(type) {
+			case *ecloudservice.FloatingIPNotFoundError:
+				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
+			default:
+				return fmt.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
+			}
+		}
+
+		stateConf = &resource.StateChangeConf{
+			Target:     []string{ecloudservice.TaskStatusComplete.String()},
+			Refresh:    TaskStatusRefreshFunc(service, taskID),
+			Timeout:    d.Timeout(schema.TimeoutDelete),
+			Delay:      5 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+		_, err = stateConf.WaitForState()
+		if err != nil {
+			return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", d.Id(), err)
+		}
 	}
 
 	return nil
