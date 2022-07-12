@@ -3,13 +3,14 @@ module github.com/ukfast/terraform-provider-ecloud
 go 1.18
 
 require (
+	github.com/ans-group/sdk-go v1.7.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.16.0
 	github.com/stretchr/testify v1.7.0
-	github.com/ukfast/sdk-go v1.6.3
 )
 
 require (
 	github.com/agext/levenshtein v1.2.2 // indirect
+	github.com/ans-group/go-durationstring v1.2.0 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -48,7 +49,6 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/ukfast/go-durationstring v1.1.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
@@ -65,4 +65,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-// replace github.com/ukfast/sdk-go => ../sdk-go
+//	replace github.com/ans-group/sdk-go => ../sdk-go

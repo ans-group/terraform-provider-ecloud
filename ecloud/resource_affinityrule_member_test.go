@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func TestAccAffinityRuleMember_basic(t *testing.T) {
@@ -47,7 +47,7 @@ func testAccCheckAffinityRuleMemberExists(n string) resource.TestCheckFunc {
 
 		service := testAccProvider.Meta().(ecloudservice.ECloudService)
 
-		_, err := service.GetAffinityRuleMember(rs.Primary.Attributes["affinity_rule_id"], rs.Primary.ID)
+		_, err := service.GetAffinityRuleMember(rs.Primary.ID)
 		if err != nil {
 			if _, ok := err.(*ecloudservice.AffinityRuleMemberNotFoundError); ok {
 				return nil
@@ -67,7 +67,7 @@ func testAccCheckAffinityRuleMemberDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := service.GetAffinityRuleMember(rs.Primary.Attributes["affinity_rule_id"], rs.Primary.ID)
+		_, err := service.GetAffinityRuleMember(rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Affinity rule member with ID [%s] still exists", rs.Primary.ID)
 		}

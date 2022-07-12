@@ -6,10 +6,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/ans-group/sdk-go/pkg/connection"
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ukfast/sdk-go/pkg/connection"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func resourceNetworkPolicy() *schema.Resource {

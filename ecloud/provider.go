@@ -4,10 +4,10 @@ import (
 	"errors"
 	"os"
 
+	"github.com/ans-group/sdk-go/pkg/client"
+	"github.com/ans-group/sdk-go/pkg/connection"
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ukfast/sdk-go/pkg/client"
-	"github.com/ukfast/sdk-go/pkg/connection"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 const userAgent = "terraform-provider-ecloud"
