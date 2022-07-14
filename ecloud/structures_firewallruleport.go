@@ -1,6 +1,6 @@
 package ecloud
 
-import "github.com/ukfast/sdk-go/pkg/service/ecloud"
+import "github.com/ans-group/sdk-go/pkg/service/ecloud"
 
 func flattenFirewallRulePorts(ports []ecloud.FirewallRulePort) interface{} {
 	var flattenedPorts []map[string]interface{}

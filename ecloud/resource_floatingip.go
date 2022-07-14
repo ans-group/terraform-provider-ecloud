@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ans-group/sdk-go/pkg/connection"
+	"github.com/ans-group/sdk-go/pkg/service/ecloud"
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ukfast/sdk-go/pkg/connection"
-	"github.com/ukfast/sdk-go/pkg/service/ecloud"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func resourceFloatingIP() *schema.Resource {

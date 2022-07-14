@@ -5,10 +5,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/ans-group/sdk-go/pkg/connection"
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ukfast/sdk-go/pkg/connection"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func resourceAffinityRule() *schema.Resource {
@@ -108,13 +108,14 @@ func resourceAffinityRuleCreate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			req := ecloudservice.CreateAffinityRuleMemberRequest{
+				AffinityRuleID: d.Id(),
 				InstanceID: memberID,
 			}
 
 			log.Printf("[DEBUG] Created CreateAffinityRuleMemberRequest: %+v", req)
 
 			log.Printf("[INFO] Adding instance member [%s] to affinity rule ID [%s]", memberID, d.Id())
-			taskRef, err := service.CreateAffinityRuleMember(d.Id(), req)
+			taskRef, err := service.CreateAffinityRuleMember(req)
 			if err != nil {
 				return fmt.Errorf("Error creating affinity rule member: %s", err)
 			}
@@ -223,7 +224,7 @@ func resourceAffinityRuleUpdate(d *schema.ResourceData, meta interface{}) error 
 
 			log.Printf("[INFO] Removing instance member [%s] from affinity rule ID [%s]", instanceID, d.Id())
 
-			taskID, err := service.DeleteAffinityRuleMember(d.Id(), ruleMemberID)
+			taskID, err := service.DeleteAffinityRuleMember(ruleMemberID)
 			if err != nil {
 				return fmt.Errorf("Error deleting affinity rule member: %s", err)
 			}
@@ -249,13 +250,14 @@ func resourceAffinityRuleUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			req := ecloudservice.CreateAffinityRuleMemberRequest{
+				AffinityRuleID: d.Id(),
 				InstanceID: instanceID,
 			}
 
 			log.Printf("[DEBUG] Created CreateAffinityRuleMemberRequest: %+v", req)
 
 			log.Printf("[INFO] Adding instance member [%s] to affinity rule ID [%s]", instanceID, d.Id())
-			taskRef, err := service.CreateAffinityRuleMember(d.Id(), req)
+			taskRef, err := service.CreateAffinityRuleMember(req)
 			if err != nil {
 				return fmt.Errorf("Error creating affinity rule member: %s", err)
 			}
@@ -310,7 +312,7 @@ func resourceAffinityRuleDelete(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[INFO] Removing affinity rule member ID [%s] for instance ID [%s]", arMembers[0].ID, instanceID)
-			taskID, err := service.DeleteAffinityRuleMember(d.Id(), arMembers[0].ID)
+			taskID, err := service.DeleteAffinityRuleMember(arMembers[0].ID)
 			if err != nil {
 				switch err.(type) {
 				case *ecloudservice.AffinityRuleMemberNotFoundError:

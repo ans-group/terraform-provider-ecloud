@@ -12,6 +12,10 @@ github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki
 github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXvaqE=
 github.com/agext/levenshtein v1.2.2/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
+github.com/ans-group/go-durationstring v1.2.0 h1:UJIuQATkp0t1rBvZsHRwki33YHV9E+Ulro+3NbMB7MM=
+github.com/ans-group/go-durationstring v1.2.0/go.mod h1:QGF9Mdpq9058QXaut8r55QWu6lcHX6i/GvF1PZVkV6o=
+github.com/ans-group/sdk-go v1.7.1 h1:rNCyY+oQtnm3FoEQQAQ2Wi5ETOrX/k5qEHov9tQ6cRE=
+github.com/ans-group/sdk-go v1.7.1/go.mod h1:XSKXEDfKobnDtZoyia5DhJxxaDMcCjr76e1KJ9dU/xc=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/apparentlymart/go-cidr v1.1.0 h1:2mAhrMoF+nhXqxTzSZMUzDHkLjmIHC+Zzn4tdgBZjnU=
 github.com/apparentlymart/go-cidr v1.1.0/go.mod h1:EBcsNrHc3zQeuaeCeCtQruQm+n9/YjEn/vI25Lg7Gwc=
@@ -206,10 +210,6 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/ukfast/go-durationstring v1.1.0 h1:Ki0ubc5jqSt7XuAs+gkPNpHYolIwbcsRW4LS239tIHA=
-github.com/ukfast/go-durationstring v1.1.0/go.mod h1:Ci81n51kfxlKUIaLY9cINIKRO94VTqV+iCGbOMTb0V8=
-github.com/ukfast/sdk-go v1.6.3 h1:Pz3ufkHpwyTv+MRXo2/7IE4L/NDX5Kys5nF8+UxJ128=
-github.com/ukfast/sdk-go v1.6.3/go.mod h1:NynAokVgvxZNUmUySgSIckA8Kcc43urFM2F2qHFq13s=
 github.com/vmihailenco/msgpack v3.3.3+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
 github.com/vmihailenco/msgpack v4.0.4+incompatible h1:dSLoQfGFAo3F6OoNhwUmLwVgaUXK79GlxNBwueZn0xI=
 github.com/vmihailenco/msgpack v4.0.4+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=

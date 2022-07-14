@@ -1,8 +1,8 @@
 package ecloud
 
 import (
+	"github.com/ans-group/sdk-go/pkg/connection"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ukfast/sdk-go/pkg/connection"
 )
 
 func dataSourceAPIRequestFiltersSchema() *schema.Schema {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func resourceSshKeyPair() *schema.Resource {

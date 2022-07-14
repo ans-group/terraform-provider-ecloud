@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 	"github.com/ukfast/terraform-provider-ecloud/pkg/lock"
 )
 
@@ -47,12 +47,14 @@ func resourceAffinityRuleMemberCreate(d *schema.ResourceData, meta interface{}) 
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateAffinityRuleMemberRequest{
+		AffinityRuleID: ruleID,
 		InstanceID: d.Get("instance_id").(string),
 	}
+
 	log.Printf("[DEBUG] Created CreateAffinityRuleMemberRequest: %+v", createReq)
 
 	log.Print("[INFO] Creating AffinityRuleMember")
-	taskRef, err := service.CreateAffinityRuleMember(ruleID, createReq)
+	taskRef, err := service.CreateAffinityRuleMember(createReq)
 	if err != nil {
 		return fmt.Errorf("Error creating affinity rule member: %s", err)
 	}
@@ -79,7 +81,7 @@ func resourceAffinityRuleMemberRead(d *schema.ResourceData, meta interface{}) er
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving affinity rule member with ID [%s]", d.Id())
-	arm, err := service.GetAffinityRuleMember(d.Get("affinity_rule_id").(string), d.Id())
+	arm, err := service.GetAffinityRuleMember(d.Id())
 	if err != nil {
 		switch err.(type) {
 		case *ecloudservice.AffinityRuleMemberNotFoundError:
@@ -109,7 +111,7 @@ func resourceAffinityRuleMemberDelete(d *schema.ResourceData, meta interface{}) 
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing affinity rule member with ID [%s]", d.Id())
-	taskID, err := service.DeleteAffinityRuleMember(ruleID, d.Id())
+	taskID, err := service.DeleteAffinityRuleMember(d.Id())
 	if err != nil {
 		switch err.(type) {
 		case *ecloudservice.AffinityRuleMemberNotFoundError:

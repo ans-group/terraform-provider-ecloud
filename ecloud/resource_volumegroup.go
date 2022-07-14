@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func resourceVolumeGroup() *schema.Resource {

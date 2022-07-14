@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ans-group/sdk-go/pkg/connection"
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/ukfast/sdk-go/pkg/connection"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 func TestAccIPAddressNICBinding_basic(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	ecloudservice "github.com/ukfast/sdk-go/pkg/service/ecloud"
 )
 
 // TaskStatusRefreshFunc returns a function with StateRefreshFunc signature for use with StateChangeConf
