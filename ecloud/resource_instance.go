@@ -143,6 +143,13 @@ func resourceInstance() *schema.Resource {
 			"host_group_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ConflictsWith: []string{"resource_tier_id"},
+			},
+			"resource_tier_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ConflictsWith: []string{"host_group_id"},
 			},
 			"volume_group_id": {
 				Type:     schema.TypeString,
@@ -171,6 +178,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		FloatingIPID:       d.Get("floating_ip_id").(string),
 		RequiresFloatingIP: d.Get("requires_floating_ip").(bool),
 		HostGroupID:        d.Get("host_group_id").(string),
+		ResourceTierID:     d.Get("resource_tier_id").(string),
 		SSHKeyPairIDs:      expandSshKeyPairIds(d.Get("ssh_keypair_ids").(*schema.Set).List()),
 	}
 	log.Printf("[DEBUG] Created CreateInstanceRequest: %+v", createReq)
@@ -286,6 +294,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("locked", instance.Locked)
 	d.Set("backup_enabled", instance.BackupEnabled)
 	d.Set("host_group_id", instance.HostGroupID)
+	d.Set("resource_tier_id", instance.ResourceTierID)
 	d.Set("volume_capacity", osVolume[0].Capacity)
 	d.Set("volume_iops", osVolume[0].IOPS)
 	d.Set("volume_group_id", instance.VolumeGroupID)
@@ -553,6 +562,30 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		log.Printf("[INFO] Migrating instance [%s] to host group [%s]", d.Id(), hostGroupID)
+		taskID, err := service.MigrateInstance(d.Id(), migrateReq)
+		if err != nil {
+			return fmt.Errorf("Error migrating instance: %s", err)
+		}
+
+		_, err = waitForResourceState(
+			ecloudservice.TaskStatusComplete.String(),
+			TaskStatusRefreshFunc(service, taskID),
+			d.Timeout(schema.TimeoutUpdate),
+		)
+		if err != nil {
+			return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+		}
+	}
+
+	// handle resource tier migrations if hostgroup id isn't populated
+	if d.HasChange("resource_tier_id") {
+		resourceTierID := d.Get("resource_tier_id").(string)
+
+		migrateReq := ecloud.MigrateInstanceRequest{
+			ResourceTierID: resourceTierID,
+		}
+
+		log.Printf("[INFO] Migrating instance [%s] to resource tier [%s]", d.Id(), resourceTierID)
 		taskID, err := service.MigrateInstance(d.Id(), migrateReq)
 		if err != nil {
 			return fmt.Errorf("Error migrating instance: %s", err)
