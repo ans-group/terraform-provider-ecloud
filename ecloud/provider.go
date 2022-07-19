@@ -61,6 +61,7 @@ func Provider() *schema.Provider {
 			"ecloud_loadbalancer_vip":    dataSourceLoadBalancerVip(),
 			"ecloud_affinityrule":        dataSourceAffinityRule(),
 			"ecloud_affinityrule_member": dataSourceAffinityRuleMember(),
+			"ecloud_resourcetier":        dataSourceResourceTier(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":                   resourceVPC(),

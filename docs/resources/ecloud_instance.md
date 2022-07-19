@@ -45,6 +45,8 @@ resource "ecloud_instance" "instance-1" {
 - `image_data`: Any parameters needed for deploying an image 
 - `ssh_keypair_ids`: IDs of any ssh keypairs to be added to the instance during creation 
 - `volume_group_id`: ID of the volumegroup to attach to the instance.
+- `host_group_id`: ID of the dedicated host group to move the instance to. Cannot be used with `resource_tier_id`
+- `resource_tier_id`: ID of the public resource tier to move the instance to. Cannot be used with `host_group_id`
 
 
 **Note on Floating IPs** 
@@ -75,3 +77,5 @@ If `requires_floating_ip` is set to `true` for an instance resource, **do not** 
 - `ssh_keypair_ids`: IDs of instance ssh keypairs 
 - `host_group_id`: ID of host group
 - `volume_group_id`: ID of the volumegroup attached to the instance.
+- `host_group_id`: ID of the host group the instance runs on, if defined.
+- `resource_tier_id`: ID of the public resource tier the instance runs on.
