@@ -67,6 +67,7 @@ func Provider() *schema.Provider {
 			"ecloud_vpc":                   resourceVPC(),
 			"ecloud_router":                resourceRouter(),
 			"ecloud_network":               resourceNetwork(),
+			"ecloud_image":                 resourceImage(),
 			"ecloud_instance":              resourceInstance(),
 			"ecloud_ipaddress":             resourceIPAddress(),
 			"ecloud_firewallpolicy":        resourceFirewallPolicy(),

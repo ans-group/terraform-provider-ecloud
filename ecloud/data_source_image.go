@@ -23,6 +23,18 @@ func dataSourceImage() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"vpc_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"availability_zone_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"platform": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -34,6 +46,18 @@ func dataSourceImageRead(d *schema.ResourceData, meta interface{}) error {
 
 	if id, ok := d.GetOk("image_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
+	}
+
+	if vpcID, ok := d.GetOk("vpc_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("vpc_id", connection.EQOperator, []string{vpcID.(string)}))
+	}
+
+	if availabilityZoneID, ok := d.GetOk("availability_zone_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("availability_zone_id", connection.EQOperator, []string{availabilityZoneID.(string)}))
+	}
+
+	if platform, ok := d.GetOk("platform"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("platform", connection.EQOperator, []string{platform.(string)}))
 	}
 
 	images, err := service.GetImages(params)
@@ -58,6 +82,9 @@ func dataSourceImageRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(images[0].ID)
 	d.Set("name", images[0].Name)
+	d.Set("vpc_id", images[0].VPCID)
+	d.Set("availability_zone_id", images[0].AvailabilityZoneID)
+	d.Set("platform", images[0].Platform)
 
 	return nil
 }
