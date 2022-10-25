@@ -37,7 +37,7 @@ func resourceFloatingIP() *schema.Resource {
 				Optional: true,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					id := val.(string)
-					fipAssignableResources := []string{"nic-", "ip-"}
+					fipAssignableResources := []string{"nic-", "ip-", "rtr-"}
 
 					prefixInSlice := func(slice []string, value string) bool {
 						for _, s := range slice {

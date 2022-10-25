@@ -62,6 +62,7 @@ func Provider() *schema.Provider {
 			"ecloud_affinityrule":        dataSourceAffinityRule(),
 			"ecloud_affinityrule_member": dataSourceAffinityRuleMember(),
 			"ecloud_resourcetier":        dataSourceResourceTier(),
+			"ecloud_natoverloadrule":     dataSourceNATOverloadRule(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":                   resourceVPC(),
@@ -88,6 +89,7 @@ func Provider() *schema.Provider {
 			"ecloud_loadbalancer_vip":      resourceLoadBalancerVip(),
 			"ecloud_affinityrule":          resourceAffinityRule(),
 			"ecloud_affinityrule_member":   resourceAffinityRuleMember(),
+			"ecloud_natoverloadrule":       resourceNATOverloadRule(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
