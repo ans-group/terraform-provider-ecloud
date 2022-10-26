@@ -11,10 +11,8 @@ import (
 )
 
 func TestAccNATOverloadRule_basic(t *testing.T) {
-	networkName := acctest.RandomWithPrefix("tftest")
-	resourceName := "ecloud_network.test-network"
-	routerResourceName := "ecloud_router.test-router"
-	subnet := "10.0.0.0/24"
+	ruleName := acctest.RandomWithPrefix("tftest")
+	resourceName := "ecloud_natoverloadrule.test-rule"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -22,12 +20,10 @@ func TestAccNATOverloadRule_basic(t *testing.T) {
 		CheckDestroy: testAccCheckNATOverloadRuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceNATOverloadRuleConfig_basic(UKF_TEST_VPC_REGION_ID, networkName, subnet),
+				Config: testAccResourceNATOverloadRuleConfig_basic(ANS_TEST_VPC_REGION_ID, ruleName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNATOverloadRuleExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "name", networkName),
-					resource.TestCheckResourceAttrPair(routerResourceName, "id", resourceName, "router_id"),
-					resource.TestCheckResourceAttr(resourceName, "subnet", subnet),
+					resource.TestCheckResourceAttr(resourceName, "name", ruleName),
 				),
 			},
 		},
@@ -82,7 +78,7 @@ func testAccCheckNATOverloadRuleDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceNATOverloadRuleConfig_basic(regionID string, networkName string, subnet string) string {
+func testAccResourceNATOverloadRuleConfig_basic(regionID string, ruleName string) string {
 	return fmt.Sprintf(`
 resource "ecloud_vpc" "test-vpc" {
 	region_id = "%[1]s"
@@ -101,8 +97,21 @@ resource "ecloud_router" "test-router" {
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "%[2]s"
-	subnet = "%[3]s"
+	subnet = "10.0.0.0/24"
 }
-`, regionID, networkName, subnet)
+
+resource "ecloud_floatingip" "test-fip" {
+	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
+	resource_id = ecloud_router.test-router.id
+}
+  
+resource "ecloud_natoverloadrule" "test-rule" {
+	name = "%[2]s"
+	network_id = ecloud_network.test-network.id
+	subnet = "10.0.0.0/24"
+	floating_ip_id = ecloud_floatingip.test-fip.id
+	action = "allow"
+}
+`, regionID, ruleName)
 }
