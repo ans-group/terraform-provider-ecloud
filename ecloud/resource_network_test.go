@@ -22,7 +22,7 @@ func TestAccNetwork_basic(t *testing.T) {
 		CheckDestroy: testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceNetworkConfig_basic(UKF_TEST_VPC_REGION_ID, networkName, subnet),
+				Config: testAccResourceNetworkConfig_basic(ANS_TEST_VPC_REGION_ID, networkName, subnet),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNetworkExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", networkName),

@@ -21,7 +21,7 @@ func TestAccVPNSession_basic(t *testing.T) {
 		CheckDestroy: testAccCheckVPNSessionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVPNSessionConfig_basic(UKF_TEST_VPC_REGION_ID, vpcName),
+				Config: testAccResourceVPNSessionConfig_basic(ANS_TEST_VPC_REGION_ID, vpcName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVPNSessionExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", vpcName),

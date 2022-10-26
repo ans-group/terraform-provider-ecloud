@@ -21,7 +21,7 @@ func TestAccVPNEndpoint_basic(t *testing.T) {
 		CheckDestroy: testAccCheckVPNEndpointDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVPNEndpointConfig_basic(UKF_TEST_VPC_REGION_ID, vpcName),
+				Config: testAccResourceVPNEndpointConfig_basic(ANS_TEST_VPC_REGION_ID, vpcName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVPNEndpointExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", vpcName),

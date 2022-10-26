@@ -21,7 +21,7 @@ func TestAccAffinityRule_basic(t *testing.T) {
 		CheckDestroy: testAccCheckAffinityRuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAffinityRuleConfig_basic(UKF_TEST_VPC_REGION_ID, affinityRuleName, affinityRuleType),
+				Config: testAccResourceAffinityRuleConfig_basic(ANS_TEST_VPC_REGION_ID, affinityRuleName, affinityRuleType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAffinityRuleExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", affinityRuleName),

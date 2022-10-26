@@ -12,5 +12,5 @@ function SetEnv($Name)
     }
 }
 
-SetEnv "UKF_API_KEY"
-SetEnv "UKF_TEST_VPC_REGION_ID"
+SetEnv "ANS_API_KEY"
+SetEnv "ANS_TEST_VPC_REGION_ID"

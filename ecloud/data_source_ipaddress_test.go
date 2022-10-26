@@ -9,7 +9,7 @@ import (
 
 func TestAccDataSourceIPAddress_basic(t *testing.T) {
 	params := map[string]string{
-		"vpc_region_id":   UKF_TEST_VPC_REGION_ID,
+		"vpc_region_id":   ANS_TEST_VPC_REGION_ID,
 		"datasource_name": "test-ipaddress",
 		"name":            acctest.RandomWithPrefix("tftest"),
 		"ip_address":      "10.0.0.10",

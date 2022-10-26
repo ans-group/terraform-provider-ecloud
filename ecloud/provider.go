@@ -20,7 +20,7 @@ func Provider() *schema.Provider {
 				Optional:  true,
 				Sensitive: true,
 				DefaultFunc: func() (interface{}, error) {
-					key := os.Getenv("UKF_API_KEY")
+					key := os.Getenv("ANS_API_KEY")
 					if key != "" {
 						return key, nil
 					}

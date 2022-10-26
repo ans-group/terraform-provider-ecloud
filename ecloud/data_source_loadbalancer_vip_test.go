@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceLoadBalancerVip_basic(t *testing.T) {
 	lbVipName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceLoadBalancerVipConfig_basic(UKF_TEST_VPC_REGION_ID, lbVipName)
+	config := testAccDataSourceLoadBalancerVipConfig_basic(ANS_TEST_VPC_REGION_ID, lbVipName)
 	resourceName := "data.ecloud_loadbalancer_vip.test-lb-vip"
 
 	resource.Test(t, resource.TestCase{

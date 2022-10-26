@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceAffinityRuleMember_basic(t *testing.T) {
 	memberInstanceID := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceAffinityRuleMemberConfig_basic(UKF_TEST_VPC_REGION_ID, memberInstanceID)
+	config := testAccDataSourceAffinityRuleMemberConfig_basic(ANS_TEST_VPC_REGION_ID, memberInstanceID)
 	armResourceName := "data.affinityrule_member.test-arm"
 	arResourceName := "ecloud_affinityrule.test-ar.id"
 

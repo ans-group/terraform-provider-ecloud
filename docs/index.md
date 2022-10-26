@@ -16,4 +16,4 @@ resource "ecloud_vpc" "vpc-1" {
 
 ## Argument Reference
 
-* `api_key`: UKFast API key - read/write permissions for `ecloud` service required. If omitted, will use `UKF_API_KEY` environment variable value
+* `api_key`: UKFast API key - read/write permissions for `ecloud` service required. If omitted, will use `ANS_API_KEY` environment variable value

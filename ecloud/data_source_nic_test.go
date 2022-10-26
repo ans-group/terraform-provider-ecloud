@@ -9,7 +9,7 @@ import (
 )
 
 func TestAccDataSourceNic_basic(t *testing.T) {
-	config := testAccDataSourceNicConfig_basic(UKF_TEST_VPC_REGION_ID)
+	config := testAccDataSourceNicConfig_basic(ANS_TEST_VPC_REGION_ID)
 	resourceName := "data.ecloud_nic.test-nic"
 
 	resource.Test(t, resource.TestCase{

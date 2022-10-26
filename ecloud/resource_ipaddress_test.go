@@ -22,7 +22,7 @@ func TestAccIPAddress_basic(t *testing.T) {
 		CheckDestroy: testAccCheckIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceIPAddressConfig_basic(UKF_TEST_VPC_REGION_ID, ipAddressName, ipAddressIPAddress),
+				Config: testAccResourceIPAddressConfig_basic(ANS_TEST_VPC_REGION_ID, ipAddressName, ipAddressIPAddress),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckIPAddressExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", ipAddressName),

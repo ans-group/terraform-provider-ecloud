@@ -21,7 +21,7 @@ func TestAccFirewallPolicy_basic(t *testing.T) {
 		CheckDestroy: testAccCheckFirewallPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceFirewallPolicyConfig_basic(UKF_TEST_VPC_REGION_ID, policyName),
+				Config: testAccResourceFirewallPolicyConfig_basic(ANS_TEST_VPC_REGION_ID, policyName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckFirewallPolicyExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", policyName),

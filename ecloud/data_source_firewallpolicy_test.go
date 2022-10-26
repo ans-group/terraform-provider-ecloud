@@ -9,7 +9,7 @@ import (
 
 func TestAccDataSourceFirewallPolicy_basic(t *testing.T) {
 	params := map[string]string{
-		"vpc_region_id":   UKF_TEST_VPC_REGION_ID,
+		"vpc_region_id":   ANS_TEST_VPC_REGION_ID,
 		"policy_name":     acctest.RandomWithPrefix("tftest"),
 		"policy_sequence": "0",
 	}

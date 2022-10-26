@@ -11,7 +11,7 @@ import (
 func TestAccDataSourceNetwork_basic(t *testing.T) {
 	networkName := acctest.RandomWithPrefix("tftest")
 	subnet := "10.0.0.0/24"
-	config := testAccDataSourceNetworkConfig_basic(UKF_TEST_VPC_REGION_ID, networkName, subnet)
+	config := testAccDataSourceNetworkConfig_basic(ANS_TEST_VPC_REGION_ID, networkName, subnet)
 	resourceName := "data.ecloud_network.test-network"
 
 	resource.Test(t, resource.TestCase{

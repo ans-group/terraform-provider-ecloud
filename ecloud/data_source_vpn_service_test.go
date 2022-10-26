@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceVPNService_basic(t *testing.T) {
 	vpnServiceName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceVPNServiceConfig_basic(UKF_TEST_VPC_REGION_ID, vpnServiceName)
+	config := testAccDataSourceVPNServiceConfig_basic(ANS_TEST_VPC_REGION_ID, vpnServiceName)
 	resourceName := "data.ecloud_vpn_service.test-vpnservice"
 
 	resource.Test(t, resource.TestCase{

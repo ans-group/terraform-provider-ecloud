@@ -21,7 +21,7 @@ func TestAccVPC_basic(t *testing.T) {
 		CheckDestroy: testAccCheckVPCDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVPCConfig_basic(UKF_TEST_VPC_REGION_ID, vpcName),
+				Config: testAccResourceVPCConfig_basic(ANS_TEST_VPC_REGION_ID, vpcName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVPCExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", vpcName),

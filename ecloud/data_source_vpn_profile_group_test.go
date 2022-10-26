@@ -8,7 +8,7 @@ import (
 )
 
 func TestAccDataSourceVPNProfileGroup_basic(t *testing.T) {
-	config := testAccDataSourceVPNProfileGroupConfig_basic(UKF_TEST_VPN_PROFILE_GROUP_ID)
+	config := testAccDataSourceVPNProfileGroupConfig_basic(ANS_TEST_VPN_PROFILE_GROUP_ID)
 	resourceName := "data.ecloud_vpn_profile_group.test-vpnprofilegroup"
 
 	resource.Test(t, resource.TestCase{
@@ -18,7 +18,7 @@ func TestAccDataSourceVPNProfileGroup_basic(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", UKF_TEST_VPN_PROFILE_GROUP_ID),
+					resource.TestCheckResourceAttr(resourceName, "name", ANS_TEST_VPN_PROFILE_GROUP_ID),
 				),
 			},
 		},

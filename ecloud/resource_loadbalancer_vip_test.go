@@ -21,7 +21,7 @@ func TestAccLoadBalancerVip_basic(t *testing.T) {
 		CheckDestroy: testAccCheckLoadBalancerVipDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceLoadBalancerVipConfig_basic(UKF_TEST_VPC_REGION_ID, VIPName),
+				Config: testAccResourceLoadBalancerVipConfig_basic(ANS_TEST_VPC_REGION_ID, VIPName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLoadBalancerVipExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", VIPName),

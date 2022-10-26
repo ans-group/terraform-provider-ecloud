@@ -31,6 +31,7 @@ func resourceFloatingIP() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"resource_id": {
 				Type:     schema.TypeString,

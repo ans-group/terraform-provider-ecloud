@@ -21,7 +21,7 @@ func TestAccNetworkPolicy_basic(t *testing.T) {
 		CheckDestroy: testAccCheckNetworkPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceNetworkPolicyConfig_basic(UKF_TEST_VPC_REGION_ID, policyName),
+				Config: testAccResourceNetworkPolicyConfig_basic(ANS_TEST_VPC_REGION_ID, policyName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNetworkPolicyExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", policyName),

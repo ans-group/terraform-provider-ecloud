@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceInstance_basic(t *testing.T) {
 	instanceName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceInstanceConfig_basic(UKF_TEST_VPC_REGION_ID, instanceName)
+	config := testAccDataSourceInstanceConfig_basic(ANS_TEST_VPC_REGION_ID, instanceName)
 	resourceName := "data.ecloud_instance.test-instance"
 
 	resource.Test(t, resource.TestCase{
