@@ -1,13 +1,15 @@
 package ecloud
 
 import (
-	"errors"
-	"os"
+	"fmt"
 
 	"github.com/ans-group/sdk-go/pkg/client"
+	"github.com/ans-group/sdk-go/pkg/config"
 	"github.com/ans-group/sdk-go/pkg/connection"
+	"github.com/ans-group/sdk-go/pkg/logging"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/ukfast/terraform-provider-ecloud/pkg/logger"
 )
 
 const userAgent = "terraform-provider-ecloud"
@@ -16,18 +18,10 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"api_key": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Sensitive: true,
-				DefaultFunc: func() (interface{}, error) {
-					key := os.Getenv("ANS_API_KEY")
-					if key != "" {
-						return key, nil
-					}
-
-					return "", errors.New("api_key required")
-				},
-				Description: "API token required to authenticate with UKFast APIs. See https://developers.ukfast.io for more details",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "API token to authenticate with UKFast APIs. See https://developers.ukfast.io for more details",
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
@@ -96,16 +90,37 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	return getService(d.Get("api_key").(string)), nil
+	err := config.Init("")
+	if err != nil {
+		return nil, fmt.Errorf("Failed to initialise config: %s", err)
+	}
+
+	if config.GetBool("api_debug") {
+		logging.SetLogger(&logger.ProviderLogger{})
+	}
+
+	return getService(d.Get("api_key").(string))
 }
 
-func getClient(apiKey string) client.Client {
-	conn := connection.NewAPIKeyCredentialsAPIConnection(apiKey)
-	conn.UserAgent = userAgent
+func getConnection() (connection.Connection, error) {
+	connFactory := connection.NewDefaultConnectionFactory(
+		connection.WithDefaultConnectionUserAgent(userAgent),
+	)
 
-	return client.NewClient(conn)
+	return connFactory.NewConnection()
 }
 
-func getService(apiKey string) ecloudservice.ECloudService {
-	return getClient(apiKey).ECloudService()
+func getService(apiKey string) (ecloudservice.ECloudService, error) {
+	if len(apiKey) > 0 {
+		config.Set(config.GetCurrentContextName(), "api_key", apiKey)
+	}
+
+	conn, err := getConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("Test: %s", config.GetString("api_key"))
+
+	return client.NewClient(conn).ECloudService(), nil
 }
