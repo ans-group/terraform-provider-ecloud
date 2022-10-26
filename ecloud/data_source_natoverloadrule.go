@@ -14,7 +14,7 @@ func dataSourceNATOverloadRule() *schema.Resource {
 		Read: dataSourceNATOverloadRuleRead,
 
 		Schema: map[string]*schema.Schema{
-			"natoverloadrule_id": {
+			"nat_overload_rule_id": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -47,7 +47,7 @@ func dataSourceNATOverloadRuleRead(d *schema.ResourceData, meta interface{}) err
 
 	params := connection.APIRequestParameters{}
 
-	if id, ok := d.GetOk("natoverloadrule_id"); ok {
+	if id, ok := d.GetOk("nat_overload_rule_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{id.(string)}))
 	}
 	if routerID, ok := d.GetOk("network_id"); ok {
