@@ -3,7 +3,7 @@ module github.com/ukfast/terraform-provider-ecloud
 go 1.18
 
 require (
-	github.com/ans-group/sdk-go v1.15.1
+	github.com/ans-group/sdk-go v1.16.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.16.0
 	github.com/stretchr/testify v1.8.1
 )
@@ -75,4 +75,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/ans-group/sdk-go => ../sdk-go
+// replace github.com/ans-group/sdk-go => ../sdk-go
