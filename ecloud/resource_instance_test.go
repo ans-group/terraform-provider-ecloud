@@ -21,7 +21,7 @@ func TestAccInstance_basic(t *testing.T) {
 		CheckDestroy: testAccCheckInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceInstanceConfig_basic(UKF_TEST_VPC_REGION_ID, instanceName),
+				Config: testAccResourceInstanceConfig_basic(ANS_TEST_VPC_REGION_ID, instanceName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckInstanceExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", instanceName),

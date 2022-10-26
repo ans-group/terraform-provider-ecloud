@@ -19,7 +19,7 @@ func TestAccIPAddressNICBinding_basic(t *testing.T) {
 		CheckDestroy: testAccCheckIPAddressNICBindingDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceIPAddressNICBindingConfig_basic(UKF_TEST_VPC_REGION_ID),
+				Config: testAccResourceIPAddressNICBindingConfig_basic(ANS_TEST_VPC_REGION_ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckIPAddressNICBindingExists(nicIPAddressBindingResourceName),
 				),

@@ -21,7 +21,7 @@ func TestAccVolume_basic(t *testing.T) {
 		CheckDestroy: testAccCheckVolumeDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVolumeConfig_basic(UKF_TEST_VPC_REGION_ID, volumeName),
+				Config: testAccResourceVolumeConfig_basic(ANS_TEST_VPC_REGION_ID, volumeName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVolumeExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", volumeName),

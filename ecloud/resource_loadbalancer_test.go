@@ -21,7 +21,7 @@ func TestAccLoadBalancer_basic(t *testing.T) {
 		CheckDestroy: testAccCheckLoadBalancerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceLoadBalancerConfig_basic(UKF_TEST_VPC_REGION_ID, lbName),
+				Config: testAccResourceLoadBalancerConfig_basic(ANS_TEST_VPC_REGION_ID, lbName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLoadBalancerExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", lbName),

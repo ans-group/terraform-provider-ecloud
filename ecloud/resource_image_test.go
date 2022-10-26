@@ -20,7 +20,7 @@ func TestAccImage_basic(t *testing.T) {
 		CheckDestroy: testAccCheckimageDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceImageConfig_basic(UKF_TEST_VPC_REGION_ID, imageName),
+				Config: testAccResourceImageConfig_basic(ANS_TEST_VPC_REGION_ID, imageName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckimageExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", imageName),

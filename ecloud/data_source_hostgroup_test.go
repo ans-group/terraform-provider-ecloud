@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceHostGroup_basic(t *testing.T) {
 	hostGroupName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceHostGroupConfig_basic(UKF_TEST_VPC_REGION_ID, hostGroupName)
+	config := testAccDataSourceHostGroupConfig_basic(ANS_TEST_VPC_REGION_ID, hostGroupName)
 	resourceName := "data.ecloud_hostgroup.test-hostgroup"
 
 	resource.Test(t, resource.TestCase{

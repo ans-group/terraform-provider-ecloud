@@ -21,7 +21,7 @@ func TestAccHost_basic(t *testing.T) {
 		CheckDestroy: testAccCheckHostDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceHostConfig_basic(UKF_TEST_VPC_REGION_ID, hostName),
+				Config: testAccResourceHostConfig_basic(ANS_TEST_VPC_REGION_ID, hostName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckHostExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", hostName),

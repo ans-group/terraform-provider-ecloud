@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceFloatingIP_basic(t *testing.T) {
 	fipName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceFloatingIPConfig_basic(UKF_TEST_VPC_REGION_ID, fipName)
+	config := testAccDataSourceFloatingIPConfig_basic(ANS_TEST_VPC_REGION_ID, fipName)
 	resourceName := "data.ecloud_floatingip.test-fip"
 
 	resource.Test(t, resource.TestCase{

@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceNetworkPolicy_basic(t *testing.T) {
 	policyName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceNetworkPolicyConfig_basic(UKF_TEST_VPC_REGION_ID, policyName)
+	config := testAccDataSourceNetworkPolicyConfig_basic(ANS_TEST_VPC_REGION_ID, policyName)
 	resourceName := "data.ecloud_networkpolicy.test-network"
 
 	resource.Test(t, resource.TestCase{

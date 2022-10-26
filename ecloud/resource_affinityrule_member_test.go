@@ -22,7 +22,7 @@ func TestAccAffinityRuleMember_basic(t *testing.T) {
 		CheckDestroy: testAccCheckAffinityRuleMemberDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAffinityRuleMemberConfig_basic(UKF_TEST_VPC_REGION_ID, affinityRuleName, affinityRuleMemberInstanceID),
+				Config: testAccResourceAffinityRuleMemberConfig_basic(ANS_TEST_VPC_REGION_ID, affinityRuleName, affinityRuleMemberInstanceID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAffinityRuleMemberExists(armResourceName),
 					resource.TestCheckResourceAttr(armResourceName, "name", affinityRuleName),

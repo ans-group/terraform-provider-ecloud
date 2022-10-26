@@ -21,7 +21,7 @@ func TestAccRouter_basic(t *testing.T) {
 		CheckDestroy: testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceRouterConfig_basic(UKF_TEST_VPC_REGION_ID, routerName),
+				Config: testAccResourceRouterConfig_basic(ANS_TEST_VPC_REGION_ID, routerName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", routerName),

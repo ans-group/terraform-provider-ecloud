@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceVPC_basic(t *testing.T) {
 	vpcName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceVPCConfig_basic(UKF_TEST_VPC_REGION_ID, vpcName)
+	config := testAccDataSourceVPCConfig_basic(ANS_TEST_VPC_REGION_ID, vpcName)
 	resourceName := "data.ecloud_vpc.test-vpc"
 
 	resource.Test(t, resource.TestCase{
@@ -20,7 +20,7 @@ func TestAccDataSourceVPC_basic(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "region_id", UKF_TEST_VPC_REGION_ID),
+					resource.TestCheckResourceAttr(resourceName, "region_id", ANS_TEST_VPC_REGION_ID),
 					resource.TestCheckResourceAttr(resourceName, "name", vpcName),
 				),
 			},

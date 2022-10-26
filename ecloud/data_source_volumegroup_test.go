@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceVolumeGroup_basic(t *testing.T) {
 	volumeGroupName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceVolumeGroupConfig_basic(UKF_TEST_VPC_REGION_ID, volumeGroupName)
+	config := testAccDataSourceVolumeGroupConfig_basic(ANS_TEST_VPC_REGION_ID, volumeGroupName)
 	resourceName := "data.ecloud_volumegroup.test-volumegroup"
 
 	resource.Test(t, resource.TestCase{

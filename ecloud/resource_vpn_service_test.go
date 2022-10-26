@@ -21,7 +21,7 @@ func TestAccVPNService_basic(t *testing.T) {
 		CheckDestroy: testAccCheckVPNServiceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVPNServiceConfig_basic(UKF_TEST_VPC_REGION_ID, vpcName),
+				Config: testAccResourceVPNServiceConfig_basic(ANS_TEST_VPC_REGION_ID, vpcName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVPNServiceExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", vpcName),

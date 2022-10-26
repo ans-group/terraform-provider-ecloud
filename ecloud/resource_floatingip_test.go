@@ -21,7 +21,7 @@ func TestAccFloatingIP_basic(t *testing.T) {
 		CheckDestroy: testAccCheckFloatingIPDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceFloatingIPConfig_basic(UKF_TEST_VPC_REGION_ID, fipName),
+				Config: testAccResourceFloatingIPConfig_basic(ANS_TEST_VPC_REGION_ID, fipName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckFloatingIPExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", fipName),

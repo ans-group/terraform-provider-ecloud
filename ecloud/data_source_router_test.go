@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceRouter_basic(t *testing.T) {
 	routerName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceRouterConfig_basic(UKF_TEST_VPC_REGION_ID, routerName)
+	config := testAccDataSourceRouterConfig_basic(ANS_TEST_VPC_REGION_ID, routerName)
 	resourceName := "data.ecloud_router.test-router"
 
 	resource.Test(t, resource.TestCase{

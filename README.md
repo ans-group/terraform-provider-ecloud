@@ -48,11 +48,11 @@ Documentation is located within this repository at `/docs`, and is published in 
 Acceptance tests can be executed using `make` as below:
 
 ```
-export UKF_TEST_VPC_REGION_ID=<region_id>
+export ANS_TEST_VPC_REGION_ID=<region_id>
 make testacc TEST=VPC_basic
 ```
 
-Note `UKF_TEST_VPC_REGION_ID` environment is required for executing tests
+Note `ANS_TEST_VPC_REGION_ID` environment is required for executing tests
 
 
 ### Releasing 

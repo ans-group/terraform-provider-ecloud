@@ -12,7 +12,7 @@ import (
 
 func TestAccNetworkRule_basic(t *testing.T) {
 	params := map[string]string{
-		"vpc_region_id":    UKF_TEST_VPC_REGION_ID,
+		"vpc_region_id":    ANS_TEST_VPC_REGION_ID,
 		"rule_name":        acctest.RandomWithPrefix("tftest"),
 		"rule_sequence":    "0",
 		"rule_direction":   "IN",

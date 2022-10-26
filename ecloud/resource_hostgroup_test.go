@@ -21,7 +21,7 @@ func TestAccHostGroup_basic(t *testing.T) {
 		CheckDestroy: testAccCheckHostGroupDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceHostGroupConfig_basic(UKF_TEST_VPC_REGION_ID, hostGroupName),
+				Config: testAccResourceHostGroupConfig_basic(ANS_TEST_VPC_REGION_ID, hostGroupName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckHostGroupExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", hostGroupName),
