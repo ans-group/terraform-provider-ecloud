@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-This provider is available via the [Terraform Registry](https://registry.terraform.io/providers/ukfast/ecloud/latest) with Terraform v0.13+
+This provider is available via the [Terraform Registry](https://registry.terraform.io/providers/ans-group/ecloud/latest) with Terraform v0.13+
 
 > :warning: We strongly recommend pinning the provider version to a target major version, as to ensure future breaking changes do not affect workflows and automated CI pipelines
 
