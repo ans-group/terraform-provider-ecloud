@@ -25,5 +25,5 @@ func (l *ProviderLogger) Trace(msg string) {
 }
 
 func (l *ProviderLogger) log(level string, msg string) {
-	log.Print("[%s] %s", level, msg)
+	log.Printf("[%s] %s", level, msg)
 }
