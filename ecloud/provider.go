@@ -7,7 +7,6 @@ import (
 	"github.com/ans-group/sdk-go/pkg/config"
 	"github.com/ans-group/sdk-go/pkg/connection"
 	"github.com/ans-group/sdk-go/pkg/logging"
-	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/terraform-provider-ecloud/pkg/logger"
 )
@@ -17,6 +16,11 @@ const userAgent = "terraform-provider-ecloud"
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
+			"context": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Config context to use",
+			},
 			"api_key": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -99,18 +103,15 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		logging.SetLogger(&logger.ProviderLogger{})
 	}
 
-	return getService(d.Get("api_key").(string))
-}
+	context := d.Get("context").(string)
+	if len(context) > 0 {
+		err := config.SwitchCurrentContext(context)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-func getConnection() (connection.Connection, error) {
-	connFactory := connection.NewDefaultConnectionFactory(
-		connection.WithDefaultConnectionUserAgent(userAgent),
-	)
-
-	return connFactory.NewConnection()
-}
-
-func getService(apiKey string) (ecloudservice.ECloudService, error) {
+	apiKey := d.Get("api_key").(string)
 	if len(apiKey) > 0 {
 		config.Set(config.GetCurrentContextName(), "api_key", apiKey)
 	}
@@ -120,7 +121,13 @@ func getService(apiKey string) (ecloudservice.ECloudService, error) {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("Test: %s", config.GetString("api_key"))
-
 	return client.NewClient(conn).ECloudService(), nil
+}
+
+func getConnection() (connection.Connection, error) {
+	connFactory := connection.NewDefaultConnectionFactory(
+		connection.WithDefaultConnectionUserAgent(userAgent),
+	)
+
+	return connFactory.NewConnection()
 }
