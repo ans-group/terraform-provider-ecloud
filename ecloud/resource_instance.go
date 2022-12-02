@@ -109,8 +109,8 @@ func resourceInstance() *schema.Resource {
 				Computed: true,
 			},
 			"floating_ip_id": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:          schema.TypeString,
+				Optional:      true,
 				ConflictsWith: []string{"requires_floating_ip"},
 				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
 					if d.Get("requires_floating_ip").(bool) {
@@ -120,10 +120,10 @@ func resourceInstance() *schema.Resource {
 				},
 			},
 			"requires_floating_ip": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-				ForceNew: true,
+				Type:          schema.TypeBool,
+				Optional:      true,
+				Default:       false,
+				ForceNew:      true,
 				ConflictsWith: []string{"floating_ip_id"},
 			},
 			"data_volume_ids": {
@@ -141,19 +141,24 @@ func resourceInstance() *schema.Resource {
 				ForceNew: true,
 			},
 			"host_group_id": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:          schema.TypeString,
+				Optional:      true,
 				ConflictsWith: []string{"resource_tier_id"},
 			},
 			"resource_tier_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
 				ConflictsWith: []string{"host_group_id"},
 			},
 			"volume_group_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+			},
+			"ip_address": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
 			},
 		},
 	}
@@ -179,6 +184,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		RequiresFloatingIP: d.Get("requires_floating_ip").(bool),
 		HostGroupID:        d.Get("host_group_id").(string),
 		ResourceTierID:     d.Get("resource_tier_id").(string),
+		CustomIPAddress:    connection.IPAddress(d.Get("ip_address").(string)),
 		SSHKeyPairIDs:      expandSshKeyPairIds(d.Get("ssh_keypair_ids").(*schema.Set).List()),
 	}
 	log.Printf("[DEBUG] Created CreateInstanceRequest: %+v", createReq)
@@ -387,12 +393,12 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			if len(oldFip) < 1 {
 				return fmt.Errorf("invalid floating ip ID: %s", oldFip)
 			}
-		
+
 			unlock := lock.LockResource(oldFip)
 			defer unlock()
 
 			log.Printf("[DEBUG] Unassigning floating IP with ID [%s]", oldFip)
-			
+
 			//unassign floating ip but don't delete as it may be managed by another resource
 			taskID, err := service.UnassignFloatingIP(oldFip)
 			if err != nil {
@@ -403,7 +409,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 					return fmt.Errorf("Error unassigning floating ip with ID [%s]: %s", oldFip, err)
 				}
 			}
-	
+
 			_, err = waitForResourceState(
 				ecloudservice.TaskStatusComplete.String(),
 				TaskStatusRefreshFunc(service, taskID),
@@ -414,7 +420,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 
 			//unset floating ip
-			d.Set("floating_ip_id", "")	
+			d.Set("floating_ip_id", "")
 		}
 
 		if oldFip == "" && newFip != "" {
@@ -422,7 +428,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			if len(newFip) < 1 {
 				return fmt.Errorf("invalid floating ip ID: %s", newFip)
 			}
-		
+
 			unlock := lock.LockResource(newFip)
 			defer unlock()
 

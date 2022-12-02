@@ -47,6 +47,7 @@ resource "ecloud_instance" "instance-1" {
 - `volume_group_id`: ID of the volumegroup to attach to the instance.
 - `host_group_id`: ID of the dedicated host group to move the instance to. Cannot be used with `resource_tier_id`
 - `resource_tier_id`: ID of the public resource tier to move the instance to. Cannot be used with `host_group_id`
+- `ip_address`: DHCP IP address to allocate to instance
 
 
 **Note on Floating IPs** 
