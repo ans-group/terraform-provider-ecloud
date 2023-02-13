@@ -41,6 +41,10 @@ terraform apply
 
 Documentation is located within this repository at `/docs`, and is published in the [Terraform Registry](https://registry.terraform.io/providers/ans-group/ecloud/latest/docs)
 
+## Upgrading
+
+:warning: This provider was originally created under the `ukfast` organisation, and was later moved to the `ans-group` organisation. Upgrading the `ukfast` provider will result in the error `checksum list has unexpected`. Updating provider config to use the `ans-group` organisation will resolve this
+
 ## Development
 
 ### Testing
