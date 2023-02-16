@@ -1,6 +1,6 @@
 # eCloud Provider
 
-Official UKFast eCloud Terraform provider, allowing for manipulation of eCloud environments
+Official ANS eCloud Terraform provider, allowing for manipulation of eCloud environments
 
 ## Example Usage
 
