@@ -43,6 +43,7 @@ func resourceVolume() *schema.Resource {
 			"iops": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					v := val.(int)
 					iops := []int{300, 600, 1200, 2500}
