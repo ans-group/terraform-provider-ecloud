@@ -83,6 +83,7 @@ func resourceVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if volumeGroupID, ok := d.GetOk("volume_group_id"); ok {
 		createReq.VolumeGroupID = volumeGroupID.(string)
+		createReq.IsShared = true
 	}
 
 	log.Printf("[DEBUG] Created CreateVolumeRequest: %+v", createReq)
