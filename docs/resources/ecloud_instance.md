@@ -15,6 +15,7 @@ resource "ecloud_instance" "instance-1" {
   volume_iops     = 600
   network_id      = "net-abcdef12"
   backup_enabled  = false
+  encrypted       = false
 
   data_volume_ids = [
     "vol-abc12345"
@@ -48,6 +49,7 @@ resource "ecloud_instance" "instance-1" {
 - `host_group_id`: ID of the dedicated host group to move the instance to. Cannot be used with `resource_tier_id`
 - `resource_tier_id`: ID of the public resource tier to move the instance to. Cannot be used with `host_group_id`
 - `ip_address`: DHCP IP address to allocate to instance
+- `encrypted`: Whether instance should be encrypted at rest
 
 
 **Note on Floating IPs** 
@@ -80,3 +82,4 @@ If `requires_floating_ip` is set to `true` for an instance resource, **do not** 
 - `volume_group_id`: ID of the volumegroup attached to the instance.
 - `host_group_id`: ID of the host group the instance runs on, if defined.
 - `resource_tier_id`: ID of the public resource tier the instance runs on.
+- `encrypted`: Whether instance is encrypted
