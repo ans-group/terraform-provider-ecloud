@@ -165,6 +165,7 @@ func resourceInstance() *schema.Resource {
 			"encrypted": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  false,
 			},
 		},
 	}
