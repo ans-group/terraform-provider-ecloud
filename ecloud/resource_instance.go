@@ -162,6 +162,11 @@ func resourceInstance() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"encrypted": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -184,6 +189,7 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		NetworkID:          d.Get("network_id").(string),
 		FloatingIPID:       d.Get("floating_ip_id").(string),
 		RequiresFloatingIP: d.Get("requires_floating_ip").(bool),
+		IsEncrypted:        d.Get("encrypted").(bool),
 		HostGroupID:        d.Get("host_group_id").(string),
 		ResourceTierID:     d.Get("resource_tier_id").(string),
 		CustomIPAddress:    connection.IPAddress(d.Get("ip_address").(string)),
@@ -306,6 +312,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("volume_capacity", osVolume[0].Capacity)
 	d.Set("volume_iops", osVolume[0].IOPS)
 	d.Set("volume_group_id", instance.VolumeGroupID)
+	d.Set("encrypted", instance.IsEncrypted)
 
 	if d.Get("nic_id").(string) == "" {
 		nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
@@ -606,6 +613,41 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		)
 		if err != nil {
 			return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+		}
+	}
+
+	if d.HasChange("encrypted") {
+		isEncrypted := d.Get("encrypted").(bool)
+		log.Printf("[INFO] Updating instance encryption status to [%s]", isEncrypted)
+
+		if isEncrypted {
+			taskID, err := service.EncryptInstance(d.Id())
+			if err != nil {
+				return fmt.Errorf("Error encrypting instance [%s]: %w", d.Id(), err)
+			}
+
+			_, err = waitForResourceState(
+				ecloudservice.TaskStatusComplete.String(),
+				TaskStatusRefreshFunc(service, taskID),
+				d.Timeout(schema.TimeoutUpdate),
+			)
+			if err != nil {
+				return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+			}
+		} else {
+			taskID, err := service.DecryptInstance(d.Id())
+			if err != nil {
+				return fmt.Errorf("Error decrypting instance [%s]: %w", d.Id(), err)
+			}
+
+			_, err = waitForResourceState(
+				ecloudservice.TaskStatusComplete.String(),
+				TaskStatusRefreshFunc(service, taskID),
+				d.Timeout(schema.TimeoutUpdate),
+			)
+			if err != nil {
+				return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+			}
 		}
 	}
 
