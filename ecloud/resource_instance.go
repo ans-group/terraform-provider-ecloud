@@ -67,24 +67,6 @@ func resourceInstance() *schema.Resource {
 			"volume_iops": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  300,
-				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-					v := val.(int)
-					iops := []int{300, 600, 1200, 2500}
-					intInSlice := func(slice []int, value int) bool {
-						for _, s := range slice {
-							if s == value {
-								return true
-							}
-						}
-						return false
-					}
-
-					if !intInSlice(iops, v) {
-						errs = append(errs, fmt.Errorf("%q must be a valid IOPS value [300, 600, 1200, 2500], got: %d", key, v))
-					}
-					return
-				},
 			},
 			"volume_id": {
 				Type:     schema.TypeString,

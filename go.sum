@@ -51,12 +51,8 @@ github.com/agext/levenshtein v1.2.2/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
 github.com/ans-group/go-durationstring v1.2.0 h1:UJIuQATkp0t1rBvZsHRwki33YHV9E+Ulro+3NbMB7MM=
 github.com/ans-group/go-durationstring v1.2.0/go.mod h1:QGF9Mdpq9058QXaut8r55QWu6lcHX6i/GvF1PZVkV6o=
-github.com/ans-group/sdk-go v1.16.3 h1:kxuEwIc6Z/0X0xGtpEN2KBJ3X24D4MkaCgD1Q0hWKHA=
-github.com/ans-group/sdk-go v1.16.3/go.mod h1:p1vrXBxHPvMOGlS4sFUSgeLeKAl9vIe/lJ6UaExe49A=
-github.com/ans-group/sdk-go v1.16.4 h1:Bqo0dJbpGlfDpfm+amkkOn9Oru6pIU2xkdP8ZXhKlXo=
-github.com/ans-group/sdk-go v1.16.4/go.mod h1:p1vrXBxHPvMOGlS4sFUSgeLeKAl9vIe/lJ6UaExe49A=
-github.com/ans-group/sdk-go v1.16.5 h1:FoBcdhM209iS2EfjVfq98GrDJNlJRu2mygZ0Xi8Mb3Q=
-github.com/ans-group/sdk-go v1.16.5/go.mod h1:p1vrXBxHPvMOGlS4sFUSgeLeKAl9vIe/lJ6UaExe49A=
+github.com/ans-group/sdk-go v1.16.6 h1:WPdKk8Ze8SDh2afStBWmaLdufPhLxYgGdEKThIboD24=
+github.com/ans-group/sdk-go v1.16.6/go.mod h1:p1vrXBxHPvMOGlS4sFUSgeLeKAl9vIe/lJ6UaExe49A=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/apparentlymart/go-cidr v1.1.0 h1:2mAhrMoF+nhXqxTzSZMUzDHkLjmIHC+Zzn4tdgBZjnU=
 github.com/apparentlymart/go-cidr v1.1.0/go.mod h1:EBcsNrHc3zQeuaeCeCtQruQm+n9/YjEn/vI25Lg7Gwc=
