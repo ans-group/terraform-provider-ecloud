@@ -29,6 +29,7 @@ func resourceRouter() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"availability_zone_id": {
 				Type:     schema.TypeString,
