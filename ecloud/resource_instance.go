@@ -67,6 +67,7 @@ func resourceInstance() *schema.Resource {
 			"volume_iops": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
 			},
 			"volume_id": {
 				Type:     schema.TypeString,
