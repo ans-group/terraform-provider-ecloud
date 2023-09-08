@@ -14,6 +14,7 @@ data "ecloud_vpc" "vpc-1" {
 
 - `vpc_id`: ID of VPC
 - `region_id`: ID of VPC region
+- `client_id`: ID of VPC client
 - `name`: Name of VPC
 
 ## Attributes Reference
@@ -21,4 +22,5 @@ data "ecloud_vpc" "vpc-1" {
 `id` is set to VPC ID
 
 - `region_id`: ID of VPC region
+- `client_id`: ID of VPC client
 - `name`: Name of VPC
