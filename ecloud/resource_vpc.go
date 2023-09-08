@@ -31,6 +31,10 @@ func resourceVPC() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"client_id": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 			"advanced_networking": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -47,6 +51,7 @@ func resourceVPCCreate(d *schema.ResourceData, meta interface{}) error {
 	createReq := ecloudservice.CreateVPCRequest{
 		RegionID:           d.Get("region_id").(string),
 		Name:               d.Get("name").(string),
+		ClientID:           d.Get("client_id").(int),
 		AdvancedNetworking: ptr.Bool(d.Get("advanced_networking").(bool)),
 	}
 	log.Printf("[DEBUG] Created CreateVPCRequest: %+v", createReq)

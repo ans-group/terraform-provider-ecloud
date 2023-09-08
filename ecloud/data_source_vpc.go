@@ -3,6 +3,7 @@ package ecloud
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
@@ -20,6 +21,10 @@ func dataSourceVPC() *schema.Resource {
 			},
 			"region_id": {
 				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"client_id": {
+				Type:     schema.TypeInt,
 				Optional: true,
 			},
 			"name": {
@@ -41,6 +46,9 @@ func dataSourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 	if regionID, ok := d.GetOk("region_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("region_id", connection.EQOperator, []string{regionID.(string)}))
 	}
+	if clientID, ok := d.GetOk("client_id"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("client_id", connection.EQOperator, []string{strconv.Itoa(clientID.(int))}))
+	}
 	if name, ok := d.GetOk("name"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
 	}
@@ -60,6 +68,7 @@ func dataSourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(vpcs[0].ID)
 	d.Set("region_id", vpcs[0].RegionID)
+	d.Set("client_id", vpcs[0].ClientID)
 	d.Set("name", vpcs[0].Name)
 
 	return nil
