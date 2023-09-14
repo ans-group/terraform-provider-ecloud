@@ -2,10 +2,11 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -42,9 +43,9 @@ func resourceVPNServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 		RouterID: d.Get("router_id").(string),
 		Name:     d.Get("name").(string),
 	}
-	log.Printf("[DEBUG] Created CreateVPNServiceRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateVPNServiceRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating VPN service")
+	tflog.Info(ctx, "Creating VPN service")
 	taskRef, err := service.CreateVPNService(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating VPN service: %s", err)
@@ -54,7 +55,7 @@ func resourceVPNServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -71,7 +72,9 @@ func resourceVPNServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceVPNServiceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving VPNService with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving VPNService", map[string]interface{}{
+		"id": d.Id(),
+	})
 	vpc, err := service.GetVPNService(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -97,7 +100,9 @@ func resourceVPNServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 			Name: d.Get("name").(string),
 		}
 
-		log.Printf("[INFO] Updating VPNService with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating VPNService", map[string]interface{}{
+			"id": d.Id(),
+		})
 		taskRef, err := service.PatchVPNService(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating VPNService with ID [%s]: %s", d.Id(), err)
@@ -105,7 +110,7 @@ func resourceVPNServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.SyncStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutCreate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -123,7 +128,9 @@ func resourceVPNServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceVPNServiceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing VPNService with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing VPNService", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteVPNService(d.Id())
 	if err != nil {
 		return diag.Errorf("Error VPNService with ID [%s]: %s", d.Id(), err)
@@ -131,7 +138,7 @@ func resourceVPNServiceDelete(ctx context.Context, d *schema.ResourceData, meta 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

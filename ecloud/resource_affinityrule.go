@@ -3,11 +3,11 @@ package ecloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -78,9 +78,9 @@ func resourceAffinityRuleCreate(ctx context.Context, d *schema.ResourceData, met
 		Type:               ruleType,
 	}
 
-	log.Printf("[DEBUG] Created CreateAffinityRuleRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateAffinityRuleRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating AffinityRule")
+	tflog.Info(ctx, "Creating AffinityRule")
 	taskRef, err := service.CreateAffinityRule(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating affinity rule: %s", err)
@@ -90,7 +90,7 @@ func resourceAffinityRuleCreate(ctx context.Context, d *schema.ResourceData, met
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      10 * time.Second,
 		MinTimeout: 5 * time.Second,
@@ -114,9 +114,12 @@ func resourceAffinityRuleCreate(ctx context.Context, d *schema.ResourceData, met
 				InstanceID:     memberID,
 			}
 
-			log.Printf("[DEBUG] Created CreateAffinityRuleMemberRequest: %+v", req)
+			tflog.Debug(ctx, fmt.Sprintf("Created CreateAffinityRuleMemberRequest: %+v", req))
 
-			log.Printf("[INFO] Adding instance member [%s] to affinity rule ID [%s]", memberID, d.Id())
+			tflog.Info(ctx, "Adding instance member to affinity rule", map[string]interface{}{
+				"affinity_rule_id": d.Id(),
+				"instance_member":  memberID,
+			})
 			taskRef, err := service.CreateAffinityRuleMember(req)
 			if err != nil {
 				return diag.Errorf("Error creating affinity rule member: %s", err)
@@ -124,7 +127,7 @@ func resourceAffinityRuleCreate(ctx context.Context, d *schema.ResourceData, met
 
 			stateConf := &resource.StateChangeConf{
 				Target:     []string{ecloudservice.TaskStatusComplete.String()},
-				Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+				Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 				Timeout:    d.Timeout(schema.TimeoutCreate),
 				Delay:      10 * time.Second,
 				MinTimeout: 5 * time.Second,
@@ -143,7 +146,9 @@ func resourceAffinityRuleCreate(ctx context.Context, d *schema.ResourceData, met
 func resourceAffinityRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving affinity rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving affinity rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	ar, err := service.GetAffinityRule(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -173,7 +178,9 @@ func resourceAffinityRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
-		log.Printf("[INFO] Updating affinity rule with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating affinity rule", map[string]interface{}{
+			"id": d.Id(),
+		})
 		patchReq := ecloudservice.PatchAffinityRuleRequest{
 			Name: d.Get("name").(string),
 		}
@@ -185,7 +192,7 @@ func resourceAffinityRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      3 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -224,7 +231,10 @@ func resourceAffinityRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 
 			ruleMemberID := getMemberByInstanceID(ruleMembers, instanceID)
 
-			log.Printf("[INFO] Removing instance member [%s] from affinity rule ID [%s]", instanceID, d.Id())
+			tflog.Info(ctx, "Removing instance member to affinity rule", map[string]interface{}{
+				"affinity_rule_id": d.Id(),
+				"instance_member":  instanceID,
+			})
 
 			taskID, err := service.DeleteAffinityRuleMember(ruleMemberID)
 			if err != nil {
@@ -233,7 +243,7 @@ func resourceAffinityRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 
 			stateConf := &resource.StateChangeConf{
 				Target:     []string{ecloudservice.TaskStatusComplete.String()},
-				Refresh:    TaskStatusRefreshFunc(service, taskID),
+				Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 				Timeout:    d.Timeout(schema.TimeoutDelete),
 				Delay:      10 * time.Second,
 				MinTimeout: 5 * time.Second,
@@ -256,9 +266,12 @@ func resourceAffinityRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 				InstanceID:     instanceID,
 			}
 
-			log.Printf("[DEBUG] Created CreateAffinityRuleMemberRequest: %+v", req)
+			tflog.Debug(ctx, fmt.Sprintf("Created CreateAffinityRuleMemberRequest: %+v", req))
 
-			log.Printf("[INFO] Adding instance member [%s] to affinity rule ID [%s]", instanceID, d.Id())
+			tflog.Info(ctx, "Adding instance member to affinity rule", map[string]interface{}{
+				"affinity_rule_id": d.Id(),
+				"instance_member":  instanceID,
+			})
 			taskRef, err := service.CreateAffinityRuleMember(req)
 			if err != nil {
 				return diag.Errorf("Error creating affinity rule member: %s", err)
@@ -266,7 +279,7 @@ func resourceAffinityRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 
 			stateConf := &resource.StateChangeConf{
 				Target:     []string{ecloudservice.TaskStatusComplete.String()},
-				Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+				Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 				Timeout:    d.Timeout(schema.TimeoutCreate),
 				Delay:      10 * time.Second,
 				MinTimeout: 5 * time.Second,
@@ -313,12 +326,18 @@ func resourceAffinityRuleDelete(ctx context.Context, d *schema.ResourceData, met
 				return diag.Errorf("More than 1 affinity rule member found for instance ID [%s]", instanceID)
 			}
 
-			log.Printf("[INFO] Removing affinity rule member ID [%s] for instance ID [%s]", arMembers[0].ID, instanceID)
+			tflog.Info(ctx, "Adding instance member to affinity rule", map[string]interface{}{
+				"affinity_rule_id": arMembers[0].ID,
+				"instance_member":  instanceID,
+			})
 			taskID, err := service.DeleteAffinityRuleMember(arMembers[0].ID)
 			if err != nil {
 				switch err.(type) {
 				case *ecloudservice.AffinityRuleMemberNotFoundError:
-					log.Printf("[DEBUG] Affinity rule member ID [%s] for instance ID [%s] not found. Skipping delete.", arMembers[0].ID, instanceID)
+					tflog.Debug(ctx, "Affinity rule member not found, skipping delete", map[string]interface{}{
+						"affinity_rule_id": arMembers[0].ID,
+						"instance_member":  instanceID,
+					})
 				default:
 					return diag.Errorf("Error removing affinity rule member ID [%s] for instance ID [%s]: %s", arMembers[0].ID, instanceID, err)
 				}
@@ -326,7 +345,7 @@ func resourceAffinityRuleDelete(ctx context.Context, d *schema.ResourceData, met
 
 			stateConf := &resource.StateChangeConf{
 				Target:     []string{ecloudservice.TaskStatusComplete.String()},
-				Refresh:    TaskStatusRefreshFunc(service, taskID),
+				Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 				Timeout:    d.Timeout(schema.TimeoutDelete),
 				Delay:      5 * time.Second,
 				MinTimeout: 3 * time.Second,
@@ -338,7 +357,9 @@ func resourceAffinityRuleDelete(ctx context.Context, d *schema.ResourceData, met
 		}
 	}
 
-	log.Printf("[INFO] Removing affinity rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing affinity rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteAffinityRule(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -351,7 +372,7 @@ func resourceAffinityRuleDelete(ctx context.Context, d *schema.ResourceData, met
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

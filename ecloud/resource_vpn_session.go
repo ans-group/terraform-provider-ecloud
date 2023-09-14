@@ -2,11 +2,12 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -75,9 +76,9 @@ func resourceVPNSessionCreate(ctx context.Context, d *schema.ResourceData, meta 
 		RemoteNetworks:    d.Get("remote_networks").(string),
 		LocalNetworks:     d.Get("local_networks").(string),
 	}
-	log.Printf("[DEBUG] Created CreateVPNSessionRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateVPNSessionRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating VPN session")
+	tflog.Info(ctx, "Creating VPN session")
 	taskRef, err := service.CreateVPNSession(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating VPN session: %s", err)
@@ -87,7 +88,7 @@ func resourceVPNSessionCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -102,7 +103,7 @@ func resourceVPNSessionCreate(ctx context.Context, d *schema.ResourceData, meta 
 		updatePSKReq := ecloudservice.UpdateVPNSessionPreSharedKeyRequest{
 			PSK: d.Get("psk").(string),
 		}
-		log.Printf("[DEBUG] Created UpdateVPNSessionPreSharedKeyRequest: %+v", updatePSKReq)
+		tflog.Debug(ctx, fmt.Sprintf("Created UpdateVPNSessionPreSharedKeyRequest: %+v", updatePSKReq))
 
 		taskRef, err := service.UpdateVPNSessionPreSharedKey(taskRef.ResourceID, updatePSKReq)
 		if err != nil {
@@ -111,7 +112,7 @@ func resourceVPNSessionCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.SyncStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutCreate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -129,7 +130,9 @@ func resourceVPNSessionCreate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceVPNSessionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving VPN session with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving VPN session", map[string]interface{}{
+		"id": d.Id(),
+	})
 	session, err := service.GetVPNSession(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -149,7 +152,9 @@ func resourceVPNSessionRead(ctx context.Context, d *schema.ResourceData, meta in
 	d.Set("remote_networks", session.RemoteNetworks)
 	d.Set("local_networks", session.LocalNetworks)
 
-	log.Printf("[INFO] Retrieving VPN session pre-shared key with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving VPN session pre-shared key", map[string]interface{}{
+		"id": d.Id(),
+	})
 	psk, err := service.GetVPNSessionPreSharedKey(d.Id())
 	if err != nil {
 		return diag.Errorf("Error retrieving VPN service pre-shared key: %s", err)
@@ -186,7 +191,9 @@ func resourceVPNSessionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if hasChange {
-		log.Printf("[INFO] Updating VPNSession with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating VPN session", map[string]interface{}{
+			"id": d.Id(),
+		})
 		taskRef, err := service.PatchVPNSession(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating VPNSession with ID [%s]: %s", d.Id(), err)
@@ -194,7 +201,7 @@ func resourceVPNSessionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.SyncStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutCreate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -210,7 +217,7 @@ func resourceVPNSessionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		updatePSKReq := ecloudservice.UpdateVPNSessionPreSharedKeyRequest{
 			PSK: d.Get("psk").(string),
 		}
-		log.Printf("[DEBUG] Created UpdateVPNSessionPreSharedKeyRequest: %+v", updatePSKReq)
+		tflog.Debug(ctx, fmt.Sprintf("Created UpdateVPNSessionPreSharedKeyRequest: %+v", updatePSKReq))
 
 		taskRef, err := service.UpdateVPNSessionPreSharedKey(d.Id(), updatePSKReq)
 		if err != nil {
@@ -219,7 +226,7 @@ func resourceVPNSessionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.SyncStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutCreate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -237,7 +244,9 @@ func resourceVPNSessionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceVPNSessionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing VPNSession with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing VPN session", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteVPNSession(d.Id())
 	if err != nil {
 		return diag.Errorf("Error VPNSession with ID [%s]: %s", d.Id(), err)
@@ -245,7 +254,7 @@ func resourceVPNSessionDelete(ctx context.Context, d *schema.ResourceData, meta 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

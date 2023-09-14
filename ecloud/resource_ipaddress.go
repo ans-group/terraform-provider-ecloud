@@ -2,11 +2,12 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -55,9 +56,9 @@ func resourceIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta i
 		Name:      d.Get("name").(string),
 		IPAddress: connection.IPAddress(d.Get("ip_address").(string)),
 	}
-	log.Printf("[DEBUG] Created CreateIPAddressRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateIPAddressRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating IPAddress")
+	tflog.Info(ctx, "Creating IPAddress")
 	task, err := service.CreateIPAddress(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating IP address: %s", err)
@@ -67,7 +68,7 @@ func resourceIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta i
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      10 * time.Second,
 		MinTimeout: 20 * time.Second,
@@ -84,7 +85,9 @@ func resourceIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta i
 func resourceIPAddressRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving IP address with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving IP address", map[string]interface{}{
+		"id": d.Id(),
+	})
 	ipAddress, err := service.GetIPAddress(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -107,7 +110,9 @@ func resourceIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
-		log.Printf("[INFO] Updating IP address with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating IP address", map[string]interface{}{
+			"id": d.Id(),
+		})
 		patchReq := ecloudservice.PatchIPAddressRequest{
 			Name: d.Get("name").(string),
 		}
@@ -119,7 +124,7 @@ func resourceIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta i
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -137,7 +142,9 @@ func resourceIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta i
 func resourceIPAddressDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing IP address with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing IP address", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteIPAddress(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -150,7 +157,7 @@ func resourceIPAddressDelete(ctx context.Context, d *schema.ResourceData, meta i
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 5 * time.Second,

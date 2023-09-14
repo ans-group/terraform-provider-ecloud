@@ -2,10 +2,11 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,9 +51,9 @@ func resourceImageCreate(ctx context.Context, d *schema.ResourceData, meta inter
 	createReq := ecloudservice.CreateInstanceImageRequest{
 		Name: d.Get("name").(string),
 	}
-	log.Printf("[DEBUG] Created CreateImageRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateImageRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating image")
+	tflog.Info(ctx, "Creating image")
 	taskRef, err := service.CreateInstanceImage(instanceID, createReq)
 	if err != nil {
 		return diag.Errorf("Error creating image: %s", err)
@@ -62,7 +63,7 @@ func resourceImageCreate(ctx context.Context, d *schema.ResourceData, meta inter
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -79,7 +80,9 @@ func resourceImageCreate(ctx context.Context, d *schema.ResourceData, meta inter
 func resourceImageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving image with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving image", map[string]interface{}{
+		"id": d.Id(),
+	})
 	image, err := service.GetImage(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -110,7 +113,9 @@ func resourceImageUpdate(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	if hasChange {
-		log.Printf("[INFO] Updating image with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating image", map[string]interface{}{
+			"id": d.Id(),
+		})
 		taskRef, err := service.UpdateImage(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating image with ID [%s]: %s", d.Id(), err)
@@ -118,7 +123,7 @@ func resourceImageUpdate(ctx context.Context, d *schema.ResourceData, meta inter
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.SyncStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutCreate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -136,7 +141,9 @@ func resourceImageUpdate(ctx context.Context, d *schema.ResourceData, meta inter
 func resourceImageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing image with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing image", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteImage(d.Id())
 	if err != nil {
 		return diag.Errorf("Error removing image with ID [%s]: %s", d.Id(), err)
@@ -144,7 +151,7 @@ func resourceImageDelete(ctx context.Context, d *schema.ResourceData, meta inter
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

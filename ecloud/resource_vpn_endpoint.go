@@ -2,10 +2,11 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -61,9 +62,9 @@ func resourceVPNEndpointCreate(ctx context.Context, d *schema.ResourceData, meta
 		FloatingIPID: d.Get("floating_ip_id").(string),
 		Name:         d.Get("name").(string),
 	}
-	log.Printf("[DEBUG] Created CreateVPNEndpointRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateVPNEndpointRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating VPN endpoint")
+	tflog.Info(ctx, "Creating VPN endpoint")
 	taskRef, err := service.CreateVPNEndpoint(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating VPN endpoint: %s", err)
@@ -73,7 +74,7 @@ func resourceVPNEndpointCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -90,7 +91,9 @@ func resourceVPNEndpointCreate(ctx context.Context, d *schema.ResourceData, meta
 func resourceVPNEndpointRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving VPNEndpoint with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving VPNEndpoint", map[string]interface{}{
+		"id": d.Id(),
+	})
 	vpc, err := service.GetVPNEndpoint(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -117,7 +120,9 @@ func resourceVPNEndpointUpdate(ctx context.Context, d *schema.ResourceData, meta
 			Name: d.Get("name").(string),
 		}
 
-		log.Printf("[INFO] Updating VPNEndpoint with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating VPNEndpoint", map[string]interface{}{
+			"id": d.Id(),
+		})
 		taskRef, err := service.PatchVPNEndpoint(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating VPNEndpoint with ID [%s]: %s", d.Id(), err)
@@ -125,7 +130,7 @@ func resourceVPNEndpointUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.SyncStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutCreate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -143,7 +148,9 @@ func resourceVPNEndpointUpdate(ctx context.Context, d *schema.ResourceData, meta
 func resourceVPNEndpointDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing VPNEndpoint with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing VPNEndpoint", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteVPNEndpoint(d.Id())
 	if err != nil {
 		return diag.Errorf("Error VPNEndpoint with ID [%s]: %s", d.Id(), err)
@@ -151,7 +158,7 @@ func resourceVPNEndpointDelete(ctx context.Context, d *schema.ResourceData, meta
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.SyncStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -166,13 +173,17 @@ func resourceVPNEndpointDelete(ctx context.Context, d *schema.ResourceData, meta
 	if d.Get("manage_floating_ip").(bool) {
 		fip := d.Get("floating_ip_id").(string)
 
-		log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
+		tflog.Debug(ctx, "Removing floating IP", map[string]interface{}{
+			"id": fip,
+		})
 
 		taskID, err = service.DeleteFloatingIP(fip)
 		if err != nil {
 			switch err.(type) {
 			case *ecloudservice.FloatingIPNotFoundError:
-				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
+				tflog.Debug(ctx, "Floating IP not found, skipping delete", map[string]interface{}{
+					"id": fip,
+				})
 			default:
 				return diag.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
 			}
@@ -180,7 +191,7 @@ func resourceVPNEndpointDelete(ctx context.Context, d *schema.ResourceData, meta
 
 		stateConf = &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 			Timeout:    d.Timeout(schema.TimeoutDelete),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,

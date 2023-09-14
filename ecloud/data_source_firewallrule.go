@@ -2,11 +2,11 @@ package ecloud
 
 import (
 	"context"
-	"log"
 	"strconv"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -89,7 +89,9 @@ func dataSourceFirewallRuleRead(ctx context.Context, d *schema.ResourceData, met
 		params.WithFilter(*connection.NewAPIRequestFiltering("enabled", connection.EQOperator, []string{strconv.FormatBool(enabled.(bool))}))
 	}
 
-	log.Printf("[DEBUG] Retrieving firewall rules with parameters: %+v", params)
+	tflog.Debug(ctx, "Retrieving firewall rules", map[string]interface{}{
+		"parameters": params,
+	})
 	rules, err := service.GetFirewallRules(params)
 	if err != nil {
 		return diag.Errorf("Error retrieving active firewall rules: %s", err)

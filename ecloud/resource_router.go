@@ -2,10 +2,10 @@ package ecloud
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -56,9 +56,9 @@ func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		AvailabilityZoneID: d.Get("availability_zone_id").(string),
 		RouterThroughputID: d.Get("router_throughput_id").(string),
 	}
-	log.Printf("[DEBUG] Created CreateRouterRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateRouterRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating Router")
+	tflog.Info(ctx, "Creating Router")
 	routerID, err := service.CreateRouter(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating router: %s", err)
@@ -85,7 +85,9 @@ func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta inte
 func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving router with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving router", map[string]interface{}{
+		"id": d.Id(),
+	})
 	router, err := service.GetRouter(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -122,7 +124,9 @@ func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if hasChange {
-		log.Printf("[INFO] Updating router with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating router", map[string]interface{}{
+			"id": d.Id(),
+		})
 		err := service.PatchRouter(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating router with ID [%s]: %s", d.Id(), err)
@@ -148,7 +152,9 @@ func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing router with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing router", map[string]interface{}{
+		"id": d.Id(),
+	})
 	err := service.DeleteRouter(d.Id())
 	if err != nil {
 		return diag.Errorf("Error removing router with ID [%s]: %s", d.Id(), err)

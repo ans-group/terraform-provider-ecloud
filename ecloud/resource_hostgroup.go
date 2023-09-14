@@ -2,10 +2,11 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -60,9 +61,9 @@ func resourceHostGroupCreate(ctx context.Context, d *schema.ResourceData, meta i
 		Name:               d.Get("name").(string),
 		AvailabilityZoneID: d.Get("availability_zone_id").(string),
 	}
-	log.Printf("[DEBUG] Created CreateHostGroupRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateHostGroupRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating Host Group")
+	tflog.Info(ctx, "Creating Host Group")
 	task, err := service.CreateHostGroup(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating host group: %s", err)
@@ -72,7 +73,7 @@ func resourceHostGroupCreate(ctx context.Context, d *schema.ResourceData, meta i
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -89,7 +90,9 @@ func resourceHostGroupCreate(ctx context.Context, d *schema.ResourceData, meta i
 func resourceHostGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving host group with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving host group", map[string]interface{}{
+		"id": d.Id(),
+	})
 	hostGroup, err := service.GetHostGroup(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -114,7 +117,9 @@ func resourceHostGroupUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
-		log.Printf("[INFO] Updating host group with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating host group", map[string]interface{}{
+			"id": d.Id(),
+		})
 		patchReq := ecloudservice.PatchHostGroupRequest{
 			Name: d.Get("name").(string),
 		}
@@ -126,7 +131,7 @@ func resourceHostGroupUpdate(ctx context.Context, d *schema.ResourceData, meta i
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -144,7 +149,9 @@ func resourceHostGroupUpdate(ctx context.Context, d *schema.ResourceData, meta i
 func resourceHostGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing host group with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing host group", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteHostGroup(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -157,7 +164,7 @@ func resourceHostGroupDelete(ctx context.Context, d *schema.ResourceData, meta i
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

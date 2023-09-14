@@ -2,11 +2,12 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -65,9 +66,9 @@ func resourceNetworkPolicyCreate(ctx context.Context, d *schema.ResourceData, me
 		createReq.CatchallRuleAction = action
 	}
 
-	log.Printf("[DEBUG] Created CreateNetworkPolicyRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateNetworkPolicyRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating network policy")
+	tflog.Info(ctx, "Creating network policy")
 	task, err := service.CreateNetworkPolicy(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating network policy: %s", err)
@@ -77,7 +78,7 @@ func resourceNetworkPolicyCreate(ctx context.Context, d *schema.ResourceData, me
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 1 * time.Second,
@@ -94,7 +95,9 @@ func resourceNetworkPolicyCreate(ctx context.Context, d *schema.ResourceData, me
 func resourceNetworkPolicyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[DEBUG] Retrieving Network Policy with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving Network Policy", map[string]interface{}{
+		"id": d.Id(),
+	})
 	policy, err := service.GetNetworkPolicy(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -111,7 +114,9 @@ func resourceNetworkPolicyRead(ctx context.Context, d *schema.ResourceData, meta
 	d.Set("name", policy.Name)
 
 	if d.Get("catchall_rule_id").(string) == "" {
-		log.Printf("[DEBUG] Retrieving catchall rule for Network Policy with ID [%s]", d.Id())
+		tflog.Info(ctx, "Retrieving catchall rule for Network Policy", map[string]interface{}{
+			"id": d.Id(),
+		})
 
 		params := connection.APIRequestParameters{}
 		params.WithFilter(*connection.NewAPIRequestFiltering("type", connection.EQOperator, []string{"catchall"}))
@@ -147,7 +152,9 @@ func resourceNetworkPolicyUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if hasChange {
-		log.Printf("[INFO] Updating network policy with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating Network Policy", map[string]interface{}{
+			"id": d.Id(),
+		})
 		task, err := service.PatchNetworkPolicy(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating networking policy with ID [%s]: %s", d.Id(), err)
@@ -155,7 +162,7 @@ func resourceNetworkPolicyUpdate(ctx context.Context, d *schema.ResourceData, me
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 1 * time.Second,
@@ -184,7 +191,7 @@ func resourceNetworkPolicyUpdate(ctx context.Context, d *schema.ResourceData, me
 		patchRuleReq := ecloudservice.PatchNetworkRuleRequest{
 			Action: ecloudservice.NetworkRuleAction(catchallRuleAction),
 		}
-		log.Printf("[DEBUG] Created PatchNetworkRuleRequest: %+v", patchRuleReq)
+		tflog.Debug(ctx, fmt.Sprintf("Created PatchNetworkRuleRequest: %+v", patchRuleReq))
 
 		task, err := service.PatchNetworkRule(rule.ID, patchRuleReq)
 		if err != nil {
@@ -193,7 +200,7 @@ func resourceNetworkPolicyUpdate(ctx context.Context, d *schema.ResourceData, me
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 1 * time.Second,
@@ -211,7 +218,9 @@ func resourceNetworkPolicyUpdate(ctx context.Context, d *schema.ResourceData, me
 func resourceNetworkPolicyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing network policy with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing Network Policy", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteNetworkPolicy(d.Id())
 	if err != nil {
 		return diag.Errorf("Error removing network policy with ID [%s]: %s", d.Id(), err)
@@ -219,7 +228,7 @@ func resourceNetworkPolicyDelete(ctx context.Context, d *schema.ResourceData, me
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

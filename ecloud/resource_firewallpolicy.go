@@ -3,11 +3,11 @@ package ecloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,9 +50,9 @@ func resourceFirewallPolicyCreate(ctx context.Context, d *schema.ResourceData, m
 		Sequence: d.Get("sequence").(int),
 		Name:     d.Get("name").(string),
 	}
-	log.Printf("[DEBUG] Created CreateFirewallPolicyRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateFirewallPolicyRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating firewall policy")
+	tflog.Info(ctx, "Creating firewall policy")
 	policy, err := service.CreateFirewallPolicy(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating firewall policy: %s", err)
@@ -79,7 +79,9 @@ func resourceFirewallPolicyCreate(ctx context.Context, d *schema.ResourceData, m
 func resourceFirewallPolicyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[DEBUG] Retrieving FirewallPolicy with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving firewall policy", map[string]interface{}{
+		"id": d.Id(),
+	})
 	policy, err := service.GetFirewallPolicy(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -115,7 +117,9 @@ func resourceFirewallPolicyUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	if hasChange {
-		log.Printf("[INFO] Updating firewall policy with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating firewall policy", map[string]interface{}{
+			"id": d.Id(),
+		})
 		_, err := service.PatchFirewallPolicy(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating firewall policy with ID [%s]: %s", d.Id(), err)
@@ -141,7 +145,9 @@ func resourceFirewallPolicyUpdate(ctx context.Context, d *schema.ResourceData, m
 func resourceFirewallPolicyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing firewall policy with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing firewall policy", map[string]interface{}{
+		"id": d.Id(),
+	})
 	_, err := service.DeleteFirewallPolicy(d.Id())
 	if err != nil {
 		return diag.Errorf("Error removing firewall policy with ID [%s]: %s", d.Id(), err)
