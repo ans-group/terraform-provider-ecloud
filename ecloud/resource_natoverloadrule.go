@@ -2,11 +2,12 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -66,9 +67,9 @@ func resourceNATOverloadRuleCreate(ctx context.Context, d *schema.ResourceData, 
 		Action:       actionParsed,
 		Name:         d.Get("name").(string),
 	}
-	log.Printf("[DEBUG] Created CreateNATOverloadRuleRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateNATOverloadRuleRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating NAT overload rule")
+	tflog.Info(ctx, "Creating NAT overload rule")
 	taskRef, err := service.CreateNATOverloadRule(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating NAT overload rule: %s", err)
@@ -78,7 +79,7 @@ func resourceNATOverloadRuleCreate(ctx context.Context, d *schema.ResourceData, 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -95,7 +96,9 @@ func resourceNATOverloadRuleCreate(ctx context.Context, d *schema.ResourceData, 
 func resourceNATOverloadRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving NAT overload rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving NAT overload rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	rule, err := service.GetNATOverloadRule(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -131,7 +134,9 @@ func resourceNATOverloadRuleUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	if changed {
-		log.Printf("[INFO] Updating NAT overload rule with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating NAT overload rule", map[string]interface{}{
+			"id": d.Id(),
+		})
 		taskRef, err := service.PatchNATOverloadRule(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating network with ID [%s]: %s", d.Id(), err)
@@ -139,7 +144,7 @@ func resourceNATOverloadRuleUpdate(ctx context.Context, d *schema.ResourceData, 
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutCreate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -157,7 +162,9 @@ func resourceNATOverloadRuleUpdate(ctx context.Context, d *schema.ResourceData, 
 func resourceNATOverloadRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing network with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing NAT overload rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteNATOverloadRule(d.Id())
 	if err != nil {
 		return diag.Errorf("Error removing network with ID [%s]: %s", d.Id(), err)
@@ -165,7 +172,7 @@ func resourceNATOverloadRuleDelete(ctx context.Context, d *schema.ResourceData, 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

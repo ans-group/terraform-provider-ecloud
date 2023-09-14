@@ -2,9 +2,10 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -41,9 +42,9 @@ func resourceSshKeyPairCreate(ctx context.Context, d *schema.ResourceData, meta 
 		PublicKey: d.Get("public_key").(string),
 		Name:      d.Get("name").(string),
 	}
-	log.Printf("[DEBUG] Created CreateSSHKeyPairRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateSSHKeyPairRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating ssh key pair")
+	tflog.Info(ctx, "Creating SSH key pair")
 	keyPairID, err := service.CreateSSHKeyPair(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating ssh key pair: %s", err)
@@ -57,7 +58,9 @@ func resourceSshKeyPairCreate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceSshKeyPairRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving ssh key pair with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving SSH key pair", map[string]interface{}{
+		"id": d.Id(),
+	})
 	keyPair, err := service.GetSSHKeyPair(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -79,7 +82,9 @@ func resourceSshKeyPairUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
-		log.Printf("[INFO] Updating ssh key pair with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating SSH key pair", map[string]interface{}{
+			"id": d.Id(),
+		})
 		patchReq := ecloudservice.PatchSSHKeyPairRequest{
 			Name: d.Get("name").(string),
 		}
@@ -96,7 +101,9 @@ func resourceSshKeyPairUpdate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceSshKeyPairDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing host group with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing SSH key pair", map[string]interface{}{
+		"id": d.Id(),
+	})
 	err := service.DeleteSSHKeyPair(d.Id())
 	if err != nil {
 		switch err.(type) {

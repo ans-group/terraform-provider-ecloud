@@ -3,10 +3,10 @@ package ecloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,9 +50,9 @@ func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta int
 		Subnet:   d.Get("subnet").(string),
 		Name:     d.Get("name").(string),
 	}
-	log.Printf("[DEBUG] Created CreateNetworkRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateNetworkRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating network")
+	tflog.Info(ctx, "Creating network")
 	networkID, err := service.CreateNetwork(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating network: %s", err)
@@ -79,7 +79,9 @@ func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta int
 func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving network with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving network", map[string]interface{}{
+		"id": d.Id(),
+	})
 	network, err := service.GetNetwork(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -106,7 +108,9 @@ func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta int
 			Name: d.Get("name").(string),
 		}
 
-		log.Printf("[INFO] Updating network with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating network", map[string]interface{}{
+			"id": d.Id(),
+		})
 		err := service.PatchNetwork(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating network with ID [%s]: %s", d.Id(), err)
@@ -132,7 +136,9 @@ func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta int
 func resourceNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing network with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing network", map[string]interface{}{
+		"id": d.Id(),
+	})
 	err := service.DeleteNetwork(d.Id())
 	if err != nil {
 		return diag.Errorf("Error removing network with ID [%s]: %s", d.Id(), err)

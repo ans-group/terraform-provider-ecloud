@@ -3,11 +3,11 @@ package ecloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -88,9 +88,9 @@ func resourceVolumeCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		createReq.IsShared = true
 	}
 
-	log.Printf("[DEBUG] Created CreateVolumeRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateVolumeRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating Volume")
+	tflog.Info(ctx, "Creating Volume")
 	taskRef, err := service.CreateVolume(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating volume: %s", err)
@@ -100,7 +100,7 @@ func resourceVolumeCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      3 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -117,7 +117,9 @@ func resourceVolumeCreate(ctx context.Context, d *schema.ResourceData, meta inte
 func resourceVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving volume with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving volume", map[string]interface{}{
+		"id": d.Id(),
+	})
 	volume, err := service.GetVolume(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -162,7 +164,9 @@ func resourceVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if hasChange {
-		log.Printf("[INFO] Updating volume with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating volume", map[string]interface{}{
+			"id": d.Id(),
+		})
 		task, err := service.PatchVolume(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating volume with ID [%s]: %s", d.Id(), err)
@@ -170,7 +174,7 @@ func resourceVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -187,7 +191,9 @@ func resourceVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 func resourceVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing volume with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing volume", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteVolume(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -200,7 +206,7 @@ func resourceVolumeDelete(ctx context.Context, d *schema.ResourceData, meta inte
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

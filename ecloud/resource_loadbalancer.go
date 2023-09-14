@@ -2,10 +2,11 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -66,9 +67,9 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 		NetworkID:          d.Get("network_id").(string),
 	}
 
-	log.Printf("[DEBUG] Created CreateLoadBalancerRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateLoadBalancerRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating LoadBalancer")
+	tflog.Info(ctx, "Creating LoadBalancer")
 	taskRef, err := service.CreateLoadBalancer(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating loadbalancer: %s", err)
@@ -78,7 +79,7 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      10 * time.Second,
 		MinTimeout: 5 * time.Second,
@@ -95,7 +96,9 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving loadbalancer with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving load balancer", map[string]interface{}{
+		"id": d.Id(),
+	})
 	lb, err := service.GetLoadBalancer(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -121,7 +124,9 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
-		log.Printf("[INFO] Updating loadbalancer with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating load balancer", map[string]interface{}{
+			"id": d.Id(),
+		})
 		patchReq := ecloudservice.PatchLoadBalancerRequest{
 			Name: d.Get("name").(string),
 		}
@@ -133,7 +138,7 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      3 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -151,7 +156,9 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 func resourceLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing loadbalancer with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing load balancer", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteLoadBalancer(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -164,7 +171,7 @@ func resourceLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, met
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,

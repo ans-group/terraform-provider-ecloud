@@ -2,12 +2,13 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	"github.com/ans-group/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -119,9 +120,9 @@ func resourceFirewallRuleCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 	createReq.Action = actionParsed
 
-	log.Printf("[DEBUG] Created CreateFirewallRuleRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateFirewallRuleRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating firewall rule")
+	tflog.Info(ctx, "Creating firewall rule")
 	rule, err := service.CreateFirewallRule(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating firewall rule: %s", err)
@@ -148,7 +149,9 @@ func resourceFirewallRuleCreate(ctx context.Context, d *schema.ResourceData, met
 func resourceFirewallRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving firewall rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving firewall rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	rule, err := service.GetFirewallRule(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -160,7 +163,9 @@ func resourceFirewallRuleRead(ctx context.Context, d *schema.ResourceData, meta 
 		}
 	}
 
-	log.Printf("[INFO] Retrieving firewall rule ports for firewall rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving firewall rule ports", map[string]interface{}{
+		"id": d.Id(),
+	})
 	ports, err := service.GetFirewallRuleFirewallRulePorts(d.Id(), connection.APIRequestParameters{})
 	if err != nil {
 		return diag.FromErr(err)
@@ -250,7 +255,10 @@ func resourceFirewallRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if hasChange {
-		log.Printf("[INFO] Updating firewall rule with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating firewall rule", map[string]interface{}{
+			"id": d.Id(),
+		})
+
 		_, err := service.PatchFirewallRule(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating firewall rule with ID [%s]: %s", d.Id(), err)
@@ -280,7 +288,9 @@ func resourceFirewallRuleDelete(ctx context.Context, d *schema.ResourceData, met
 
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing firewall rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing firewall rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	_, err := service.DeleteFirewallRule(d.Id())
 	if err != nil {
 		return diag.Errorf("Error removing firewall rule with ID [%s]: %s", d.Id(), err)

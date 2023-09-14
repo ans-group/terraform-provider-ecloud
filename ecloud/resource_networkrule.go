@@ -2,12 +2,13 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	"github.com/ans-group/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -124,9 +125,9 @@ func resourceNetworkRuleCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 	createReq.Action = actionParsed
 
-	log.Printf("[DEBUG] Created CreateNetworkRuleRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateNetworkRuleRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating network rule")
+	tflog.Info(ctx, "Creating network rule")
 	task, err := service.CreateNetworkRule(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating network rule: %s", err)
@@ -136,7 +137,7 @@ func resourceNetworkRuleCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      5 * time.Second,
 		MinTimeout: 1 * time.Second,
@@ -153,7 +154,9 @@ func resourceNetworkRuleCreate(ctx context.Context, d *schema.ResourceData, meta
 func resourceNetworkRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving network rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving network rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	rule, err := service.GetNetworkRule(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -165,7 +168,9 @@ func resourceNetworkRuleRead(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	log.Printf("[INFO] Retrieving network rule ports for network rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving network rule ports for network rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	// ports, err := service.GetNetworkRuleNetworkRulePorts(d.Id(), connection.APIRequestParameters{})
 
 	// using filter parameter in request until dedicated API endpoint is
@@ -262,7 +267,9 @@ func resourceNetworkRuleUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if hasChange {
-		log.Printf("[INFO] Updating network rule with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating network rule", map[string]interface{}{
+			"id": d.Id(),
+		})
 		task, err := service.PatchNetworkRule(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating firewall rule with ID [%s]: %s", d.Id(), err)
@@ -270,7 +277,7 @@ func resourceNetworkRuleUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, task.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      5 * time.Second,
 			MinTimeout: 1 * time.Second,
@@ -292,7 +299,9 @@ func resourceNetworkRuleDelete(ctx context.Context, d *schema.ResourceData, meta
 
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing network rule with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing network rule", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteNetworkRule(d.Id())
 	if err != nil {
 		return diag.Errorf("Error removing network rule with ID [%s]: %s", d.Id(), err)
@@ -300,7 +309,7 @@ func resourceNetworkRuleDelete(ctx context.Context, d *schema.ResourceData, meta
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 1 * time.Second,

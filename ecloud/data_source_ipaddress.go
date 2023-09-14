@@ -2,10 +2,10 @@ package ecloud
 
 import (
 	"context"
-	"log"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -60,7 +60,9 @@ func dataSourceIPAddressRead(ctx context.Context, d *schema.ResourceData, meta i
 		params.WithFilter(*connection.NewAPIRequestFiltering("type", connection.EQOperator, []string{ipType.(string)}))
 	}
 
-	log.Printf("[DEBUG] Retrieving IP addresses with parameters: %+v", params)
+	tflog.Debug(ctx, "Retrieving IP address", map[string]interface{}{
+		"parameters": params,
+	})
 	addresses, err := service.GetIPAddresses(params)
 	if err != nil {
 		return diag.Errorf("Error retrieving IP addresses: %s", err)

@@ -2,11 +2,12 @@ package ecloud
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -54,9 +55,9 @@ func resourceLoadBalancerVipCreate(ctx context.Context, d *schema.ResourceData, 
 		Name:               d.Get("name").(string),
 	}
 
-	log.Printf("[DEBUG] Created CreateVIPRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateVIPRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating LoadBalancer VIP")
+	tflog.Info(ctx, "Creating LoadBalancer VIP")
 	taskRef, err := service.CreateVIP(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating loadbalancer vip: %s", err)
@@ -66,7 +67,7 @@ func resourceLoadBalancerVipCreate(ctx context.Context, d *schema.ResourceData, 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      3 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -83,7 +84,9 @@ func resourceLoadBalancerVipCreate(ctx context.Context, d *schema.ResourceData, 
 func resourceLoadBalancerVipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving loadbalancer vip with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving loadbalancer VIP", map[string]interface{}{
+		"id": d.Id(),
+	})
 	lbVip, err := service.GetVIP(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -123,7 +126,9 @@ func resourceLoadBalancerVipUpdate(ctx context.Context, d *schema.ResourceData, 
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
-		log.Printf("[INFO] Updating loadbalancer vip with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating loadbalancer VIP", map[string]interface{}{
+			"id": d.Id(),
+		})
 		patchReq := ecloudservice.PatchVIPRequest{
 			Name: d.Get("name").(string),
 		}
@@ -135,7 +140,7 @@ func resourceLoadBalancerVipUpdate(ctx context.Context, d *schema.ResourceData, 
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      3 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -153,12 +158,16 @@ func resourceLoadBalancerVipUpdate(ctx context.Context, d *schema.ResourceData, 
 func resourceLoadBalancerVipDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing loadbalancer network with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing loadbalancer VIP", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteVIP(d.Id())
 	if err != nil {
 		switch err.(type) {
 		case *ecloudservice.VIPNotFoundError:
-			log.Printf("[DEBUG] loadbalancer VIP with ID [%s] not found. Continuing.", d.Id())
+			tflog.Debug(ctx, "Loadbalancer VIP not found, continuing", map[string]interface{}{
+				"id": d.Id(),
+			})
 		default:
 			return diag.Errorf("Error removing loadbalancer vip with ID [%s]: %s", d.Id(), err)
 		}
@@ -166,7 +175,7 @@ func resourceLoadBalancerVipDelete(ctx context.Context, d *schema.ResourceData, 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -181,13 +190,17 @@ func resourceLoadBalancerVipDelete(ctx context.Context, d *schema.ResourceData, 
 	if len(d.Get("floating_ip_id").(string)) > 1 {
 		fip := d.Get("floating_ip_id").(string)
 
-		log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
+		tflog.Debug(ctx, "Removing floating IP", map[string]interface{}{
+			"fip_id": fip,
+		})
 
 		taskID, err = service.DeleteFloatingIP(fip)
 		if err != nil {
 			switch err.(type) {
 			case *ecloudservice.FloatingIPNotFoundError:
-				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
+				tflog.Info(ctx, "Floating IP not found, skipping delete", map[string]interface{}{
+					"id": fip,
+				})
 			default:
 				return diag.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
 			}
@@ -195,7 +208,7 @@ func resourceLoadBalancerVipDelete(ctx context.Context, d *schema.ResourceData, 
 
 		stateConf = &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 			Timeout:    d.Timeout(schema.TimeoutDelete),
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,

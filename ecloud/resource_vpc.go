@@ -3,11 +3,11 @@ package ecloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -56,9 +56,9 @@ func resourceVPCCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 		ClientID:           d.Get("client_id").(int),
 		AdvancedNetworking: ptr.Bool(d.Get("advanced_networking").(bool)),
 	}
-	log.Printf("[DEBUG] Created CreateVPCRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateVPCRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating VPC")
+	tflog.Info(ctx, "Creating VPC")
 	vpcID, err := service.CreateVPC(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating VPC: %s", err)
@@ -85,7 +85,10 @@ func resourceVPCCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 func resourceVPCRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving VPC with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving VPC", map[string]interface{}{
+		"id": d.Id(),
+	})
+
 	vpc, err := service.GetVPC(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -112,7 +115,9 @@ func resourceVPCUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 			Name: d.Get("name").(string),
 		}
 
-		log.Printf("[INFO] Updating VPC with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating VPC", map[string]interface{}{
+			"id": d.Id(),
+		})
 		err := service.PatchVPC(d.Id(), patchReq)
 		if err != nil {
 			return diag.Errorf("Error updating VPC with ID [%s]: %s", d.Id(), err)
@@ -138,7 +143,9 @@ func resourceVPCUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 func resourceVPCDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Removing VPC with ID [%s]", d.Id())
+	tflog.Info(ctx, "Deleting VPC", map[string]interface{}{
+		"id": d.Id(),
+	})
 	err := service.DeleteVPC(d.Id())
 	if err != nil {
 		return diag.Errorf("Error VPC with ID [%s]: %s", d.Id(), err)

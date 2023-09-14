@@ -2,10 +2,10 @@ package ecloud
 
 import (
 	"context"
-	"log"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -53,7 +53,9 @@ func dataSourceNetworkPolicyRead(ctx context.Context, d *schema.ResourceData, me
 		params.WithFilter(*connection.NewAPIRequestFiltering("name", connection.EQOperator, []string{name.(string)}))
 	}
 
-	log.Printf("[DEBUG] Retrieving network policies with parameters: %+v", params)
+	tflog.Debug(ctx, "Retrieving network policies", map[string]interface{}{
+		"parameters": params,
+	})
 	policies, err := service.GetNetworkPolicies(params)
 	if err != nil {
 		return diag.Errorf("Error retrieving active network policies: %s", err)

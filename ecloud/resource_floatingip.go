@@ -3,13 +3,13 @@ package ecloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	"github.com/ans-group/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -78,9 +78,9 @@ func resourceFloatingIPCreate(ctx context.Context, d *schema.ResourceData, meta 
 		AvailabilityZoneID: d.Get("availability_zone_id").(string),
 	}
 
-	log.Printf("[DEBUG] Created CreateFloatingIPRequest: %+v", createReq)
+	tflog.Debug(ctx, fmt.Sprintf("Created CreateFloatingIPRequest: %+v", createReq))
 
-	log.Print("[INFO] Creating Floating IP")
+	tflog.Info(ctx, "Creating Floating IP")
 	taskRef, err := service.CreateFloatingIP(createReq)
 	if err != nil {
 		return diag.Errorf("Error creating floating IP: %s", err)
@@ -90,7 +90,7 @@ func resourceFloatingIPCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      3 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -111,12 +111,15 @@ func resourceFloatingIPCreate(ctx context.Context, d *schema.ResourceData, meta 
 			resourceID = nicDHCPAddress.ID
 		}
 
-		log.Printf("[DEBUG] Assigning floating IP with ID [%s] to resource [%s]", d.Id(), resourceID)
+		tflog.Info(ctx, "Assigning floating IP", map[string]interface{}{
+			"fip_id":          d.Id(),
+			"target_resource": resourceID,
+		})
 
 		assignFipReq := ecloudservice.AssignFloatingIPRequest{
 			ResourceID: r.(string),
 		}
-		log.Printf("[DEBUG] Created AssignFloatingIPRequest: %+v", assignFipReq)
+		tflog.Debug(ctx, fmt.Sprintf("Created AssignFloatingIPRequest: %+v", assignFipReq))
 
 		taskID, err := service.AssignFloatingIP(d.Id(), assignFipReq)
 		if err != nil {
@@ -125,7 +128,7 @@ func resourceFloatingIPCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 			Timeout:    d.Timeout(schema.TimeoutCreate),
 			Delay:      3 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -142,7 +145,9 @@ func resourceFloatingIPCreate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceFloatingIPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	log.Printf("[INFO] Retrieving floating IP with ID [%s]", d.Id())
+	tflog.Info(ctx, "Retrieving floating IP", map[string]interface{}{
+		"id": d.Id(),
+	})
 	fip, err := service.GetFloatingIP(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -166,7 +171,9 @@ func resourceFloatingIPUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
-		log.Printf("[INFO] Updating floating ip with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating floating IP", map[string]interface{}{
+			"id": d.Id(),
+		})
 		patchReq := ecloudservice.PatchFloatingIPRequest{
 			Name: d.Get("name").(string),
 		}
@@ -178,7 +185,7 @@ func resourceFloatingIPUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 		stateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskRef.TaskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskRef.TaskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      3 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -191,7 +198,9 @@ func resourceFloatingIPUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if d.HasChange("resource_id") {
-		log.Printf("[INFO] Updating floating ip with ID [%s]", d.Id())
+		tflog.Info(ctx, "Updating floating IP", map[string]interface{}{
+			"id": d.Id(),
+		})
 
 		oldVal, newVal := d.GetChange("resource_id")
 		assign := true
@@ -228,7 +237,9 @@ func resourceFloatingIPUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 		// if oldVal wasn't empty then floating ip needs unassigned first
 		if assign && oldVal.(string) != "" {
-			log.Printf("[DEBUG] Unassigning floating IP with ID [%s]", d.Id())
+			tflog.Debug(ctx, "Unassigning floating IP", map[string]interface{}{
+				"id": d.Id(),
+			})
 			taskID, err := service.UnassignFloatingIP(d.Id())
 			if err != nil {
 				return diag.Errorf("Error unassigning floating ip with ID [%s]: %s", d.Id(), err)
@@ -236,7 +247,7 @@ func resourceFloatingIPUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 			stateConf := &resource.StateChangeConf{
 				Target:     []string{ecloudservice.TaskStatusComplete.String()},
-				Refresh:    TaskStatusRefreshFunc(service, taskID),
+				Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 				Timeout:    d.Timeout(schema.TimeoutUpdate),
 				Delay:      3 * time.Second,
 				MinTimeout: 3 * time.Second,
@@ -250,12 +261,15 @@ func resourceFloatingIPUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 		// Assign floating ip to new instance value if set
 		if assign && len(newVal.(string)) > 1 {
-			log.Printf("[DEBUG] Assigning floating IP with ID [%s] to resource [%s]", d.Id(), newVal.(string))
+			tflog.Info(ctx, "Assigning floating IP", map[string]interface{}{
+				"fip_id":          d.Id(),
+				"target_resource": newVal.(string),
+			})
 
 			assignFipReq := ecloudservice.AssignFloatingIPRequest{
 				ResourceID: newVal.(string),
 			}
-			log.Printf("[DEBUG] Created AssignFloatingIPRequest: %+v", assignFipReq)
+			tflog.Debug(ctx, fmt.Sprintf("Created AssignFloatingIPRequest: %+v", assignFipReq))
 
 			taskID, err := service.AssignFloatingIP(d.Id(), assignFipReq)
 			if err != nil {
@@ -264,7 +278,7 @@ func resourceFloatingIPUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 			stateConf := &resource.StateChangeConf{
 				Target:     []string{ecloudservice.TaskStatusComplete.String()},
-				Refresh:    TaskStatusRefreshFunc(service, taskID),
+				Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 				Timeout:    d.Timeout(schema.TimeoutCreate),
 				Delay:      3 * time.Second,
 				MinTimeout: 3 * time.Second,
@@ -291,7 +305,7 @@ func resourceFloatingIPDelete(ctx context.Context, d *schema.ResourceData, meta 
 
 		unassignStateConf := &resource.StateChangeConf{
 			Target:     []string{ecloudservice.TaskStatusComplete.String()},
-			Refresh:    TaskStatusRefreshFunc(service, taskID),
+			Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 			Timeout:    d.Timeout(schema.TimeoutUpdate),
 			Delay:      3 * time.Second,
 			MinTimeout: 3 * time.Second,
@@ -304,7 +318,9 @@ func resourceFloatingIPDelete(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	// Once unassigned - remove the floating ip resource
-	log.Printf("[INFO] Removing floating ip with ID [%s]", d.Id())
+	tflog.Info(ctx, "Removing floating IP", map[string]interface{}{
+		"id": d.Id(),
+	})
 	taskID, err := service.DeleteFloatingIP(d.Id())
 	if err != nil {
 		switch err.(type) {
@@ -317,7 +333,7 @@ func resourceFloatingIPDelete(ctx context.Context, d *schema.ResourceData, meta 
 
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{ecloudservice.TaskStatusComplete.String()},
-		Refresh:    TaskStatusRefreshFunc(service, taskID),
+		Refresh:    TaskStatusRefreshFunc(ctx, service, taskID),
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
