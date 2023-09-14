@@ -1,18 +1,18 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"strconv"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceLoadBalancer() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceLoadBalancerRead,
+		ReadContext: dataSourceLoadBalancerRead,
 
 		Schema: map[string]*schema.Schema{
 			"load_balancer_id": {
@@ -47,7 +47,7 @@ func dataSourceLoadBalancer() *schema.Resource {
 	}
 }
 
-func dataSourceLoadBalancerRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -76,15 +76,15 @@ func dataSourceLoadBalancerRead(d *schema.ResourceData, meta interface{}) error 
 
 	lbs, err := service.GetLoadBalancers(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving loadbalancers: %s", err)
+		return diag.Errorf("Error retrieving loadbalancers: %s", err)
 	}
 
 	if len(lbs) < 1 {
-		return errors.New("No loadbalancers found with provided arguments")
+		return diag.Errorf("No loadbalancers found with provided arguments")
 	}
 
 	if len(lbs) > 1 {
-		return errors.New("More than 1 loadbalancer found with provided arguments")
+		return diag.Errorf("More than 1 loadbalancer found with provided arguments")
 	}
 
 	d.SetId(lbs[0].ID)

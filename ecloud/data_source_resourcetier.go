@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceResourceTier() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceResourceTierRead,
+		ReadContext: dataSourceResourceTierRead,
 
 		Schema: map[string]*schema.Schema{
 			"resource_tier_id": {
@@ -30,7 +30,7 @@ func dataSourceResourceTier() *schema.Resource {
 	}
 }
 
-func dataSourceResourceTierRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceResourceTierRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -47,15 +47,15 @@ func dataSourceResourceTierRead(d *schema.ResourceData, meta interface{}) error 
 
 	rts, err := service.GetResourceTiers(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active resource tiers: %s", err)
+		return diag.Errorf("Error retrieving active resource tiers: %s", err)
 	}
 
 	if len(rts) < 1 {
-		return errors.New("No resource tiers found with provided arguments")
+		return diag.Errorf("No resource tiers found with provided arguments")
 	}
 
 	if len(rts) > 1 {
-		return errors.New("More than 1 resource tier found with provided arguments")
+		return diag.Errorf("More than 1 resource tier found with provided arguments")
 	}
 
 	d.SetId(rts[0].ID)

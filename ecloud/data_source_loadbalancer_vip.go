@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceLoadBalancerVip() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceLoadBalancerVipRead,
+		ReadContext: dataSourceLoadBalancerVipRead,
 
 		Schema: map[string]*schema.Schema{
 			"load_balancer_vip_id": {
@@ -30,7 +30,7 @@ func dataSourceLoadBalancerVip() *schema.Resource {
 	}
 }
 
-func dataSourceLoadBalancerVipRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceLoadBalancerVipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -47,15 +47,15 @@ func dataSourceLoadBalancerVipRead(d *schema.ResourceData, meta interface{}) err
 
 	lbNetworks, err := service.GetVIPs(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving loadbalancer vips: %s", err)
+		return diag.Errorf("Error retrieving loadbalancer vips: %s", err)
 	}
 
 	if len(lbNetworks) < 1 {
-		return errors.New("No loadbalancer vips found with provided arguments")
+		return diag.Errorf("No loadbalancer vips found with provided arguments")
 	}
 
 	if len(lbNetworks) > 1 {
-		return errors.New("More than 1 loadbalancer vip found with provided arguments")
+		return diag.Errorf("More than 1 loadbalancer vip found with provided arguments")
 	}
 
 	d.SetId(lbNetworks[0].ID)

@@ -6,18 +6,20 @@ import (
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/net/context"
 )
 
 func resourceRouter() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceRouterCreate,
-		Read:   resourceRouterRead,
-		Update: resourceRouterUpdate,
-		Delete: resourceRouterDelete,
+		CreateContext: resourceRouterCreate,
+		ReadContext:   resourceRouterRead,
+		UpdateContext: resourceRouterUpdate,
+		DeleteContext: resourceRouterDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -45,7 +47,7 @@ func resourceRouter() *schema.Resource {
 	}
 }
 
-func resourceRouterCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateRouterRequest{
@@ -59,7 +61,7 @@ func resourceRouterCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating Router")
 	routerID, err := service.CreateRouter(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating router: %s", err)
+		return diag.Errorf("Error creating router: %s", err)
 	}
 
 	d.SetId(routerID)
@@ -72,15 +74,15 @@ func resourceRouterCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for router with ID [%s] to return sync status of [%s]: %s", routerID, ecloudservice.SyncStatusComplete, err)
+		return diag.Errorf("Error waiting for router with ID [%s] to return sync status of [%s]: %s", routerID, ecloudservice.SyncStatusComplete, err)
 	}
 
-	return resourceRouterRead(d, meta)
+	return resourceRouterRead(ctx, d, meta)
 }
 
-func resourceRouterRead(d *schema.ResourceData, meta interface{}) error {
+func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving router with ID [%s]", d.Id())
@@ -91,7 +93,7 @@ func resourceRouterRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -103,7 +105,7 @@ func resourceRouterRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceRouterUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	hasChange := false
@@ -123,7 +125,7 @@ func resourceRouterUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Updating router with ID [%s]", d.Id())
 		err := service.PatchRouter(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating router with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating router with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -134,22 +136,22 @@ func resourceRouterUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for router with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+			return diag.Errorf("Error waiting for router with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
 		}
 	}
 
-	return resourceRouterRead(d, meta)
+	return resourceRouterRead(ctx, d, meta)
 }
 
-func resourceRouterDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing router with ID [%s]", d.Id())
 	err := service.DeleteRouter(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error removing router with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error removing router with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -160,9 +162,9 @@ func resourceRouterDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for router with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for router with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

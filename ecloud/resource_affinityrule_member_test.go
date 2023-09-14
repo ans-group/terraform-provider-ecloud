@@ -17,9 +17,9 @@ func TestAccAffinityRuleMember_basic(t *testing.T) {
 	arResourceName := "ecloud_affinityrule.test-ar"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAffinityRuleMemberDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckAffinityRuleMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceAffinityRuleMemberConfig_basic(ANS_TEST_VPC_REGION_ID, affinityRuleName, affinityRuleMemberInstanceID),

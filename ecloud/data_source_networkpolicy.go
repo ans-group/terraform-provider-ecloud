@@ -1,18 +1,18 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"log"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceNetworkPolicy() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceNetworkPolicyRead,
+		ReadContext: dataSourceNetworkPolicyRead,
 
 		Schema: map[string]*schema.Schema{
 			"network_policy_id": {
@@ -35,7 +35,7 @@ func dataSourceNetworkPolicy() *schema.Resource {
 	}
 }
 
-func dataSourceNetworkPolicyRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceNetworkPolicyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -56,15 +56,15 @@ func dataSourceNetworkPolicyRead(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Retrieving network policies with parameters: %+v", params)
 	policies, err := service.GetNetworkPolicies(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active network policies: %s", err)
+		return diag.Errorf("Error retrieving active network policies: %s", err)
 	}
 
 	if len(policies) < 1 {
-		return errors.New("No network policies found with provided arguments")
+		return diag.Errorf("No network policies found with provided arguments")
 	}
 
 	if len(policies) > 1 {
-		return errors.New("More than 1 network policy found with provided arguments")
+		return diag.Errorf("More than 1 network policy found with provided arguments")
 	}
 
 	d.SetId(policies[0].ID)

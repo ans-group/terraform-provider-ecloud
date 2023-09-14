@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceHost() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceHostRead,
+		ReadContext: dataSourceHostRead,
 
 		Schema: map[string]*schema.Schema{
 			"host_id": {
@@ -30,7 +30,7 @@ func dataSourceHost() *schema.Resource {
 	}
 }
 
-func dataSourceHostRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -44,15 +44,15 @@ func dataSourceHostRead(d *schema.ResourceData, meta interface{}) error {
 
 	hosts, err := service.GetHosts(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active host: %s", err)
+		return diag.Errorf("Error retrieving active host: %s", err)
 	}
 
 	if len(hosts) < 1 {
-		return errors.New("No hosts found with provided arguments")
+		return diag.Errorf("No hosts found with provided arguments")
 	}
 
 	if len(hosts) > 1 {
-		return errors.New("More than 1 host found with provided arguments")
+		return diag.Errorf("More than 1 host found with provided arguments")
 	}
 
 	d.SetId(hosts[0].ID)

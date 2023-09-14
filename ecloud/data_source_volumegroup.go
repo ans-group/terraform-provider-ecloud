@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceVolumeGroup() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceVolumeGroupRead,
+		ReadContext: dataSourceVolumeGroupRead,
 
 		Schema: map[string]*schema.Schema{
 			"volume_group_id": {
@@ -34,7 +34,7 @@ func dataSourceVolumeGroup() *schema.Resource {
 	}
 }
 
-func dataSourceVolumeGroupRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceVolumeGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -54,15 +54,15 @@ func dataSourceVolumeGroupRead(d *schema.ResourceData, meta interface{}) error {
 
 	volumegroups, err := service.GetVolumeGroups(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active volumesgroups: %s", err)
+		return diag.Errorf("Error retrieving active volumesgroups: %s", err)
 	}
 
 	if len(volumegroups) < 1 {
-		return errors.New("No volumesgroups found with provided arguments")
+		return diag.Errorf("No volumesgroups found with provided arguments")
 	}
 
 	if len(volumegroups) > 1 {
-		return errors.New("More than 1 volumegroups found with provided arguments")
+		return diag.Errorf("More than 1 volumegroups found with provided arguments")
 	}
 
 	d.SetId(volumegroups[0].ID)

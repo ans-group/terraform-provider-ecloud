@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceNic() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceNicRead,
+		ReadContext: dataSourceNicRead,
 
 		Schema: map[string]*schema.Schema{
 			"nic_id": {
@@ -34,7 +34,7 @@ func dataSourceNic() *schema.Resource {
 	}
 }
 
-func dataSourceNicRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceNicRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -51,15 +51,15 @@ func dataSourceNicRead(d *schema.ResourceData, meta interface{}) error {
 
 	nics, err := service.GetNICs(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active nics: %s", err)
+		return diag.Errorf("Error retrieving active nics: %s", err)
 	}
 
 	if len(nics) < 1 {
-		return errors.New("No nics found with provided arguments")
+		return diag.Errorf("No nics found with provided arguments")
 	}
 
 	if len(nics) > 1 {
-		return errors.New("More than 1 network found with provided arguments")
+		return diag.Errorf("More than 1 network found with provided arguments")
 	}
 
 	d.SetId(nics[0].ID)

@@ -14,8 +14,8 @@ func TestAccDataSourceVolume_basic(t *testing.T) {
 	resourceName := "data.ecloud_volume.test-volume"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: config,

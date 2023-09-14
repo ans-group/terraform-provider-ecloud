@@ -16,9 +16,9 @@ func TestAccHostGroup_basic(t *testing.T) {
 	vpcResourceName := "ecloud_vpc.test-vpc"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckHostGroupDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckHostGroupDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceHostGroupConfig_basic(ANS_TEST_VPC_REGION_ID, hostGroupName),

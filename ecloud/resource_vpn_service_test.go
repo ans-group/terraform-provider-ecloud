@@ -16,9 +16,9 @@ func TestAccVPNService_basic(t *testing.T) {
 	resourceName := "ecloud_vpn_service.test-vpnservice"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckVPNServiceDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckVPNServiceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceVPNServiceConfig_basic(ANS_TEST_VPC_REGION_ID, vpcName),

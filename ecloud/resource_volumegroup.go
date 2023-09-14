@@ -1,23 +1,24 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceVolumeGroup() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVolumeGroupCreate,
-		Read:   resourceVolumeGroupRead,
-		Update: resourceVolumeGroupUpdate,
-		Delete: resourceVolumeGroupDelete,
+		CreateContext: resourceVolumeGroupCreate,
+		ReadContext:   resourceVolumeGroupRead,
+		UpdateContext: resourceVolumeGroupUpdate,
+		DeleteContext: resourceVolumeGroupDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -39,7 +40,7 @@ func resourceVolumeGroup() *schema.Resource {
 	}
 }
 
-func resourceVolumeGroupCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateVolumeGroupRequest{
@@ -53,7 +54,7 @@ func resourceVolumeGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating VolumeGroup")
 	taskRef, err := service.CreateVolumeGroup(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating volumegroup: %s", err)
+		return diag.Errorf("Error creating volumegroup: %s", err)
 	}
 
 	d.SetId(taskRef.ResourceID)
@@ -66,15 +67,15 @@ func resourceVolumeGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for volumegroup with ID [%s] to be created: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for volumegroup with ID [%s] to be created: %s", d.Id(), err)
 	}
 
-	return resourceVolumeGroupRead(d, meta)
+	return resourceVolumeGroupRead(ctx, d, meta)
 }
 
-func resourceVolumeGroupRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVolumeGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving volume with ID [%s]", d.Id())
@@ -85,7 +86,7 @@ func resourceVolumeGroupRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -96,7 +97,7 @@ func resourceVolumeGroupRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceVolumeGroupUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	patchReq := ecloudservice.PatchVolumeGroupRequest{}
@@ -110,7 +111,7 @@ func resourceVolumeGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Updating volumegroup with ID [%s]", d.Id())
 		task, err := service.PatchVolumeGroup(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating volumegroup with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating volumegroup with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -121,15 +122,15 @@ func resourceVolumeGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for volumegroup with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for volumegroup with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
-	return resourceVolumeGroupRead(d, meta)
+	return resourceVolumeGroupRead(ctx, d, meta)
 }
 
-func resourceVolumeGroupDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing volumegroup with ID [%s]", d.Id())
@@ -139,7 +140,7 @@ func resourceVolumeGroupDelete(d *schema.ResourceData, meta interface{}) error {
 		case *ecloudservice.VolumeGroupNotFoundError:
 			return nil
 		default:
-			return fmt.Errorf("Error removing volumegroup with ID [%s]: %s", d.Id(), err)
+			return diag.Errorf("Error removing volumegroup with ID [%s]: %s", d.Id(), err)
 		}
 	}
 
@@ -151,9 +152,9 @@ func resourceVolumeGroupDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for volumegroup with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for volumegroup with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

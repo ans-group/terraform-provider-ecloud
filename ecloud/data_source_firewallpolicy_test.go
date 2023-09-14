@@ -14,11 +14,11 @@ func TestAccDataSourceFirewallPolicy_basic(t *testing.T) {
 		"policy_sequence": "0",
 	}
 	config := testAccDataSourceFirewallPolicyConfig_basic(params)
-	resourceName := "data.ecloud_firewallpolicy.test-policy"
+	resourceName := "data.ecloud_firewallpolicy.test-fwp"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: config,

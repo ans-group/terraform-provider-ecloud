@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var testAccProviders map[string]*schema.Provider
+var testAccProviders map[string]func() (*schema.Provider, error)
 var testAccProvider *schema.Provider
 var (
 	ANS_TEST_VPC_REGION_ID        = os.Getenv("ANS_TEST_VPC_REGION_ID")
@@ -19,8 +19,8 @@ var (
 
 func init() {
 	testAccProvider = Provider()
-	testAccProviders = map[string]*schema.Provider{
-		"ecloud": testAccProvider,
+	testAccProviders = map[string]func() (*schema.Provider, error){
+		"ecloud": func() (*schema.Provider, error) { return testAccProvider, nil },
 	}
 }
 

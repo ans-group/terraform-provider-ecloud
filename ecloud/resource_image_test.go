@@ -15,9 +15,9 @@ func TestAccImage_basic(t *testing.T) {
 	resourceName := "ecloud_image.test-image"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckimageDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckimageDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceImageConfig_basic(ANS_TEST_VPC_REGION_ID, imageName),

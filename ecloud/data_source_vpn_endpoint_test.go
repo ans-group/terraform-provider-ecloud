@@ -14,8 +14,8 @@ func TestAccDataSourceVPNEndpoint_basic(t *testing.T) {
 	resourceName := "data.ecloud_vpn_endpoint.test-vpnendpoint"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: config,

@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceRouter() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceRouterRead,
+		ReadContext: dataSourceRouterRead,
 
 		Schema: map[string]*schema.Schema{
 			"router_id": {
@@ -38,7 +38,7 @@ func dataSourceRouter() *schema.Resource {
 	}
 }
 
-func dataSourceRouterRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -61,15 +61,15 @@ func dataSourceRouterRead(d *schema.ResourceData, meta interface{}) error {
 
 	routers, err := service.GetRouters(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active routers: %s", err)
+		return diag.Errorf("Error retrieving active routers: %s", err)
 	}
 
 	if len(routers) < 1 {
-		return errors.New("No routers found with provided arguments")
+		return diag.Errorf("No routers found with provided arguments")
 	}
 
 	if len(routers) > 1 {
-		return errors.New("More than 1 router found with provided arguments")
+		return diag.Errorf("More than 1 router found with provided arguments")
 	}
 
 	d.SetId(routers[0].ID)

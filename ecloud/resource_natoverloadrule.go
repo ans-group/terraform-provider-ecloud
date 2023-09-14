@@ -1,24 +1,25 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceNATOverloadRule() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceNATOverloadRuleCreate,
-		Read:   resourceNATOverloadRuleRead,
-		Update: resourceNATOverloadRuleUpdate,
-		Delete: resourceNATOverloadRuleDelete,
+		CreateContext: resourceNATOverloadRuleCreate,
+		ReadContext:   resourceNATOverloadRuleRead,
+		UpdateContext: resourceNATOverloadRuleUpdate,
+		DeleteContext: resourceNATOverloadRuleDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -50,12 +51,12 @@ func resourceNATOverloadRule() *schema.Resource {
 	}
 }
 
-func resourceNATOverloadRuleCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceNATOverloadRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	actionParsed, err := ecloud.ParseNATOverloadRuleAction(d.Get("action").(string))
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	createReq := ecloudservice.CreateNATOverloadRuleRequest{
@@ -70,7 +71,7 @@ func resourceNATOverloadRuleCreate(d *schema.ResourceData, meta interface{}) err
 	log.Print("[INFO] Creating NAT overload rule")
 	taskRef, err := service.CreateNATOverloadRule(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating NAT overload rule: %s", err)
+		return diag.Errorf("Error creating NAT overload rule: %s", err)
 	}
 
 	d.SetId(taskRef.ResourceID)
@@ -83,15 +84,15 @@ func resourceNATOverloadRuleCreate(d *schema.ResourceData, meta interface{}) err
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskRef.TaskID, ecloudservice.TaskStatusComplete, err)
+		return diag.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskRef.TaskID, ecloudservice.TaskStatusComplete, err)
 	}
 
-	return resourceNATOverloadRuleRead(d, meta)
+	return resourceNATOverloadRuleRead(ctx, d, meta)
 }
 
-func resourceNATOverloadRuleRead(d *schema.ResourceData, meta interface{}) error {
+func resourceNATOverloadRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving NAT overload rule with ID [%s]", d.Id())
@@ -102,7 +103,7 @@ func resourceNATOverloadRuleRead(d *schema.ResourceData, meta interface{}) error
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -115,7 +116,7 @@ func resourceNATOverloadRuleRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceNATOverloadRuleUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceNATOverloadRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	patchReq := ecloudservice.PatchNATOverloadRuleRequest{}
@@ -133,7 +134,7 @@ func resourceNATOverloadRuleUpdate(d *schema.ResourceData, meta interface{}) err
 		log.Printf("[INFO] Updating NAT overload rule with ID [%s]", d.Id())
 		taskRef, err := service.PatchNATOverloadRule(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating network with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating network with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -144,22 +145,22 @@ func resourceNATOverloadRuleUpdate(d *schema.ResourceData, meta interface{}) err
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskRef.TaskID, ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskRef.TaskID, ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceNATOverloadRuleRead(d, meta)
+	return resourceNATOverloadRuleRead(ctx, d, meta)
 }
 
-func resourceNATOverloadRuleDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceNATOverloadRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing network with ID [%s]", d.Id())
 	taskID, err := service.DeleteNATOverloadRule(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error removing network with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error removing network with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -170,9 +171,9 @@ func resourceNATOverloadRuleDelete(d *schema.ResourceData, meta interface{}) err
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+		return diag.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
 	}
 
 	return nil

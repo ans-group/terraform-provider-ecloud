@@ -18,8 +18,8 @@ func TestAccDataSourceIPAddress_basic(t *testing.T) {
 	resourceName := "data.ecloud_ipaddress." + params["datasource_name"]
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: config,

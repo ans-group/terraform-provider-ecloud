@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceLoadBalancerSpec() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceLoadBalancerSpecRead,
+		ReadContext: dataSourceLoadBalancerSpecRead,
 
 		Schema: map[string]*schema.Schema{
 			"loadbalancer_spec_id": {
@@ -26,7 +26,7 @@ func dataSourceLoadBalancerSpec() *schema.Resource {
 	}
 }
 
-func dataSourceLoadBalancerSpecRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceLoadBalancerSpecRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -40,15 +40,15 @@ func dataSourceLoadBalancerSpecRead(d *schema.ResourceData, meta interface{}) er
 
 	lbSpecs, err := service.GetLoadBalancerSpecs(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving host specs: %s", err)
+		return diag.Errorf("Error retrieving host specs: %s", err)
 	}
 
 	if len(lbSpecs) < 1 {
-		return errors.New("No loadbalancer specs found with provided arguments")
+		return diag.Errorf("No loadbalancer specs found with provided arguments")
 	}
 
 	if len(lbSpecs) > 1 {
-		return errors.New("More than 1 loadbalancer spec found with provided arguments")
+		return diag.Errorf("More than 1 loadbalancer spec found with provided arguments")
 	}
 
 	d.SetId(lbSpecs[0].ID)

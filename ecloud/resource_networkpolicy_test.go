@@ -16,9 +16,9 @@ func TestAccNetworkPolicy_basic(t *testing.T) {
 	routerResourceName := "ecloud_network.test-network"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckNetworkPolicyDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckNetworkPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceNetworkPolicyConfig_basic(ANS_TEST_VPC_REGION_ID, policyName),

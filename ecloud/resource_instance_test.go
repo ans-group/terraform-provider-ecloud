@@ -16,9 +16,9 @@ func TestAccInstance_basic(t *testing.T) {
 	vpcResourceName := "ecloud_vpc.test-vpc"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckInstanceDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceInstanceConfig_basic(ANS_TEST_VPC_REGION_ID, instanceName),

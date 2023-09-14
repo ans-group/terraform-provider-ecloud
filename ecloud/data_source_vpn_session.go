@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceVPNSession() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceVPNSessionRead,
+		ReadContext: dataSourceVPNSessionRead,
 
 		Schema: map[string]*schema.Schema{
 			"vpn_session_id": {
@@ -54,7 +54,7 @@ func dataSourceVPNSession() *schema.Resource {
 	}
 }
 
-func dataSourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceVPNSessionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -80,15 +80,15 @@ func dataSourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 
 	vpnSessions, err := service.GetVPNSessions(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active VPN services: %s", err)
+		return diag.Errorf("Error retrieving active VPN services: %s", err)
 	}
 
 	if len(vpnSessions) < 1 {
-		return errors.New("No VPN services found with provided arguments")
+		return diag.Errorf("No VPN services found with provided arguments")
 	}
 
 	if len(vpnSessions) > 1 {
-		return errors.New("More than 1 VPN service found with provided arguments")
+		return diag.Errorf("More than 1 VPN service found with provided arguments")
 	}
 
 	d.SetId(vpnSessions[0].ID)
@@ -102,7 +102,7 @@ func dataSourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 
 	psk, err := service.GetVPNSessionPreSharedKey(vpnSessions[0].ID)
 	if err != nil {
-		return fmt.Errorf("Error retrieving VPN service pre-shared key: %s", err)
+		return diag.Errorf("Error retrieving VPN service pre-shared key: %s", err)
 	}
 	d.Set("psk", psk.PSK)
 

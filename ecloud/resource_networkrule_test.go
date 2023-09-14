@@ -25,9 +25,9 @@ func TestAccNetworkRule_basic(t *testing.T) {
 	policyResourceName := "ecloud_networkpolicy.test-np"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckNetworkRuleDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckNetworkRuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceNetworkRuleConfig_basic(params),

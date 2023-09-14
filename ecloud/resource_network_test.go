@@ -17,9 +17,9 @@ func TestAccNetwork_basic(t *testing.T) {
 	subnet := "10.0.0.0/24"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckNetworkDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceNetworkConfig_basic(ANS_TEST_VPC_REGION_ID, networkName, subnet),

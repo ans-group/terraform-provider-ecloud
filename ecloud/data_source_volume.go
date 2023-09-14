@@ -1,18 +1,18 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"strconv"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceVolume() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceVolumeRead,
+		ReadContext: dataSourceVolumeRead,
 
 		Schema: map[string]*schema.Schema{
 			"volume_id": {
@@ -47,7 +47,7 @@ func dataSourceVolume() *schema.Resource {
 	}
 }
 
-func dataSourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -76,15 +76,15 @@ func dataSourceVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	volumes, err := service.GetVolumes(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active volumes: %s", err)
+		return diag.Errorf("Error retrieving active volumes: %s", err)
 	}
 
 	if len(volumes) < 1 {
-		return errors.New("No volumes found with provided arguments")
+		return diag.Errorf("No volumes found with provided arguments")
 	}
 
 	if len(volumes) > 1 {
-		return errors.New("More than 1 volume found with provided arguments")
+		return diag.Errorf("More than 1 volume found with provided arguments")
 	}
 
 	d.SetId(volumes[0].ID)

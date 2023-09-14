@@ -1,11 +1,12 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/terraform-provider-ecloud/pkg/lock"
@@ -13,12 +14,12 @@ import (
 
 func resourceAffinityRuleMember() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceAffinityRuleMemberCreate,
-		Read:   resourceAffinityRuleMemberRead,
-		Update: resourceAffinityRuleMemberUpdate,
-		Delete: resourceAffinityRuleMemberDelete,
+		CreateContext: resourceAffinityRuleMemberCreate,
+		ReadContext:   resourceAffinityRuleMemberRead,
+		UpdateContext: resourceAffinityRuleMemberUpdate,
+		DeleteContext: resourceAffinityRuleMemberDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -35,10 +36,10 @@ func resourceAffinityRuleMember() *schema.Resource {
 	}
 }
 
-func resourceAffinityRuleMemberCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceAffinityRuleMemberCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	ruleID := d.Get("affinity_rule_id").(string)
 	if len(ruleID) < 1 {
-		return fmt.Errorf("Invalid affinity rule ID: %s", ruleID)
+		return diag.Errorf("Invalid affinity rule ID: %s", ruleID)
 	}
 
 	unlock := lock.LockResource(ruleID)
@@ -48,7 +49,7 @@ func resourceAffinityRuleMemberCreate(d *schema.ResourceData, meta interface{}) 
 
 	createReq := ecloudservice.CreateAffinityRuleMemberRequest{
 		AffinityRuleID: ruleID,
-		InstanceID: d.Get("instance_id").(string),
+		InstanceID:     d.Get("instance_id").(string),
 	}
 
 	log.Printf("[DEBUG] Created CreateAffinityRuleMemberRequest: %+v", createReq)
@@ -56,7 +57,7 @@ func resourceAffinityRuleMemberCreate(d *schema.ResourceData, meta interface{}) 
 	log.Print("[INFO] Creating AffinityRuleMember")
 	taskRef, err := service.CreateAffinityRuleMember(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating affinity rule member: %s", err)
+		return diag.Errorf("Error creating affinity rule member: %s", err)
 	}
 
 	d.SetId(taskRef.ResourceID)
@@ -69,15 +70,15 @@ func resourceAffinityRuleMemberCreate(d *schema.ResourceData, meta interface{}) 
 		MinTimeout: 5 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for affinity rule member with ID [%s] to be created: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for affinity rule member with ID [%s] to be created: %s", d.Id(), err)
 	}
 
-	return resourceAffinityRuleMemberRead(d, meta)
+	return resourceAffinityRuleMemberRead(ctx, d, meta)
 }
 
-func resourceAffinityRuleMemberRead(d *schema.ResourceData, meta interface{}) error {
+func resourceAffinityRuleMemberRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving affinity rule member with ID [%s]", d.Id())
@@ -88,7 +89,7 @@ func resourceAffinityRuleMemberRead(d *schema.ResourceData, meta interface{}) er
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -98,11 +99,11 @@ func resourceAffinityRuleMemberRead(d *schema.ResourceData, meta interface{}) er
 	return nil
 }
 
-func resourceAffinityRuleMemberUpdate(d *schema.ResourceData, meta interface{}) error {
-	return resourceAffinityRuleMemberRead(d, meta)
+func resourceAffinityRuleMemberUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceAffinityRuleMemberRead(ctx, d, meta)
 }
 
-func resourceAffinityRuleMemberDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceAffinityRuleMemberDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	ruleID := d.Get("affinity_rule_id").(string)
 
 	unlock := lock.LockResource(ruleID)
@@ -117,7 +118,7 @@ func resourceAffinityRuleMemberDelete(d *schema.ResourceData, meta interface{}) 
 		case *ecloudservice.AffinityRuleMemberNotFoundError:
 			return nil
 		default:
-			return fmt.Errorf("Error removing affinity rule member with ID [%s]: %s", d.Id(), err)
+			return diag.Errorf("Error removing affinity rule member with ID [%s]: %s", d.Id(), err)
 		}
 	}
 
@@ -129,9 +130,9 @@ func resourceAffinityRuleMemberDelete(d *schema.ResourceData, meta interface{}) 
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for affinity rule member with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for affinity rule member with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

@@ -9,19 +9,21 @@ import (
 	"github.com/ans-group/sdk-go/pkg/ptr"
 	"github.com/ans-group/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/terraform-provider-ecloud/pkg/lock"
+	"golang.org/x/net/context"
 )
 
 func resourceInstance() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceInstanceCreate,
-		Read:   resourceInstanceRead,
-		Update: resourceInstanceUpdate,
-		Delete: resourceInstanceDelete,
+		CreateContext: resourceInstanceCreate,
+		ReadContext:   resourceInstanceRead,
+		UpdateContext: resourceInstanceUpdate,
+		DeleteContext: resourceInstanceDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
@@ -154,7 +156,7 @@ func resourceInstance() *schema.Resource {
 	}
 }
 
-func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateInstanceRequest{
@@ -183,21 +185,22 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating Instance")
 	instanceID, err := service.CreateInstance(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating instance: %s", err)
+		return diag.Errorf("Error creating instance: %s", err)
 	}
 
 	d.SetId(instanceID)
 
 	_, err = waitForResourceState(
+		ctx,
 		ecloudservice.SyncStatusComplete.String(),
 		InstanceSyncStatusRefreshFunc(service, instanceID),
 		d.Timeout(schema.TimeoutCreate),
 	)
 	if err != nil {
-		return fmt.Errorf("Error waiting for instance with ID [%s] to return sync status of [%s]: %s", instanceID, ecloudservice.SyncStatusComplete, err)
+		return diag.Errorf("Error waiting for instance with ID [%s] to return sync status of [%s]: %s", instanceID, ecloudservice.SyncStatusComplete, err)
 	}
 
-	//attach data volumes
+	// attach data volumes
 	rawIDs, ok := d.GetOk("data_volume_ids")
 	if ok {
 		for _, rawID := range rawIDs.(*schema.Set).List() {
@@ -214,21 +217,22 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 			log.Printf("[INFO] Attaching volume to instance ID %s", d.Id())
 			taskID, err := service.AttachInstanceVolume(d.Id(), req)
 			if err != nil {
-				return fmt.Errorf("Error attaching volume: %s", err)
+				return diag.Errorf("Error attaching volume: %s", err)
 			}
 
 			_, err = waitForResourceState(
+				ctx,
 				ecloudservice.TaskStatusComplete.String(),
 				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for volume with ID [%s] to be attached: %s", volumeID, err)
+				return diag.Errorf("Error waiting for volume with ID [%s] to be attached: %s", volumeID, err)
 			}
 		}
 	}
 
-	//handle volume group if defined
+	// handle volume group if defined
 	if volumeGroupID, ok := d.GetOk("volume_group_id"); ok {
 		patchReq := ecloudservice.PatchInstanceRequest{
 			VolumeGroupID: ptr.String(volumeGroupID.(string)),
@@ -237,22 +241,23 @@ func resourceInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 
 		err := service.PatchInstance(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error attaching volume: %s", err)
+			return diag.Errorf("Error attaching volume: %s", err)
 		}
 
 		_, err = waitForResourceState(
+			ctx,
 			ecloudservice.SyncStatusComplete.String(),
 			InstanceSyncStatusRefreshFunc(service, d.Id()),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
-			return fmt.Errorf("Error waiting for volumegroup with ID [%s] to be attached: %s", volumeGroupID, err)
+			return diag.Errorf("Error waiting for volumegroup with ID [%s] to be attached: %s", volumeGroupID, err)
 		}
 	}
-	return resourceInstanceRead(d, meta)
+	return resourceInstanceRead(ctx, d, meta)
 }
 
-func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
+func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving instance with ID [%s]", d.Id())
@@ -263,16 +268,16 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	volumes, err := service.GetInstanceVolumes(d.Id(), connection.APIRequestParameters{})
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve instance volumes: %w", err)
+		return diag.Errorf("Failed to retrieve instance volumes: %s", err)
 	}
 
-	//check we have 1 os volume
+	// check we have 1 os volume
 	var osVolume []ecloudservice.Volume
 	for _, volume := range volumes {
 		if volume.Type == ecloudservice.VolumeTypeOS {
@@ -280,7 +285,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	if len(osVolume) != 1 {
-		return fmt.Errorf("Unexpected number of OS volumes (%d), expected 1", len(volumes))
+		return diag.Errorf("Unexpected number of OS volumes (%d), expected 1", len(volumes))
 	}
 
 	d.Set("vpc_id", instance.VPCID)
@@ -300,25 +305,25 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	if d.Get("nic_id").(string) == "" {
 		nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
 		if err != nil {
-			return fmt.Errorf("Failed to retrieve instance nics: %w", err)
+			return diag.Errorf("Failed to retrieve instance nics: %s", err)
 		}
 
 		if len(nics) > 1 {
-			return fmt.Errorf("Unexpected number of instance nics. Unable to lookup floating ip")
+			return diag.Errorf("Unexpected number of instance nics. Unable to lookup floating ip")
 		}
 
 		d.Set("nic_id", nics[0].ID)
 	}
 
 	if d.Get("requires_floating_ip").(bool) {
-		//we need to retrieve the instance nic to find the associated floating ip
+		// we need to retrieve the instance nic to find the associated floating ip
 		fips, err := service.GetInstanceFloatingIPs(d.Id(), connection.APIRequestParameters{})
 		if err != nil {
-			return fmt.Errorf("Failed to retrieve floating IPs: %w", err)
+			return diag.Errorf("Failed to retrieve floating IPs: %s", err)
 		}
 
 		if len(fips) != 1 {
-			return fmt.Errorf("Unexpected number of floating IPs assigned to instance")
+			return diag.Errorf("Unexpected number of floating IPs assigned to instance")
 		}
 
 		d.Set("floating_ip_id", fips[0].ID)
@@ -333,7 +338,7 @@ func resourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	patchReq := ecloudservice.PatchInstanceRequest{}
@@ -359,16 +364,17 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Updating instance with ID [%s]", d.Id())
 		err := service.PatchInstance(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating instance with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating instance with ID [%s]: %s", d.Id(), err)
 		}
 
 		_, err = waitForResourceState(
+			ctx,
 			ecloudservice.SyncStatusComplete.String(),
 			InstanceSyncStatusRefreshFunc(service, d.Id()),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
-			return fmt.Errorf("Error waiting for instance with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+			return diag.Errorf("Error waiting for instance with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
 		}
 	}
 
@@ -383,7 +389,7 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		if len(newFip) < 1 && oldFip != "" {
 			// lock the fip
 			if len(oldFip) < 1 {
-				return fmt.Errorf("invalid floating ip ID: %s", oldFip)
+				return diag.Errorf("invalid floating ip ID: %s", oldFip)
 			}
 
 			unlock := lock.LockResource(oldFip)
@@ -391,34 +397,35 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 			log.Printf("[DEBUG] Unassigning floating IP with ID [%s]", oldFip)
 
-			//unassign floating ip but don't delete as it may be managed by another resource
+			// unassign floating ip but don't delete as it may be managed by another resource
 			taskID, err := service.UnassignFloatingIP(oldFip)
 			if err != nil {
 				switch err.(type) {
 				case *ecloudservice.FloatingIPNotFoundError:
 					log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping unassign.", oldFip)
 				default:
-					return fmt.Errorf("Error unassigning floating ip with ID [%s]: %s", oldFip, err)
+					return diag.Errorf("Error unassigning floating ip with ID [%s]: %s", oldFip, err)
 				}
 			}
 
 			_, err = waitForResourceState(
+				ctx,
 				ecloudservice.TaskStatusComplete.String(),
 				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutDelete),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for floating ip with ID [%s] to be unassigned: %w", oldFip, err)
+				return diag.Errorf("Error waiting for floating ip with ID [%s] to be unassigned: %s", oldFip, err)
 			}
 
-			//unset floating ip
+			// unset floating ip
 			d.Set("floating_ip_id", "")
 		}
 
 		if oldFip == "" && newFip != "" {
 			// lock the fip
 			if len(newFip) < 1 {
-				return fmt.Errorf("invalid floating ip ID: %s", newFip)
+				return diag.Errorf("invalid floating ip ID: %s", newFip)
 			}
 
 			unlock := lock.LockResource(newFip)
@@ -433,21 +440,22 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 			taskID, err := service.AssignFloatingIP(newFip, assignFipReq)
 			if err != nil {
-				return fmt.Errorf("Error assigning floating IP: %s", err)
+				return diag.Errorf("Error assigning floating IP: %s", err)
 			}
 
 			_, err = waitForResourceState(
+				ctx,
 				ecloudservice.TaskStatusComplete.String(),
 				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for floating IP with ID [%s] to be assigned: %s", newFip, err)
+				return diag.Errorf("Error waiting for floating IP with ID [%s] to be assigned: %s", newFip, err)
 			}
 		}
 	}
 
-	//manage volume capacity
+	// manage volume capacity
 	if d.HasChange("volume_capacity") {
 		osVolumeID := d.Get("volume_id").(string)
 		log.Printf("[INFO] Updating volume with ID [%s]", osVolumeID)
@@ -455,16 +463,17 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			Capacity: d.Get("volume_capacity").(int),
 		})
 		if err != nil {
-			return fmt.Errorf("Error updating volume with ID [%s]: %w", osVolumeID, err)
+			return diag.Errorf("Error updating volume with ID [%s]: %s", osVolumeID, err)
 		}
 
 		_, err = waitForResourceState(
+			ctx,
 			ecloudservice.TaskStatusComplete.String(),
 			TaskStatusRefreshFunc(service, task.TaskID),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
-			return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", osVolumeID, ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", osVolumeID, ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
@@ -475,27 +484,28 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			IOPS: d.Get("volume_iops").(int),
 		})
 		if err != nil {
-			return fmt.Errorf("Error updating volume with ID [%s]: %w", osVolumeID, err)
+			return diag.Errorf("Error updating volume with ID [%s]: %s", osVolumeID, err)
 		}
 
 		_, err = waitForResourceState(
+			ctx,
 			ecloudservice.TaskStatusComplete.String(),
 			TaskStatusRefreshFunc(service, task.TaskID),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
-			return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", osVolumeID, ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", osVolumeID, ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	//manage attached data volumes
+	// manage attached data volumes
 	if d.HasChange("data_volume_ids") {
 		oldRaw, newRaw := d.GetChange("data_volume_ids")
 
 		oldIDs := oldRaw.(*schema.Set).List()
 		newIDs := newRaw.(*schema.Set).List()
 
-		//diff new against old for attach
+		// diff new against old for attach
 		for _, id := range newIDs {
 			volumeID := id.(string)
 			if rawVolumeExistsById(oldIDs, volumeID) {
@@ -510,20 +520,21 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			log.Printf("[INFO] Attaching volume to instance ID [%s]", d.Id())
 			taskID, err := service.AttachInstanceVolume(d.Id(), attachReq)
 			if err != nil {
-				return fmt.Errorf("Error attaching volume: %s", err)
+				return diag.Errorf("Error attaching volume: %s", err)
 			}
 
 			_, err = waitForResourceState(
+				ctx,
 				ecloudservice.TaskStatusComplete.String(),
 				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", volumeID, ecloudservice.TaskStatusComplete, err)
+				return diag.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", volumeID, ecloudservice.TaskStatusComplete, err)
 			}
 		}
 
-		//diff old against new for detach
+		// diff old against new for detach
 		for _, id := range oldIDs {
 			volumeID := id.(string)
 			if rawVolumeExistsById(newIDs, volumeID) {
@@ -538,16 +549,17 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 			log.Printf("[INFO] Detaching volume from instance ID [%s]", d.Id())
 			taskID, err := service.DetachInstanceVolume(d.Id(), detachReq)
 			if err != nil {
-				return fmt.Errorf("Error detaching volume: %s", err)
+				return diag.Errorf("Error detaching volume: %s", err)
 			}
 
 			_, err = waitForResourceState(
+				ctx,
 				ecloudservice.TaskStatusComplete.String(),
 				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", volumeID, ecloudservice.TaskStatusComplete, err)
+				return diag.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", volumeID, ecloudservice.TaskStatusComplete, err)
 			}
 		}
 	}
@@ -562,16 +574,17 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Migrating instance [%s] to host group [%s]", d.Id(), hostGroupID)
 		taskID, err := service.MigrateInstance(d.Id(), migrateReq)
 		if err != nil {
-			return fmt.Errorf("Error migrating instance: %s", err)
+			return diag.Errorf("Error migrating instance: %s", err)
 		}
 
 		_, err = waitForResourceState(
+			ctx,
 			ecloudservice.TaskStatusComplete.String(),
 			TaskStatusRefreshFunc(service, taskID),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
-			return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
@@ -586,61 +599,64 @@ func resourceInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Migrating instance [%s] to resource tier [%s]", d.Id(), resourceTierID)
 		taskID, err := service.MigrateInstance(d.Id(), migrateReq)
 		if err != nil {
-			return fmt.Errorf("Error migrating instance: %s", err)
+			return diag.Errorf("Error migrating instance: %s", err)
 		}
 
 		_, err = waitForResourceState(
+			ctx,
 			ecloudservice.TaskStatusComplete.String(),
 			TaskStatusRefreshFunc(service, taskID),
 			d.Timeout(schema.TimeoutUpdate),
 		)
 		if err != nil {
-			return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
 	if d.HasChange("encrypted") {
 		isEncrypted := d.Get("encrypted").(bool)
-		log.Printf("[INFO] Updating instance encryption status to [%s]", isEncrypted)
+		log.Printf("[INFO] Updating instance encryption status to [%t]", isEncrypted)
 
 		if isEncrypted {
 			taskID, err := service.EncryptInstance(d.Id())
 			if err != nil {
-				return fmt.Errorf("Error encrypting instance [%s]: %w", d.Id(), err)
+				return diag.Errorf("Error encrypting instance [%s]: %s", d.Id(), err)
 			}
 
 			_, err = waitForResourceState(
+				ctx,
 				ecloudservice.TaskStatusComplete.String(),
 				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+				return diag.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
 			}
 		} else {
 			taskID, err := service.DecryptInstance(d.Id())
 			if err != nil {
-				return fmt.Errorf("Error decrypting instance [%s]: %w", d.Id(), err)
+				return diag.Errorf("Error decrypting instance [%s]: %s", d.Id(), err)
 			}
 
 			_, err = waitForResourceState(
+				ctx,
 				ecloudservice.TaskStatusComplete.String(),
 				TaskStatusRefreshFunc(service, taskID),
 				d.Timeout(schema.TimeoutUpdate),
 			)
 			if err != nil {
-				return fmt.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
+				return diag.Errorf("Error waiting for task with ID [%s] to return task status of [%s]: %s", taskID, ecloudservice.TaskStatusComplete, err)
 			}
 		}
 	}
 
-	return resourceInstanceRead(d, meta)
+	return resourceInstanceRead(ctx, d, meta)
 }
 
-func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	//remove floating ip if set
+	// remove floating ip if set
 	if d.Get("requires_floating_ip").(bool) && len(d.Get("floating_ip_id").(string)) > 1 {
 		fip := d.Get("floating_ip_id").(string)
 
@@ -652,17 +668,18 @@ func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 			case *ecloudservice.FloatingIPNotFoundError:
 				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping unassign.", fip)
 			default:
-				return fmt.Errorf("Error unassigning floating ip with ID [%s]: %s", fip, err)
+				return diag.Errorf("Error unassigning floating ip with ID [%s]: %s", fip, err)
 			}
 		}
 
 		_, err = waitForResourceState(
+			ctx,
 			ecloudservice.TaskStatusComplete.String(),
 			TaskStatusRefreshFunc(service, taskID),
 			d.Timeout(schema.TimeoutDelete),
 		)
 		if err != nil {
-			return fmt.Errorf("Error waiting for floating ip with ID [%s] to be unassigned: %w", d.Id(), err)
+			return diag.Errorf("Error waiting for floating ip with ID [%s] to be unassigned: %s", d.Id(), err)
 		}
 
 		log.Printf("[DEBUG] Removing floating ip with ID [%s]", fip)
@@ -673,33 +690,35 @@ func resourceInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 			case *ecloudservice.FloatingIPNotFoundError:
 				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
 			default:
-				return fmt.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
+				return diag.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
 			}
 		}
 
 		_, err = waitForResourceState(
+			ctx,
 			ecloudservice.TaskStatusComplete.String(),
 			TaskStatusRefreshFunc(service, taskID),
 			d.Timeout(schema.TimeoutDelete),
 		)
 		if err != nil {
-			return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", d.Id(), err)
+			return diag.Errorf("Error waiting for floating ip with ID [%s] to be removed: %s", d.Id(), err)
 		}
 	}
 
 	log.Printf("[INFO] Removing instance with ID [%s]", d.Id())
 	err := service.DeleteInstance(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error removing instance with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error removing instance with ID [%s]: %s", d.Id(), err)
 	}
 
 	_, err = waitForResourceState(
+		ctx,
 		"Deleted",
 		InstanceSyncStatusRefreshFunc(service, d.Id()),
 		d.Timeout(schema.TimeoutDelete),
 	)
 	if err != nil {
-		return fmt.Errorf("Error waiting for instance with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for instance with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil
@@ -726,7 +745,7 @@ func InstanceSyncStatusRefreshFunc(service ecloudservice.ECloudService, instance
 }
 
 // waitForResourceState is a wrapper for the resource.StateChangeConf helper in order to reduce duplication
-func waitForResourceState(targetState string, refreshFunc resource.StateRefreshFunc, timeout time.Duration) (interface{}, error) {
+func waitForResourceState(ctx context.Context, targetState string, refreshFunc resource.StateRefreshFunc, timeout time.Duration) (interface{}, error) {
 	stateConf := &resource.StateChangeConf{
 		Target:     []string{targetState},
 		Refresh:    refreshFunc,
@@ -735,5 +754,5 @@ func waitForResourceState(targetState string, refreshFunc resource.StateRefreshF
 		MinTimeout: 3 * time.Second,
 	}
 
-	return stateConf.WaitForState()
+	return stateConf.WaitForStateContext(ctx)
 }

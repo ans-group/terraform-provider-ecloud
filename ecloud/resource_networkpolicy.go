@@ -1,25 +1,25 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceNetworkPolicy() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceNetworkPolicyCreate,
-		Read:   resourceNetworkPolicyRead,
-		Update: resourceNetworkPolicyUpdate,
-		Delete: resourceNetworkPolicyDelete,
+		CreateContext: resourceNetworkPolicyCreate,
+		ReadContext:   resourceNetworkPolicyRead,
+		UpdateContext: resourceNetworkPolicyUpdate,
+		DeleteContext: resourceNetworkPolicyDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -49,7 +49,7 @@ func resourceNetworkPolicy() *schema.Resource {
 	}
 }
 
-func resourceNetworkPolicyCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkPolicyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateNetworkPolicyRequest{
@@ -60,7 +60,7 @@ func resourceNetworkPolicyCreate(d *schema.ResourceData, meta interface{}) error
 	if catchallRuleAction, ok := d.GetOk("catchall_rule_action"); ok {
 		action, err := ecloudservice.ParseNetworkPolicyCatchallRuleAction(catchallRuleAction.(string))
 		if err != nil {
-			return fmt.Errorf("Error parsing network policy catch-all rule action: %s", err)
+			return diag.Errorf("Error parsing network policy catch-all rule action: %s", err)
 		}
 		createReq.CatchallRuleAction = action
 	}
@@ -70,7 +70,7 @@ func resourceNetworkPolicyCreate(d *schema.ResourceData, meta interface{}) error
 	log.Print("[INFO] Creating network policy")
 	task, err := service.CreateNetworkPolicy(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating network policy: %s", err)
+		return diag.Errorf("Error creating network policy: %s", err)
 	}
 
 	d.SetId(task.ResourceID)
@@ -83,15 +83,15 @@ func resourceNetworkPolicyCreate(d *schema.ResourceData, meta interface{}) error
 		MinTimeout: 1 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for network policy with ID [%s] to return status of [%s]: %s", task.ResourceID, ecloudservice.TaskStatusComplete, err)
+		return diag.Errorf("Error waiting for network policy with ID [%s] to return status of [%s]: %s", task.ResourceID, ecloudservice.TaskStatusComplete, err)
 	}
 
-	return resourceNetworkPolicyRead(d, meta)
+	return resourceNetworkPolicyRead(ctx, d, meta)
 }
 
-func resourceNetworkPolicyRead(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkPolicyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[DEBUG] Retrieving Network Policy with ID [%s]", d.Id())
@@ -102,7 +102,7 @@ func resourceNetworkPolicyRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -118,15 +118,15 @@ func resourceNetworkPolicyRead(d *schema.ResourceData, meta interface{}) error {
 
 		rules, err := service.GetNetworkPolicyNetworkRules(d.Id(), params)
 		if err != nil {
-			return fmt.Errorf("Error retrieving network policy catch-all rule: %s", err)
+			return diag.Errorf("Error retrieving network policy catch-all rule: %s", err)
 		}
 
 		if len(rules) > 1 {
-			return errors.New("More than 1 network policy catchall rule exists")
+			return diag.Errorf("More than 1 network policy catchall rule exists")
 		}
 
 		if len(rules) < 1 {
-			return errors.New("No catchall rule found for network policy")
+			return diag.Errorf("No catchall rule found for network policy")
 		}
 
 		d.Set("catchall_rule_id", rules[0].ID)
@@ -135,7 +135,7 @@ func resourceNetworkPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceNetworkPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkPolicyUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 	hasChange := false
 
@@ -150,7 +150,7 @@ func resourceNetworkPolicyUpdate(d *schema.ResourceData, meta interface{}) error
 		log.Printf("[INFO] Updating network policy with ID [%s]", d.Id())
 		task, err := service.PatchNetworkPolicy(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating networking policy with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating networking policy with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -161,26 +161,26 @@ func resourceNetworkPolicyUpdate(d *schema.ResourceData, meta interface{}) error
 			MinTimeout: 1 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for network policy with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for network policy with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
 	if d.HasChange("catchall_rule_action") {
-		//parse new rule action
+		// parse new rule action
 		catchallRuleAction, err := ecloudservice.ParseNetworkPolicyCatchallRuleAction(d.Get("catchall_rule_action").(string))
 		if err != nil {
-			return fmt.Errorf("Error parsing network rule action: %s", err)
+			return diag.Errorf("Error parsing network rule action: %s", err)
 		}
 
-		//retrieve catchall rule by id
+		// retrieve catchall rule by id
 		rule, err := service.GetNetworkRule(d.Get("catchall_rule_id").(string))
 		if err != nil {
-			return fmt.Errorf("Error retrieving network rule with ID [%s]: %s", d.Get("catchall_rule_id").(string), err)
+			return diag.Errorf("Error retrieving network rule with ID [%s]: %s", d.Get("catchall_rule_id").(string), err)
 		}
 
-		//patch rule
+		// patch rule
 		patchRuleReq := ecloudservice.PatchNetworkRuleRequest{
 			Action: ecloudservice.NetworkRuleAction(catchallRuleAction),
 		}
@@ -188,7 +188,7 @@ func resourceNetworkPolicyUpdate(d *schema.ResourceData, meta interface{}) error
 
 		task, err := service.PatchNetworkRule(rule.ID, patchRuleReq)
 		if err != nil {
-			return fmt.Errorf("Error updating network rule action: %s", err)
+			return diag.Errorf("Error updating network rule action: %s", err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -199,22 +199,22 @@ func resourceNetworkPolicyUpdate(d *schema.ResourceData, meta interface{}) error
 			MinTimeout: 1 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for network rule with ID [%s] to be deleted: %s", rule.ID, err)
+			return diag.Errorf("Error waiting for network rule with ID [%s] to be deleted: %s", rule.ID, err)
 		}
 	}
 
-	return resourceNetworkPolicyRead(d, meta)
+	return resourceNetworkPolicyRead(ctx, d, meta)
 }
 
-func resourceNetworkPolicyDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkPolicyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing network policy with ID [%s]", d.Id())
 	taskID, err := service.DeleteNetworkPolicy(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error removing network policy with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error removing network policy with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -225,9 +225,9 @@ func resourceNetworkPolicyDelete(d *schema.ResourceData, meta interface{}) error
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for network policy with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for network policy with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

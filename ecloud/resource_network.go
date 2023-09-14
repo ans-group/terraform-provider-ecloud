@@ -1,23 +1,25 @@
 package ecloud
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceNetwork() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceNetworkCreate,
-		Read:   resourceNetworkRead,
-		Update: resourceNetworkUpdate,
-		Delete: resourceNetworkDelete,
+		CreateContext: resourceNetworkCreate,
+		ReadContext:   resourceNetworkRead,
+		UpdateContext: resourceNetworkUpdate,
+		DeleteContext: resourceNetworkDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -40,7 +42,7 @@ func resourceNetwork() *schema.Resource {
 	}
 }
 
-func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateNetworkRequest{
@@ -53,7 +55,7 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating network")
 	networkID, err := service.CreateNetwork(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating network: %s", err)
+		return diag.Errorf("Error creating network: %s", err)
 	}
 
 	d.SetId(networkID)
@@ -66,15 +68,15 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 1 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for network with ID [%s] to return sync status of [%s]: %s", networkID, ecloudservice.SyncStatusComplete, err)
+		return diag.Errorf("Error waiting for network with ID [%s] to return sync status of [%s]: %s", networkID, ecloudservice.SyncStatusComplete, err)
 	}
 
-	return resourceNetworkRead(d, meta)
+	return resourceNetworkRead(ctx, d, meta)
 }
 
-func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving network with ID [%s]", d.Id())
@@ -85,7 +87,7 @@ func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -96,7 +98,7 @@ func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
@@ -107,7 +109,7 @@ func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Updating network with ID [%s]", d.Id())
 		err := service.PatchNetwork(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating network with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating network with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -118,22 +120,22 @@ func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 1 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for network with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+			return diag.Errorf("Error waiting for network with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
 		}
 	}
 
-	return resourceNetworkRead(d, meta)
+	return resourceNetworkRead(ctx, d, meta)
 }
 
-func resourceNetworkDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing network with ID [%s]", d.Id())
 	err := service.DeleteNetwork(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error removing network with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error removing network with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -144,9 +146,9 @@ func resourceNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for network with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for network with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

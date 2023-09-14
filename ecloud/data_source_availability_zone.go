@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceAvailabilityZone() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceAvailabilityZoneRead,
+		ReadContext: dataSourceAvailabilityZoneRead,
 
 		Schema: map[string]*schema.Schema{
 			"availability_zone_id": {
@@ -34,7 +34,7 @@ func dataSourceAvailabilityZone() *schema.Resource {
 	}
 }
 
-func dataSourceAvailabilityZoneRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceAvailabilityZoneRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -54,15 +54,15 @@ func dataSourceAvailabilityZoneRead(d *schema.ResourceData, meta interface{}) er
 
 	azs, err := service.GetAvailabilityZones(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active availability zones: %s", err)
+		return diag.Errorf("Error retrieving active availability zones: %s", err)
 	}
 
 	if len(azs) < 1 {
-		return errors.New("No availability zones found with provided arguments")
+		return diag.Errorf("No availability zones found with provided arguments")
 	}
 
 	if len(azs) > 1 {
-		return errors.New("More than 1 availability zone found with provided arguments")
+		return diag.Errorf("More than 1 availability zone found with provided arguments")
 	}
 
 	d.SetId(azs[0].ID)

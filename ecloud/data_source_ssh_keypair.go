@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceSshKeyPair() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceSshKeyPairRead,
+		ReadContext: dataSourceSshKeyPairRead,
 
 		Schema: map[string]*schema.Schema{
 			"ssh_keypair_id": {
@@ -30,7 +30,7 @@ func dataSourceSshKeyPair() *schema.Resource {
 	}
 }
 
-func dataSourceSshKeyPairRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceSshKeyPairRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -44,15 +44,15 @@ func dataSourceSshKeyPairRead(d *schema.ResourceData, meta interface{}) error {
 
 	keyPairs, err := service.GetSSHKeyPairs(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving ssh keypair: %s", err)
+		return diag.Errorf("Error retrieving ssh keypair: %s", err)
 	}
 
 	if len(keyPairs) < 1 {
-		return errors.New("No ssh keypairs found with provided arguments")
+		return diag.Errorf("No ssh keypairs found with provided arguments")
 	}
 
 	if len(keyPairs) > 1 {
-		return errors.New("More than 1 host found with provided arguments")
+		return diag.Errorf("More than 1 host found with provided arguments")
 	}
 
 	d.SetId(keyPairs[0].ID)

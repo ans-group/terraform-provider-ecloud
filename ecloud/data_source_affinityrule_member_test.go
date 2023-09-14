@@ -15,8 +15,8 @@ func TestAccDataSourceAffinityRuleMember_basic(t *testing.T) {
 	arResourceName := "ecloud_affinityrule.test-ar.id"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -79,6 +79,7 @@ resource "ecloud_affinityrule_member" "test-arm" {
 
 data "ecloud_affinityrule_member" "test-arm" {
     instance_id = ecloud_instance.test-instance.id
+	affinity_rule_id = ecloud_affinityrule.test-ar.id
 }
 `, regionID, memberInstanceID)
 }

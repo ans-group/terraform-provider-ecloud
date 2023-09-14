@@ -1,24 +1,25 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceIPAddress() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceIPAddressCreate,
-		Read:   resourceIPAddressRead,
-		Update: resourceIPAddressUpdate,
-		Delete: resourceIPAddressDelete,
+		CreateContext: resourceIPAddressCreate,
+		ReadContext:   resourceIPAddressRead,
+		UpdateContext: resourceIPAddressUpdate,
+		DeleteContext: resourceIPAddressDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -46,7 +47,7 @@ func resourceIPAddress() *schema.Resource {
 	}
 }
 
-func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateIPAddressRequest{
@@ -59,7 +60,7 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating IPAddress")
 	task, err := service.CreateIPAddress(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating IP address: %s", err)
+		return diag.Errorf("Error creating IP address: %s", err)
 	}
 
 	d.SetId(task.ResourceID)
@@ -72,15 +73,15 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 20 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for IP address with ID [%s] to be created: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for IP address with ID [%s] to be created: %s", d.Id(), err)
 	}
 
-	return resourceIPAddressRead(d, meta)
+	return resourceIPAddressRead(ctx, d, meta)
 }
 
-func resourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving IP address with ID [%s]", d.Id())
@@ -91,7 +92,7 @@ func resourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -102,7 +103,7 @@ func resourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
@@ -113,7 +114,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		task, err := service.PatchIPAddress(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating IP address with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating IP address with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -124,16 +125,16 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for IP address with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for IP address with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceIPAddressRead(d, meta)
+	return resourceIPAddressRead(ctx, d, meta)
 }
 
-func resourceIPAddressDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing IP address with ID [%s]", d.Id())
@@ -143,7 +144,7 @@ func resourceIPAddressDelete(d *schema.ResourceData, meta interface{}) error {
 		case *ecloudservice.IPAddressNotFoundError:
 			return nil
 		default:
-			return fmt.Errorf("Error removing IP address with ID [%s]: %s", d.Id(), err)
+			return diag.Errorf("Error removing IP address with ID [%s]: %s", d.Id(), err)
 		}
 	}
 
@@ -155,9 +156,9 @@ func resourceIPAddressDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 5 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for IP address with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for IP address with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

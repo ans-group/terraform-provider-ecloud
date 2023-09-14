@@ -16,9 +16,9 @@ func TestAccVolumeGroup_basic(t *testing.T) {
 	vpcResourceName := "ecloud_vpc.test-vpc"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckVolumeGroupDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckVolumeGroupDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceVolumeGroupConfig_basic(ANS_TEST_VPC_REGION_ID, volumeGroupName),

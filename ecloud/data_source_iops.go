@@ -1,18 +1,18 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"strconv"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceIOPS() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceIOPSRead,
+		ReadContext: dataSourceIOPSRead,
 
 		Schema: map[string]*schema.Schema{
 			"availability_zone_id": {
@@ -31,7 +31,7 @@ func dataSourceIOPS() *schema.Resource {
 	}
 }
 
-func dataSourceIOPSRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceIOPSRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -51,21 +51,21 @@ func dataSourceIOPSRead(d *schema.ResourceData, meta interface{}) error {
 	if azID, ok := d.GetOk("availability_zone_id"); ok {
 		tiers, err = service.GetAvailabilityZoneIOPSTiers(azID.(string), params)
 		if err != nil {
-			return fmt.Errorf("Error retrieving availability zone IOPS tiers: %s", err)
+			return diag.Errorf("Error retrieving availability zone IOPS tiers: %s", err)
 		}
 	} else {
 		tiers, err = service.GetIOPSTiers(params)
 		if err != nil {
-			return fmt.Errorf("Error retrieving IOPS tiers: %s", err)
+			return diag.Errorf("Error retrieving IOPS tiers: %s", err)
 		}
 	}
 
 	if len(tiers) < 1 {
-		return errors.New("No IOPS tiers found with provided arguments")
+		return diag.Errorf("No IOPS tiers found with provided arguments")
 	}
 
 	if len(tiers) > 1 {
-		return errors.New("More than 1 IOPS tier found with provided arguments")
+		return diag.Errorf("More than 1 IOPS tier found with provided arguments")
 	}
 
 	d.SetId(tiers[0].ID)

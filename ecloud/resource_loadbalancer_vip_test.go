@@ -16,9 +16,9 @@ func TestAccLoadBalancerVip_basic(t *testing.T) {
 	lbResourceName := "ecloud_loadbalancer.test-lb"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLoadBalancerVipDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckLoadBalancerVipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceLoadBalancerVipConfig_basic(ANS_TEST_VPC_REGION_ID, VIPName),
@@ -92,7 +92,7 @@ data "ecloud_availability_zone" "test-az" {
 }
 
 data "ecloud_loadbalancer_spec" "medium-lb" {
-	name = "Medium
+	name = "Medium"
 }
 
 resource "ecloud_router" "test-router" {

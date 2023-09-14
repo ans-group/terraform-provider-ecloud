@@ -1,23 +1,24 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceVPNEndpoint() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVPNEndpointCreate,
-		Read:   resourceVPNEndpointRead,
-		Update: resourceVPNEndpointUpdate,
-		Delete: resourceVPNEndpointDelete,
+		CreateContext: resourceVPNEndpointCreate,
+		ReadContext:   resourceVPNEndpointRead,
+		UpdateContext: resourceVPNEndpointUpdate,
+		DeleteContext: resourceVPNEndpointDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -45,7 +46,7 @@ func resourceVPNEndpoint() *schema.Resource {
 	}
 }
 
-func resourceVPNEndpointCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNEndpointCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	// if not populated then assume the provider should manage the fip
@@ -65,7 +66,7 @@ func resourceVPNEndpointCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating VPN endpoint")
 	taskRef, err := service.CreateVPNEndpoint(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating VPN endpoint: %s", err)
+		return diag.Errorf("Error creating VPN endpoint: %s", err)
 	}
 
 	d.SetId(taskRef.ResourceID)
@@ -78,15 +79,15 @@ func resourceVPNEndpointCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for VPN endpoint with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+		return diag.Errorf("Error waiting for VPN endpoint with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 	}
 
-	return resourceVPNEndpointRead(d, meta)
+	return resourceVPNEndpointRead(ctx, d, meta)
 }
 
-func resourceVPNEndpointRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNEndpointRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving VPNEndpoint with ID [%s]", d.Id())
@@ -97,7 +98,7 @@ func resourceVPNEndpointRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -108,7 +109,7 @@ func resourceVPNEndpointRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceVPNEndpointUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNEndpointUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
@@ -119,7 +120,7 @@ func resourceVPNEndpointUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Updating VPNEndpoint with ID [%s]", d.Id())
 		taskRef, err := service.PatchVPNEndpoint(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating VPNEndpoint with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating VPNEndpoint with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -130,22 +131,22 @@ func resourceVPNEndpointUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for VPN endpoint with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for VPN endpoint with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceVPNEndpointRead(d, meta)
+	return resourceVPNEndpointRead(ctx, d, meta)
 }
 
-func resourceVPNEndpointDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNEndpointDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing VPNEndpoint with ID [%s]", d.Id())
 	taskID, err := service.DeleteVPNEndpoint(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error VPNEndpoint with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error VPNEndpoint with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -156,12 +157,12 @@ func resourceVPNEndpointDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for VPNEndpoint with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for VPNEndpoint with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
-	//remove floating ip if set
+	// remove floating ip if set
 	if d.Get("manage_floating_ip").(bool) {
 		fip := d.Get("floating_ip_id").(string)
 
@@ -173,7 +174,7 @@ func resourceVPNEndpointDelete(d *schema.ResourceData, meta interface{}) error {
 			case *ecloudservice.FloatingIPNotFoundError:
 				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
 			default:
-				return fmt.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
+				return diag.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
 			}
 		}
 
@@ -184,9 +185,9 @@ func resourceVPNEndpointDelete(d *schema.ResourceData, meta interface{}) error {
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
 		}
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", d.Id(), err)
+			return diag.Errorf("Error waiting for floating ip with ID [%s] to be removed: %s", d.Id(), err)
 		}
 	}
 

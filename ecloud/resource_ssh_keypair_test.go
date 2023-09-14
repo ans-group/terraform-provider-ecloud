@@ -15,9 +15,9 @@ func TestAccSshKeyPair_basic(t *testing.T) {
 	resourceName := "ecloud_ssh_keypair.test-keypair"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckSshKeyPairDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckSshKeyPairDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceSSHKeyPairConfig_basic(keyPairName),

@@ -1,13 +1,14 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	"github.com/ans-group/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/terraform-provider-ecloud/pkg/lock"
@@ -15,12 +16,12 @@ import (
 
 func resourceNetworkRule() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceNetworkRuleCreate,
-		Read:   resourceNetworkRuleRead,
-		Update: resourceNetworkRuleUpdate,
-		Delete: resourceNetworkRuleDelete,
+		CreateContext: resourceNetworkRuleCreate,
+		ReadContext:   resourceNetworkRuleRead,
+		UpdateContext: resourceNetworkRuleUpdate,
+		DeleteContext: resourceNetworkRuleDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -87,7 +88,7 @@ func resourceNetworkRule() *schema.Resource {
 	}
 }
 
-func resourceNetworkRuleCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	networkPolicyID := d.Get("network_policy_id").(string)
 	unlock := lock.LockResource(networkPolicyID)
 	defer unlock()
@@ -96,7 +97,7 @@ func resourceNetworkRuleCreate(d *schema.ResourceData, meta interface{}) error {
 
 	portsExpanded, err := expandCreateNetworkRuleRequestPorts(d.Get("port").([]interface{}))
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	createReq := ecloudservice.CreateNetworkRuleRequest{
@@ -112,14 +113,14 @@ func resourceNetworkRuleCreate(d *schema.ResourceData, meta interface{}) error {
 	direction := d.Get("direction").(string)
 	directionParsed, err := ecloudservice.ParseNetworkRuleDirection(direction)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	createReq.Direction = directionParsed
 
 	action := d.Get("action").(string)
 	actionParsed, err := ecloudservice.ParseNetworkRuleAction(action)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	createReq.Action = actionParsed
 
@@ -128,7 +129,7 @@ func resourceNetworkRuleCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating network rule")
 	task, err := service.CreateNetworkRule(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating network rule: %s", err)
+		return diag.Errorf("Error creating network rule: %s", err)
 	}
 
 	d.SetId(task.ResourceID)
@@ -141,15 +142,15 @@ func resourceNetworkRuleCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 1 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for network policy with ID [%s] to return task status of [%s]: %s", networkPolicyID, ecloudservice.TaskStatusComplete, err)
+		return diag.Errorf("Error waiting for network policy with ID [%s] to return task status of [%s]: %s", networkPolicyID, ecloudservice.TaskStatusComplete, err)
 	}
 
-	return resourceNetworkRuleRead(d, meta)
+	return resourceNetworkRuleRead(ctx, d, meta)
 }
 
-func resourceNetworkRuleRead(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving network rule with ID [%s]", d.Id())
@@ -160,21 +161,21 @@ func resourceNetworkRuleRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	log.Printf("[INFO] Retrieving network rule ports for network rule with ID [%s]", d.Id())
 	// ports, err := service.GetNetworkRuleNetworkRulePorts(d.Id(), connection.APIRequestParameters{})
 
-	//using filter parameter in request until dedicated API endpoint is
-	//added for service.GetNetworkRuleNetworkRulePorts().
+	// using filter parameter in request until dedicated API endpoint is
+	// added for service.GetNetworkRuleNetworkRulePorts().
 	params := connection.APIRequestParameters{}
 	params.WithFilter(*connection.NewAPIRequestFiltering("network_rule_id", connection.EQOperator, []string{d.Id()}))
 
 	ports, err := service.GetNetworkRulePorts(params)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.Set("network_policy_id", rule.NetworkPolicyID)
@@ -190,7 +191,7 @@ func resourceNetworkRuleRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceNetworkRuleUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	networkPolicyID := d.Get("network_policy_id").(string)
 	unlock := lock.LockResource(networkPolicyID)
 	defer unlock()
@@ -226,7 +227,7 @@ func resourceNetworkRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 		action := d.Get("action").(string)
 		actionParsed, err := ecloudservice.ParseNetworkRuleAction(action)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		patchReq.Action = actionParsed
@@ -238,7 +239,7 @@ func resourceNetworkRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 		direction := d.Get("direction").(string)
 		directionParsed, err := ecloudservice.ParseNetworkRuleDirection(direction)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		patchReq.Direction = directionParsed
@@ -254,7 +255,7 @@ func resourceNetworkRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		portsExpanded, err := expandUpdateNetworkRuleRequestPorts(d.Get("port").([]interface{}))
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		patchReq.Ports = portsExpanded
@@ -264,7 +265,7 @@ func resourceNetworkRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Updating network rule with ID [%s]", d.Id())
 		task, err := service.PatchNetworkRule(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating firewall rule with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating firewall rule with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -275,16 +276,16 @@ func resourceNetworkRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 1 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for network policy with ID [%s] to return task status of [%s]: %s", networkPolicyID, ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for network policy with ID [%s] to return task status of [%s]: %s", networkPolicyID, ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceNetworkRuleRead(d, meta)
+	return resourceNetworkRuleRead(ctx, d, meta)
 }
 
-func resourceNetworkRuleDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	networkPolicyID := d.Get("network_policy_id").(string)
 	unlock := lock.LockResource(networkPolicyID)
 	defer unlock()
@@ -294,7 +295,7 @@ func resourceNetworkRuleDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[INFO] Removing network rule with ID [%s]", d.Id())
 	taskID, err := service.DeleteNetworkRule(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error removing network rule with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error removing network rule with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -305,9 +306,9 @@ func resourceNetworkRuleDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 1 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for network policy with ID [%s] to return task status of [%s]: %s", networkPolicyID, ecloudservice.TaskStatusComplete, err)
+		return diag.Errorf("Error waiting for network policy with ID [%s] to return task status of [%s]: %s", networkPolicyID, ecloudservice.TaskStatusComplete, err)
 	}
 
 	return nil
