@@ -48,7 +48,7 @@ func resourceVolume() *schema.Resource {
 				Computed: true,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					v := val.(int)
-					iops := []int{300, 600, 1200, 2500}
+					iops := []int{300, 600, 1200, 2500, 5000}
 					intInSlice := func(slice []int, value int) bool {
 						for _, s := range slice {
 							if s == value {
@@ -59,7 +59,7 @@ func resourceVolume() *schema.Resource {
 					}
 
 					if !intInSlice(iops, v) {
-						errs = append(errs, fmt.Errorf("%q must be a valid IOPS value [300, 600, 1200, 2500], got: %d", key, v))
+						errs = append(errs, fmt.Errorf("%q must be a valid IOPS value [300, 600, 1200, 2500, 5000], got: %d", key, v))
 					}
 					return
 				},
