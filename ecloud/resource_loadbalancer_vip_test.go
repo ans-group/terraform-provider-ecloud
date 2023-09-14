@@ -92,7 +92,7 @@ data "ecloud_availability_zone" "test-az" {
 }
 
 data "ecloud_loadbalancer_spec" "medium-lb" {
-	name = "Medium
+	name = "Medium"
 }
 
 resource "ecloud_router" "test-router" {
