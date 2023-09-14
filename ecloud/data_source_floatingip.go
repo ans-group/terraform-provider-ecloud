@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceFloatingIP() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceFloatingIPRead,
+		ReadContext: dataSourceFloatingIPRead,
 
 		Schema: map[string]*schema.Schema{
 			"floating_ip_id": {
@@ -38,7 +38,7 @@ func dataSourceFloatingIP() *schema.Resource {
 	}
 }
 
-func dataSourceFloatingIPRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceFloatingIPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -61,15 +61,15 @@ func dataSourceFloatingIPRead(d *schema.ResourceData, meta interface{}) error {
 
 	fips, err := service.GetFloatingIPs(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving floating ips: %s", err)
+		return diag.Errorf("Error retrieving floating ips: %s", err)
 	}
 
 	if len(fips) < 1 {
-		return errors.New("No floating ips found with provided arguments")
+		return diag.Errorf("No floating ips found with provided arguments")
 	}
 
 	if len(fips) > 1 {
-		return errors.New("More than 1 floating ip found with provided arguments")
+		return diag.Errorf("More than 1 floating ip found with provided arguments")
 	}
 
 	d.SetId(fips[0].ID)

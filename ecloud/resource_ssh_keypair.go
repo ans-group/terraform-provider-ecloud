@@ -1,21 +1,22 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceSshKeyPair() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceSshKeyPairCreate,
-		Read:   resourceSshKeyPairRead,
-		Update: resourceSshKeyPairUpdate,
-		Delete: resourceSshKeyPairDelete,
+		CreateContext: resourceSshKeyPairCreate,
+		ReadContext:   resourceSshKeyPairRead,
+		UpdateContext: resourceSshKeyPairUpdate,
+		DeleteContext: resourceSshKeyPairDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -33,7 +34,7 @@ func resourceSshKeyPair() *schema.Resource {
 	}
 }
 
-func resourceSshKeyPairCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceSshKeyPairCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateSSHKeyPairRequest{
@@ -45,15 +46,15 @@ func resourceSshKeyPairCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating ssh key pair")
 	keyPairID, err := service.CreateSSHKeyPair(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating ssh key pair: %s", err)
+		return diag.Errorf("Error creating ssh key pair: %s", err)
 	}
 
 	d.SetId(keyPairID)
 
-	return resourceSshKeyPairRead(d, meta)
+	return resourceSshKeyPairRead(ctx, d, meta)
 }
 
-func resourceSshKeyPairRead(d *schema.ResourceData, meta interface{}) error {
+func resourceSshKeyPairRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving ssh key pair with ID [%s]", d.Id())
@@ -64,7 +65,7 @@ func resourceSshKeyPairRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -74,7 +75,7 @@ func resourceSshKeyPairRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceSshKeyPairUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceSshKeyPairUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
@@ -85,14 +86,14 @@ func resourceSshKeyPairUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		err := service.PatchSSHKeyPair(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating ssh key pair with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating ssh key pair with ID [%s]: %s", d.Id(), err)
 		}
 	}
 
-	return resourceSshKeyPairRead(d, meta)
+	return resourceSshKeyPairRead(ctx, d, meta)
 }
 
-func resourceSshKeyPairDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceSshKeyPairDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing host group with ID [%s]", d.Id())
@@ -102,7 +103,7 @@ func resourceSshKeyPairDelete(d *schema.ResourceData, meta interface{}) error {
 		case *ecloudservice.SSHKeyPairNotFoundError:
 			return nil
 		default:
-			return fmt.Errorf("Error removing ssh key pair with ID [%s]: %s", d.Id(), err)
+			return diag.Errorf("Error removing ssh key pair with ID [%s]: %s", d.Id(), err)
 		}
 	}
 

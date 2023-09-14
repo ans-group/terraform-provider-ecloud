@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceInstance() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceInstanceRead,
+		ReadContext: dataSourceInstanceRead,
 
 		Schema: map[string]*schema.Schema{
 			"instance_id": {
@@ -30,7 +30,7 @@ func dataSourceInstance() *schema.Resource {
 	}
 }
 
-func dataSourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -47,15 +47,15 @@ func dataSourceInstanceRead(d *schema.ResourceData, meta interface{}) error {
 
 	instances, err := service.GetInstances(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active instances: %s", err)
+		return diag.Errorf("Error retrieving active instances: %s", err)
 	}
 
 	if len(instances) < 1 {
-		return errors.New("No instances found with provided arguments")
+		return diag.Errorf("No instances found with provided arguments")
 	}
 
 	if len(instances) > 1 {
-		return errors.New("More than 1 instance found with provided arguments")
+		return diag.Errorf("More than 1 instance found with provided arguments")
 	}
 
 	d.SetId(instances[0].ID)

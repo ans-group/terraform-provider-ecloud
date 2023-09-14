@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceAffinityRule() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceAffinityRuleRead,
+		ReadContext: dataSourceAffinityRuleRead,
 
 		Schema: map[string]*schema.Schema{
 			"affinity_rule_id": {
@@ -38,7 +38,7 @@ func dataSourceAffinityRule() *schema.Resource {
 	}
 }
 
-func dataSourceAffinityRuleRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceAffinityRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -61,15 +61,15 @@ func dataSourceAffinityRuleRead(d *schema.ResourceData, meta interface{}) error 
 
 	ars, err := service.GetAffinityRules(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving affinity rules: %s", err)
+		return diag.Errorf("Error retrieving affinity rules: %s", err)
 	}
 
 	if len(ars) < 1 {
-		return errors.New("No affinity rules found with provided arguments")
+		return diag.Errorf("No affinity rules found with provided arguments")
 	}
 
 	if len(ars) > 1 {
-		return errors.New("More than 1 affinity rule found with provided arguments")
+		return diag.Errorf("More than 1 affinity rule found with provided arguments")
 	}
 
 	d.SetId(ars[0].ID)

@@ -16,9 +16,9 @@ func TestAccFirewallPolicy_basic(t *testing.T) {
 	routerResourceName := "ecloud_router.test-router"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckFirewallPolicyDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckFirewallPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceFirewallPolicyConfig_basic(ANS_TEST_VPC_REGION_ID, policyName),

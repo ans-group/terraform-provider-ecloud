@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceHostSpec() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceHostSpecRead,
+		ReadContext: dataSourceHostSpecRead,
 
 		Schema: map[string]*schema.Schema{
 			"host_spec_id": {
@@ -38,7 +38,7 @@ func dataSourceHostSpec() *schema.Resource {
 	}
 }
 
-func dataSourceHostSpecRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceHostSpecRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -52,15 +52,15 @@ func dataSourceHostSpecRead(d *schema.ResourceData, meta interface{}) error {
 
 	hostSpecs, err := service.GetHostSpecs(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving host specs: %s", err)
+		return diag.Errorf("Error retrieving host specs: %s", err)
 	}
 
 	if len(hostSpecs) < 1 {
-		return errors.New("No host specs found with provided arguments")
+		return diag.Errorf("No host specs found with provided arguments")
 	}
 
 	if len(hostSpecs) > 1 {
-		return errors.New("More than 1 host spec found with provided arguments")
+		return diag.Errorf("More than 1 host spec found with provided arguments")
 	}
 
 	d.SetId(hostSpecs[0].ID)

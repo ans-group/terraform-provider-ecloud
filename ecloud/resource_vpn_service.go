@@ -1,23 +1,24 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceVPNService() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVPNServiceCreate,
-		Read:   resourceVPNServiceRead,
-		Update: resourceVPNServiceUpdate,
-		Delete: resourceVPNServiceDelete,
+		CreateContext: resourceVPNServiceCreate,
+		ReadContext:   resourceVPNServiceRead,
+		UpdateContext: resourceVPNServiceUpdate,
+		DeleteContext: resourceVPNServiceDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -34,7 +35,7 @@ func resourceVPNService() *schema.Resource {
 	}
 }
 
-func resourceVPNServiceCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNServiceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateVPNServiceRequest{
@@ -46,7 +47,7 @@ func resourceVPNServiceCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating VPN service")
 	taskRef, err := service.CreateVPNService(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating VPN service: %s", err)
+		return diag.Errorf("Error creating VPN service: %s", err)
 	}
 
 	d.SetId(taskRef.ResourceID)
@@ -59,15 +60,15 @@ func resourceVPNServiceCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for VPN service with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+		return diag.Errorf("Error waiting for VPN service with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 	}
 
-	return resourceVPNServiceRead(d, meta)
+	return resourceVPNServiceRead(ctx, d, meta)
 }
 
-func resourceVPNServiceRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNServiceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving VPNService with ID [%s]", d.Id())
@@ -78,7 +79,7 @@ func resourceVPNServiceRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -88,7 +89,7 @@ func resourceVPNServiceRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceVPNServiceUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNServiceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
@@ -99,7 +100,7 @@ func resourceVPNServiceUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Updating VPNService with ID [%s]", d.Id())
 		taskRef, err := service.PatchVPNService(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating VPNService with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating VPNService with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -110,22 +111,22 @@ func resourceVPNServiceUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for VPN service with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for VPN service with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceVPNServiceRead(d, meta)
+	return resourceVPNServiceRead(ctx, d, meta)
 }
 
-func resourceVPNServiceDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNServiceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing VPNService with ID [%s]", d.Id())
 	taskID, err := service.DeleteVPNService(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error VPNService with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error VPNService with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -136,9 +137,9 @@ func resourceVPNServiceDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for VPNService with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for VPNService with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

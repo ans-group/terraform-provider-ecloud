@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceRegion() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceRegionRead,
+		ReadContext: dataSourceRegionRead,
 
 		Schema: map[string]*schema.Schema{
 			"region_id": {
@@ -26,7 +26,7 @@ func dataSourceRegion() *schema.Resource {
 	}
 }
 
-func dataSourceRegionRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceRegionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -40,15 +40,15 @@ func dataSourceRegionRead(d *schema.ResourceData, meta interface{}) error {
 
 	regions, err := service.GetRegions(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active regions: %s", err)
+		return diag.Errorf("Error retrieving active regions: %s", err)
 	}
 
 	if len(regions) < 1 {
-		return errors.New("No regions found with provided arguments")
+		return diag.Errorf("No regions found with provided arguments")
 	}
 
 	if len(regions) > 1 {
-		return errors.New("More than 1 region found with provided arguments")
+		return diag.Errorf("More than 1 region found with provided arguments")
 	}
 
 	d.SetId(regions[0].ID)

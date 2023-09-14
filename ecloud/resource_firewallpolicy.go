@@ -1,24 +1,26 @@
 package ecloud
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/ptr"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceFirewallPolicy() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceFirewallPolicyCreate,
-		Read:   resourceFirewallPolicyRead,
-		Update: resourceFirewallPolicyUpdate,
-		Delete: resourceFirewallPolicyDelete,
+		CreateContext: resourceFirewallPolicyCreate,
+		ReadContext:   resourceFirewallPolicyRead,
+		UpdateContext: resourceFirewallPolicyUpdate,
+		DeleteContext: resourceFirewallPolicyDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -40,7 +42,7 @@ func resourceFirewallPolicy() *schema.Resource {
 	}
 }
 
-func resourceFirewallPolicyCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceFirewallPolicyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateFirewallPolicyRequest{
@@ -53,7 +55,7 @@ func resourceFirewallPolicyCreate(d *schema.ResourceData, meta interface{}) erro
 	log.Print("[INFO] Creating firewall policy")
 	policy, err := service.CreateFirewallPolicy(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating firewall policy: %s", err)
+		return diag.Errorf("Error creating firewall policy: %s", err)
 	}
 
 	d.SetId(policy.ResourceID)
@@ -66,15 +68,15 @@ func resourceFirewallPolicyCreate(d *schema.ResourceData, meta interface{}) erro
 		MinTimeout: 1 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for firewall policy with ID [%s] to return sync status of [%s]: %s", policy.ResourceID, ecloudservice.SyncStatusComplete, err)
+		return diag.Errorf("Error waiting for firewall policy with ID [%s] to return sync status of [%s]: %s", policy.ResourceID, ecloudservice.SyncStatusComplete, err)
 	}
 
-	return resourceFirewallPolicyRead(d, meta)
+	return resourceFirewallPolicyRead(ctx, d, meta)
 }
 
-func resourceFirewallPolicyRead(d *schema.ResourceData, meta interface{}) error {
+func resourceFirewallPolicyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[DEBUG] Retrieving FirewallPolicy with ID [%s]", d.Id())
@@ -85,7 +87,7 @@ func resourceFirewallPolicyRead(d *schema.ResourceData, meta interface{}) error 
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -96,7 +98,7 @@ func resourceFirewallPolicyRead(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func resourceFirewallPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceFirewallPolicyUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 	hasChange := false
 
@@ -116,7 +118,7 @@ func resourceFirewallPolicyUpdate(d *schema.ResourceData, meta interface{}) erro
 		log.Printf("[INFO] Updating firewall policy with ID [%s]", d.Id())
 		_, err := service.PatchFirewallPolicy(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating firewall policy with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating firewall policy with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -127,22 +129,22 @@ func resourceFirewallPolicyUpdate(d *schema.ResourceData, meta interface{}) erro
 			MinTimeout: 1 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for firewall policy with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
+			return diag.Errorf("Error waiting for firewall policy with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.SyncStatusComplete, err)
 		}
 	}
 
-	return resourceFirewallPolicyRead(d, meta)
+	return resourceFirewallPolicyRead(ctx, d, meta)
 }
 
-func resourceFirewallPolicyDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceFirewallPolicyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing firewall policy with ID [%s]", d.Id())
 	_, err := service.DeleteFirewallPolicy(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error removing firewall policy with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error removing firewall policy with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -153,9 +155,9 @@ func resourceFirewallPolicyDelete(d *schema.ResourceData, meta interface{}) erro
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for firewall policy with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for firewall policy with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

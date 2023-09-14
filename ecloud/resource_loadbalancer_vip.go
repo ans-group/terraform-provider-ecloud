@@ -1,24 +1,25 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceLoadBalancerVip() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceLoadBalancerVipCreate,
-		Read:   resourceLoadBalancerVipRead,
-		Update: resourceLoadBalancerVipUpdate,
-		Delete: resourceLoadBalancerVipDelete,
+		CreateContext: resourceLoadBalancerVipCreate,
+		ReadContext:   resourceLoadBalancerVipRead,
+		UpdateContext: resourceLoadBalancerVipUpdate,
+		DeleteContext: resourceLoadBalancerVipDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -34,7 +35,7 @@ func resourceLoadBalancerVip() *schema.Resource {
 			"allocate_floating_ip": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: false,
+				Default:  false,
 			},
 			"floating_ip_id": {
 				Type:     schema.TypeString,
@@ -44,13 +45,13 @@ func resourceLoadBalancerVip() *schema.Resource {
 	}
 }
 
-func resourceLoadBalancerVipCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceLoadBalancerVipCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateVIPRequest{
-		LoadBalancerID: d.Get("load_balancer_id").(string),
-		AllocateFloatingIP:  d.Get("allocate_floating_ip").(bool),
-		Name:           d.Get("name").(string),
+		LoadBalancerID:     d.Get("load_balancer_id").(string),
+		AllocateFloatingIP: d.Get("allocate_floating_ip").(bool),
+		Name:               d.Get("name").(string),
 	}
 
 	log.Printf("[DEBUG] Created CreateVIPRequest: %+v", createReq)
@@ -58,7 +59,7 @@ func resourceLoadBalancerVipCreate(d *schema.ResourceData, meta interface{}) err
 	log.Print("[INFO] Creating LoadBalancer VIP")
 	taskRef, err := service.CreateVIP(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating loadbalancer vip: %s", err)
+		return diag.Errorf("Error creating loadbalancer vip: %s", err)
 	}
 
 	d.SetId(taskRef.ResourceID)
@@ -71,15 +72,15 @@ func resourceLoadBalancerVipCreate(d *schema.ResourceData, meta interface{}) err
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for loadbalancer vip with ID [%s] to be created: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for loadbalancer vip with ID [%s] to be created: %s", d.Id(), err)
 	}
 
-	return resourceLoadBalancerVipRead(d, meta)
+	return resourceLoadBalancerVipRead(ctx, d, meta)
 }
 
-func resourceLoadBalancerVipRead(d *schema.ResourceData, meta interface{}) error {
+func resourceLoadBalancerVipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving loadbalancer vip with ID [%s]", d.Id())
@@ -90,27 +91,26 @@ func resourceLoadBalancerVipRead(d *schema.ResourceData, meta interface{}) error
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	d.Set("name", lbVip.Name)
 	d.Set("load_balancer_id", lbVip.LoadBalancerID)
 
-	
 	if d.Get("floating_ip_id").(string) == "" && d.Get("allocate_floating_ip").(bool) {
-		//we need to use the IP ID from the vip
-		//and filter for the floating IP ID
+		// we need to use the IP ID from the vip
+		// and filter for the floating IP ID
 		params := connection.APIRequestParameters{}
 		params.WithFilter(*connection.NewAPIRequestFiltering("resource_id", connection.EQOperator, []string{lbVip.IPAddressID}))
 
 		fips, err := service.GetFloatingIPs(params)
 		if err != nil {
-			return fmt.Errorf("Failed to retrieve floating IPs: %w", err)
+			return diag.Errorf("Failed to retrieve floating IPs: %s", err)
 		}
 
 		if len(fips) != 1 {
-			return fmt.Errorf("Unexpected number of floating IPs allocated to VIP")
+			return diag.Errorf("Unexpected number of floating IPs allocated to VIP")
 		}
 
 		d.Set("floating_ip_id", fips[0].ID)
@@ -119,7 +119,7 @@ func resourceLoadBalancerVipRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceLoadBalancerVipUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceLoadBalancerVipUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
@@ -130,7 +130,7 @@ func resourceLoadBalancerVipUpdate(d *schema.ResourceData, meta interface{}) err
 
 		taskRef, err := service.PatchVIP(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating loadbalancer vip with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating loadbalancer vip with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -141,16 +141,16 @@ func resourceLoadBalancerVipUpdate(d *schema.ResourceData, meta interface{}) err
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for loadbalancer vip with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for loadbalancer vip with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceLoadBalancerVipRead(d, meta)
+	return resourceLoadBalancerVipRead(ctx, d, meta)
 }
 
-func resourceLoadBalancerVipDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceLoadBalancerVipDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing loadbalancer network with ID [%s]", d.Id())
@@ -160,7 +160,7 @@ func resourceLoadBalancerVipDelete(d *schema.ResourceData, meta interface{}) err
 		case *ecloudservice.VIPNotFoundError:
 			log.Printf("[DEBUG] loadbalancer VIP with ID [%s] not found. Continuing.", d.Id())
 		default:
-			return fmt.Errorf("Error removing loadbalancer vip with ID [%s]: %s", d.Id(), err)
+			return diag.Errorf("Error removing loadbalancer vip with ID [%s]: %s", d.Id(), err)
 		}
 	}
 
@@ -172,12 +172,12 @@ func resourceLoadBalancerVipDelete(d *schema.ResourceData, meta interface{}) err
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for loadbalancer vip with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for loadbalancer vip with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
-	//remove floating ip if set
+	// remove floating ip if set
 	if len(d.Get("floating_ip_id").(string)) > 1 {
 		fip := d.Get("floating_ip_id").(string)
 
@@ -189,7 +189,7 @@ func resourceLoadBalancerVipDelete(d *schema.ResourceData, meta interface{}) err
 			case *ecloudservice.FloatingIPNotFoundError:
 				log.Printf("[DEBUG] Floating IP with ID [%s] not found. Skipping delete.", fip)
 			default:
-				return fmt.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
+				return diag.Errorf("Error removing floating ip with ID [%s]: %s", fip, err)
 			}
 		}
 
@@ -200,9 +200,9 @@ func resourceLoadBalancerVipDelete(d *schema.ResourceData, meta interface{}) err
 			Delay:      5 * time.Second,
 			MinTimeout: 3 * time.Second,
 		}
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for floating ip with ID [%s] to be removed: %w", d.Id(), err)
+			return diag.Errorf("Error waiting for floating ip with ID [%s] to be removed: %s", d.Id(), err)
 		}
 	}
 

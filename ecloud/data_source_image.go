@@ -1,18 +1,18 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"strings"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceImage() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceImageRead,
+		ReadContext: dataSourceImageRead,
 
 		Schema: map[string]*schema.Schema{
 			"image_id": {
@@ -39,7 +39,7 @@ func dataSourceImage() *schema.Resource {
 	}
 }
 
-func dataSourceImageRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceImageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -62,22 +62,22 @@ func dataSourceImageRead(d *schema.ResourceData, meta interface{}) error {
 
 	images, err := service.GetImages(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active images: %s", err)
+		return diag.Errorf("Error retrieving active images: %s", err)
 	}
 
 	if name, ok := d.GetOk("name"); ok {
 		images = filterImageName(images, name.(string))
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	if len(images) < 1 {
-		return errors.New("No images found with provided arguments")
+		return diag.Errorf("No images found with provided arguments")
 	}
 
 	if len(images) > 1 {
-		return errors.New("More than 1 image found with provided arguments")
+		return diag.Errorf("More than 1 image found with provided arguments")
 	}
 
 	d.SetId(images[0].ID)

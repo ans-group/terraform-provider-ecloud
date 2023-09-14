@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceHostGroup() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceHostGroupRead,
+		ReadContext: dataSourceHostGroupRead,
 
 		Schema: map[string]*schema.Schema{
 			"host_group_id": {
@@ -34,7 +34,7 @@ func dataSourceHostGroup() *schema.Resource {
 	}
 }
 
-func dataSourceHostGroupRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceHostGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -51,15 +51,15 @@ func dataSourceHostGroupRead(d *schema.ResourceData, meta interface{}) error {
 
 	hostGroups, err := service.GetHostGroups(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active host groups: %s", err)
+		return diag.Errorf("Error retrieving active host groups: %s", err)
 	}
 
 	if len(hostGroups) < 1 {
-		return errors.New("No host groups found with provided arguments")
+		return diag.Errorf("No host groups found with provided arguments")
 	}
 
 	if len(hostGroups) > 1 {
-		return errors.New("More than 1 host group found with provided arguments")
+		return diag.Errorf("More than 1 host group found with provided arguments")
 	}
 
 	d.SetId(hostGroups[0].ID)

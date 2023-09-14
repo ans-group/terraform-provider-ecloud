@@ -1,12 +1,13 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/client"
 	"github.com/ans-group/sdk-go/pkg/config"
 	"github.com/ans-group/sdk-go/pkg/connection"
 	"github.com/ans-group/sdk-go/pkg/logging"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ukfast/terraform-provider-ecloud/pkg/logger"
 )
@@ -90,14 +91,14 @@ func Provider() *schema.Provider {
 			"ecloud_affinityrule_member":   resourceAffinityRuleMember(),
 			"ecloud_natoverloadrule":       resourceNATOverloadRule(),
 		},
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	err := config.Init("")
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialise config: %s", err)
+		return nil, diag.Errorf("Failed to initialise config: %s", err)
 	}
 
 	if config.GetBool("api_debug") {
@@ -108,7 +109,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if len(context) > 0 {
 		err := config.SwitchCurrentContext(context)
 		if err != nil {
-			return nil, err
+			return nil, diag.FromErr(err)
 		}
 	}
 
@@ -119,7 +120,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	conn, err := getConnection()
 	if err != nil {
-		return nil, err
+		return nil, diag.FromErr(err)
 	}
 
 	return client.NewClient(conn).ECloudService(), nil

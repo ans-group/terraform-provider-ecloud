@@ -1,5 +1,6 @@
 terraform-provider-ecloud*
 .terraform/
 .vscode/
+.idea/
 dist/
 *.code-workspace

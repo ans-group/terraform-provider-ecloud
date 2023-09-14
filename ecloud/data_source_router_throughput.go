@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceRouterThroughput() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceRouterThroughputRead,
+		ReadContext: dataSourceRouterThroughputRead,
 
 		Schema: map[string]*schema.Schema{
 			"router_throughput_id": {
@@ -34,7 +34,7 @@ func dataSourceRouterThroughput() *schema.Resource {
 	}
 }
 
-func dataSourceRouterThroughputRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceRouterThroughputRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -51,15 +51,15 @@ func dataSourceRouterThroughputRead(d *schema.ResourceData, meta interface{}) er
 
 	throughputs, err := service.GetRouterThroughputs(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving router throughputs: %s", err)
+		return diag.Errorf("Error retrieving router throughputs: %s", err)
 	}
 
 	if len(throughputs) < 1 {
-		return errors.New("No router throughputs found with provided arguments")
+		return diag.Errorf("No router throughputs found with provided arguments")
 	}
 
 	if len(throughputs) > 1 {
-		return errors.New("More than 1 router throughput found with provided arguments")
+		return diag.Errorf("More than 1 router throughput found with provided arguments")
 	}
 
 	d.SetId(throughputs[0].ID)

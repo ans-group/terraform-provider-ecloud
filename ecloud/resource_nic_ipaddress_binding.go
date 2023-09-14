@@ -1,23 +1,25 @@
 package ecloud
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceNICIPAddressBinding() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceNICIPAddressBindingCreate,
-		Read:   resourceNICIPAddressBindingRead,
-		Delete: resourceNICIPAddressBindingDelete,
+		CreateContext: resourceNICIPAddressBindingCreate,
+		ReadContext:   resourceNICIPAddressBindingRead,
+		DeleteContext: resourceNICIPAddressBindingDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -39,7 +41,7 @@ func resourceNICIPAddressBinding() *schema.Resource {
 	}
 }
 
-func resourceNICIPAddressBindingCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceNICIPAddressBindingCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	bindReq := ecloudservice.AssignIPAddressRequest{
@@ -50,7 +52,7 @@ func resourceNICIPAddressBindingCreate(d *schema.ResourceData, meta interface{})
 	log.Print("[INFO] Assigning NIC IP address")
 	taskID, err := service.AssignNICIPAddress(d.Get("nic_id").(string), bindReq)
 	if err != nil {
-		return fmt.Errorf("Error assigning NIC IP address: %s", err)
+		return diag.Errorf("Error assigning NIC IP address: %s", err)
 	}
 
 	d.SetId(getID(d.Get("nic_id").(string), d.Get("ip_address_id").(string)))
@@ -63,15 +65,15 @@ func resourceNICIPAddressBindingCreate(d *schema.ResourceData, meta interface{})
 		MinTimeout: 20 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for IP address with ID [%s] to be bound to NIC: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for IP address with ID [%s] to be bound to NIC: %s", d.Id(), err)
 	}
 
-	return resourceNICIPAddressBindingRead(d, meta)
+	return resourceNICIPAddressBindingRead(ctx, d, meta)
 }
 
-func resourceNICIPAddressBindingRead(d *schema.ResourceData, meta interface{}) error {
+func resourceNICIPAddressBindingRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	nicID := d.Get("nic_id").(string)
@@ -81,7 +83,7 @@ func resourceNICIPAddressBindingRead(d *schema.ResourceData, meta interface{}) e
 		*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{ipAddressID}),
 	))
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve IP addresses for NIC: %s", err)
+		return diag.Errorf("Failed to retrieve IP addresses for NIC: %s", err)
 	}
 
 	retrievedIPAddressID := ""
@@ -94,7 +96,7 @@ func resourceNICIPAddressBindingRead(d *schema.ResourceData, meta interface{}) e
 	return nil
 }
 
-func resourceNICIPAddressBindingDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceNICIPAddressBindingDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	nicID := d.Get("nic_id").(string)
@@ -104,7 +106,7 @@ func resourceNICIPAddressBindingDelete(d *schema.ResourceData, meta interface{})
 		*connection.NewAPIRequestFiltering("id", connection.EQOperator, []string{ipAddressID}),
 	))
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve IP addresses for NIC: %s", err)
+		return diag.Errorf("Failed to retrieve IP addresses for NIC: %s", err)
 	}
 
 	if len(ipAddresses) < 1 {
@@ -114,7 +116,7 @@ func resourceNICIPAddressBindingDelete(d *schema.ResourceData, meta interface{})
 	log.Printf("[INFO] Unassigning IP address [%s] from NIC [%s]", ipAddressID, nicID)
 	taskID, err := service.UnassignNICIPAddress(nicID, ipAddressID)
 	if err != nil {
-		return fmt.Errorf("Error unassigning IP address [%s] from NIC [%s]: %s", ipAddressID, nicID, err)
+		return diag.Errorf("Error unassigning IP address [%s] from NIC [%s]: %s", ipAddressID, nicID, err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -125,9 +127,9 @@ func resourceNICIPAddressBindingDelete(d *schema.ResourceData, meta interface{})
 		MinTimeout: 5 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for IP address with ID [%s] to be unassigned from NIC [%s]: %s", ipAddressID, nicID, err)
+		return diag.Errorf("Error waiting for IP address with ID [%s] to be unassigned from NIC [%s]: %s", ipAddressID, nicID, err)
 	}
 
 	return nil

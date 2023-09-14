@@ -14,8 +14,8 @@ func TestAccDataSourceHost_basic(t *testing.T) {
 	resourceName := "data.ecloud_host.test-host"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -47,6 +47,7 @@ resource "ecloud_hostgroup" "test-hostgroup" {
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	host_spec_id = data.ecloud_hostspec.test-hostspec.id
 	name = "test-hostgroup"
+    windows_enabled = false
 }
 
 resource "ecloud_host" "test-host" {

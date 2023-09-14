@@ -1,23 +1,24 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceLoadBalancer() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceLoadBalancerCreate,
-		Read:   resourceLoadBalancerRead,
-		Update: resourceLoadBalancerUpdate,
-		Delete: resourceLoadBalancerDelete,
+		CreateContext: resourceLoadBalancerCreate,
+		ReadContext:   resourceLoadBalancerRead,
+		UpdateContext: resourceLoadBalancerUpdate,
+		DeleteContext: resourceLoadBalancerDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -54,7 +55,7 @@ func resourceLoadBalancer() *schema.Resource {
 	}
 }
 
-func resourceLoadBalancerCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateLoadBalancerRequest{
@@ -70,7 +71,7 @@ func resourceLoadBalancerCreate(d *schema.ResourceData, meta interface{}) error 
 	log.Print("[INFO] Creating LoadBalancer")
 	taskRef, err := service.CreateLoadBalancer(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating loadbalancer: %s", err)
+		return diag.Errorf("Error creating loadbalancer: %s", err)
 	}
 
 	d.SetId(taskRef.ResourceID)
@@ -83,15 +84,15 @@ func resourceLoadBalancerCreate(d *schema.ResourceData, meta interface{}) error 
 		MinTimeout: 5 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for loadbalancer with ID [%s] to be created: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for loadbalancer with ID [%s] to be created: %s", d.Id(), err)
 	}
 
-	return resourceLoadBalancerRead(d, meta)
+	return resourceLoadBalancerRead(ctx, d, meta)
 }
 
-func resourceLoadBalancerRead(d *schema.ResourceData, meta interface{}) error {
+func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving loadbalancer with ID [%s]", d.Id())
@@ -102,7 +103,7 @@ func resourceLoadBalancerRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -112,12 +113,11 @@ func resourceLoadBalancerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("availability_zone_id", lb.AvailabilityZoneID)
 	d.Set("load_balancer_spec_id", lb.LoadBalancerSpecID)
 	d.Set("network_id", lb.NetworkID)
-	
 
 	return nil
 }
 
-func resourceLoadBalancerUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
@@ -128,7 +128,7 @@ func resourceLoadBalancerUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		taskRef, err := service.PatchLoadBalancer(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating loadbalancer with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating loadbalancer with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -139,16 +139,16 @@ func resourceLoadBalancerUpdate(d *schema.ResourceData, meta interface{}) error 
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for loadbalancer with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for loadbalancer with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceLoadBalancerRead(d, meta)
+	return resourceLoadBalancerRead(ctx, d, meta)
 }
 
-func resourceLoadBalancerDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing loadbalancer with ID [%s]", d.Id())
@@ -158,7 +158,7 @@ func resourceLoadBalancerDelete(d *schema.ResourceData, meta interface{}) error 
 		case *ecloudservice.LoadBalancerNotFoundError:
 			return nil
 		default:
-			return fmt.Errorf("Error removing loadbalancer with ID [%s]: %s", d.Id(), err)
+			return diag.Errorf("Error removing loadbalancer with ID [%s]: %s", d.Id(), err)
 		}
 	}
 
@@ -170,9 +170,9 @@ func resourceLoadBalancerDelete(d *schema.ResourceData, meta interface{}) error 
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for loadbalancer with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for loadbalancer with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

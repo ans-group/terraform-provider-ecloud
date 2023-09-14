@@ -16,9 +16,9 @@ func TestAccFloatingIP_basic(t *testing.T) {
 	vpcResourceName := "ecloud_vpc.test-vpc"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckFloatingIPDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckFloatingIPDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceFloatingIPConfig_basic(ANS_TEST_VPC_REGION_ID, fipName),

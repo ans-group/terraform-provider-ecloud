@@ -1,17 +1,18 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceIPAddress() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceIPAddressRead,
+		ReadContext: dataSourceIPAddressRead,
 
 		Schema: map[string]*schema.Schema{
 			"ip_address_id": {
@@ -38,7 +39,7 @@ func dataSourceIPAddress() *schema.Resource {
 	}
 }
 
-func dataSourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceIPAddressRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -62,11 +63,11 @@ func dataSourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Retrieving IP addresses with parameters: %+v", params)
 	addresses, err := service.GetIPAddresses(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving IP addresses: %s", err)
+		return diag.Errorf("Error retrieving IP addresses: %s", err)
 	}
 
 	if len(addresses) != 1 {
-		return fmt.Errorf("Unexpected number [%d] of IP addresses found, expected 1", len(addresses))
+		return diag.Errorf("Unexpected number [%d] of IP addresses found, expected 1", len(addresses))
 	}
 
 	d.SetId(addresses[0].ID)

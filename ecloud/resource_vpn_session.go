@@ -1,24 +1,25 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceVPNSession() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVPNSessionCreate,
-		Read:   resourceVPNSessionRead,
-		Update: resourceVPNSessionUpdate,
-		Delete: resourceVPNSessionDelete,
+		CreateContext: resourceVPNSessionCreate,
+		ReadContext:   resourceVPNSessionRead,
+		UpdateContext: resourceVPNSessionUpdate,
+		DeleteContext: resourceVPNSessionDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -62,7 +63,7 @@ func resourceVPNSession() *schema.Resource {
 	}
 }
 
-func resourceVPNSessionCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNSessionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateVPNSessionRequest{
@@ -79,7 +80,7 @@ func resourceVPNSessionCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating VPN session")
 	taskRef, err := service.CreateVPNSession(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating VPN session: %s", err)
+		return diag.Errorf("Error creating VPN session: %s", err)
 	}
 
 	d.SetId(taskRef.ResourceID)
@@ -92,9 +93,9 @@ func resourceVPNSessionCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+		return diag.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 	}
 
 	if d.HasChange("psk") {
@@ -105,7 +106,7 @@ func resourceVPNSessionCreate(d *schema.ResourceData, meta interface{}) error {
 
 		taskRef, err := service.UpdateVPNSessionPreSharedKey(taskRef.ResourceID, updatePSKReq)
 		if err != nil {
-			return fmt.Errorf("Error creating VPN session pre-shared key: %s", err)
+			return diag.Errorf("Error creating VPN session pre-shared key: %s", err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -116,16 +117,16 @@ func resourceVPNSessionCreate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceVPNSessionRead(d, meta)
+	return resourceVPNSessionRead(ctx, d, meta)
 }
 
-func resourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNSessionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving VPN session with ID [%s]", d.Id())
@@ -136,7 +137,7 @@ func resourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return fmt.Errorf("Error retrieving VPN session: %s", err)
+			return diag.Errorf("Error retrieving VPN session: %s", err)
 		}
 	}
 
@@ -151,14 +152,14 @@ func resourceVPNSessionRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[INFO] Retrieving VPN session pre-shared key with ID [%s]", d.Id())
 	psk, err := service.GetVPNSessionPreSharedKey(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error retrieving VPN service pre-shared key: %s", err)
+		return diag.Errorf("Error retrieving VPN service pre-shared key: %s", err)
 	}
 	d.Set("psk", psk.PSK)
 
 	return nil
 }
 
-func resourceVPNSessionUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNSessionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	hasChange := false
@@ -188,7 +189,7 @@ func resourceVPNSessionUpdate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[INFO] Updating VPNSession with ID [%s]", d.Id())
 		taskRef, err := service.PatchVPNSession(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating VPNSession with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating VPNSession with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -199,9 +200,9 @@ func resourceVPNSessionUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
@@ -213,7 +214,7 @@ func resourceVPNSessionUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		taskRef, err := service.UpdateVPNSessionPreSharedKey(d.Id(), updatePSKReq)
 		if err != nil {
-			return fmt.Errorf("Error creating VPN session pre-shared key: %s", err)
+			return diag.Errorf("Error creating VPN session pre-shared key: %s", err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -224,22 +225,22 @@ func resourceVPNSessionUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for VPN session with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceVPNSessionRead(d, meta)
+	return resourceVPNSessionRead(ctx, d, meta)
 }
 
-func resourceVPNSessionDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVPNSessionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing VPNSession with ID [%s]", d.Id())
 	taskID, err := service.DeleteVPNSession(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error VPNSession with ID [%s]: %s", d.Id(), err)
+		return diag.Errorf("Error VPNSession with ID [%s]: %s", d.Id(), err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -250,9 +251,9 @@ func resourceVPNSessionDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 3 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for VPNSession with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for VPNSession with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

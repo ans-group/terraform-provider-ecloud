@@ -1,23 +1,24 @@
 package ecloud
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
 
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceHost() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceHostCreate,
-		Read:   resourceHostRead,
-		Update: resourceHostUpdate,
-		Delete: resourceHostDelete,
+		CreateContext: resourceHostCreate,
+		ReadContext:   resourceHostRead,
+		UpdateContext: resourceHostUpdate,
+		DeleteContext: resourceHostDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -39,7 +40,7 @@ func resourceHost() *schema.Resource {
 	}
 }
 
-func resourceHostCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateHostRequest{
@@ -51,7 +52,7 @@ func resourceHostCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Print("[INFO] Creating Host Group")
 	task, err := service.CreateHost(createReq)
 	if err != nil {
-		return fmt.Errorf("Error creating host group: %s", err)
+		return diag.Errorf("Error creating host group: %s", err)
 	}
 
 	d.SetId(task.ResourceID)
@@ -64,15 +65,15 @@ func resourceHostCreate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 20 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for host group with ID [%s] to be created: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for host group with ID [%s] to be created: %s", d.Id(), err)
 	}
 
-	return resourceHostRead(d, meta)
+	return resourceHostRead(ctx, d, meta)
 }
 
-func resourceHostRead(d *schema.ResourceData, meta interface{}) error {
+func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Retrieving host group with ID [%s]", d.Id())
@@ -83,7 +84,7 @@ func resourceHostRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		default:
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -93,7 +94,7 @@ func resourceHostRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceHostUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceHostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	if d.HasChange("name") {
@@ -104,7 +105,7 @@ func resourceHostUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		task, err := service.PatchHost(d.Id(), patchReq)
 		if err != nil {
-			return fmt.Errorf("Error updating host with ID [%s]: %w", d.Id(), err)
+			return diag.Errorf("Error updating host with ID [%s]: %s", d.Id(), err)
 		}
 
 		stateConf := &resource.StateChangeConf{
@@ -115,16 +116,16 @@ func resourceHostUpdate(d *schema.ResourceData, meta interface{}) error {
 			MinTimeout: 3 * time.Second,
 		}
 
-		_, err = stateConf.WaitForState()
+		_, err = stateConf.WaitForStateContext(ctx)
 		if err != nil {
-			return fmt.Errorf("Error waiting for host group with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+			return diag.Errorf("Error waiting for host group with ID [%s] to return task status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
 		}
 	}
 
-	return resourceHostRead(d, meta)
+	return resourceHostRead(ctx, d, meta)
 }
 
-func resourceHostDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	log.Printf("[INFO] Removing host group with ID [%s]", d.Id())
@@ -134,7 +135,7 @@ func resourceHostDelete(d *schema.ResourceData, meta interface{}) error {
 		case *ecloudservice.HostNotFoundError:
 			return nil
 		default:
-			return fmt.Errorf("Error removing host with ID [%s]: %s", d.Id(), err)
+			return diag.Errorf("Error removing host with ID [%s]: %s", d.Id(), err)
 		}
 	}
 
@@ -146,9 +147,9 @@ func resourceHostDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout: 5 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Error waiting for host with ID [%s] to be deleted: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for host with ID [%s] to be deleted: %s", d.Id(), err)
 	}
 
 	return nil

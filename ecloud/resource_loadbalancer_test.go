@@ -16,9 +16,9 @@ func TestAccLoadBalancer_basic(t *testing.T) {
 	vpcResourceName := "ecloud_vpc.test-vpc"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLoadBalancerDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckLoadBalancerDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceLoadBalancerConfig_basic(ANS_TEST_VPC_REGION_ID, lbName),

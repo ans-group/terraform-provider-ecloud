@@ -17,9 +17,9 @@ func TestAccIPAddress_basic(t *testing.T) {
 	networkResourceName := "ecloud_network.test-network"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckIPAddressDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceIPAddressConfig_basic(ANS_TEST_VPC_REGION_ID, ipAddressName, ipAddressIPAddress),

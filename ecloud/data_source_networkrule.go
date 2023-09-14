@@ -1,19 +1,19 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"log"
 	"strconv"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceNetworkRule() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceNetworkRuleRead,
+		ReadContext: dataSourceNetworkRuleRead,
 
 		Schema: map[string]*schema.Schema{
 			"network_rule_id": {
@@ -56,7 +56,7 @@ func dataSourceNetworkRule() *schema.Resource {
 	}
 }
 
-func dataSourceNetworkRuleRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceNetworkRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -92,15 +92,15 @@ func dataSourceNetworkRuleRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Retrieving network rules with parameters: %+v", params)
 	rules, err := service.GetNetworkRules(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving network rules: %s", err)
+		return diag.Errorf("Error retrieving network rules: %s", err)
 	}
 
 	if len(rules) < 1 {
-		return errors.New("No network rules found with provided arguments")
+		return diag.Errorf("No network rules found with provided arguments")
 	}
 
 	if len(rules) > 1 {
-		return errors.New("More than 1 network rule found with provided arguments")
+		return diag.Errorf("More than 1 network rule found with provided arguments")
 	}
 
 	d.SetId(rules[0].ID)

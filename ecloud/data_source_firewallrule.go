@@ -1,19 +1,19 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"log"
 	"strconv"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceFirewallRule() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceFirewallRuleRead,
+		ReadContext: dataSourceFirewallRuleRead,
 
 		Schema: map[string]*schema.Schema{
 			"firewall_rule_id": {
@@ -56,7 +56,7 @@ func dataSourceFirewallRule() *schema.Resource {
 	}
 }
 
-func dataSourceFirewallRuleRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceFirewallRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -92,15 +92,15 @@ func dataSourceFirewallRuleRead(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG] Retrieving firewall rules with parameters: %+v", params)
 	rules, err := service.GetFirewallRules(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active firewall rules: %s", err)
+		return diag.Errorf("Error retrieving active firewall rules: %s", err)
 	}
 
 	if len(rules) < 1 {
-		return errors.New("No firewall rules found with provided arguments")
+		return diag.Errorf("No firewall rules found with provided arguments")
 	}
 
 	if len(rules) > 1 {
-		return errors.New("More than 1 firewall rule found with provided arguments")
+		return diag.Errorf("More than 1 firewall rule found with provided arguments")
 	}
 
 	d.SetId(rules[0].ID)

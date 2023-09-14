@@ -14,9 +14,9 @@ func TestAccIPAddressNICBinding_basic(t *testing.T) {
 	nicIPAddressBindingResourceName := "ecloud_ipaddress.test-ipaddress"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckIPAddressNICBindingDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckIPAddressNICBindingDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceIPAddressNICBindingConfig_basic(ANS_TEST_VPC_REGION_ID),

@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceVPNService() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceVPNServiceRead,
+		ReadContext: dataSourceVPNServiceRead,
 
 		Schema: map[string]*schema.Schema{
 			"vpn_service_id": {
@@ -34,7 +34,7 @@ func dataSourceVPNService() *schema.Resource {
 	}
 }
 
-func dataSourceVPNServiceRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceVPNServiceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -54,15 +54,15 @@ func dataSourceVPNServiceRead(d *schema.ResourceData, meta interface{}) error {
 
 	vpnServices, err := service.GetVPNServices(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active VPN services: %s", err)
+		return diag.Errorf("Error retrieving active VPN services: %s", err)
 	}
 
 	if len(vpnServices) < 1 {
-		return errors.New("No VPN services found with provided arguments")
+		return diag.Errorf("No VPN services found with provided arguments")
 	}
 
 	if len(vpnServices) > 1 {
-		return errors.New("More than 1 VPN service found with provided arguments")
+		return diag.Errorf("More than 1 VPN service found with provided arguments")
 	}
 
 	d.SetId(vpnServices[0].ID)

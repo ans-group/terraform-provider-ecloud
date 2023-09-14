@@ -25,9 +25,9 @@ func TestAccFirewallRule_basic(t *testing.T) {
 	policyResourceName := "ecloud_firewallpolicy.test-fwp"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckFirewallRuleDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckFirewallRuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceFirewallRuleConfig_basic(params),

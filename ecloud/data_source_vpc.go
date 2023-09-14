@@ -1,18 +1,18 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"strconv"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceVPC() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceVPCRead,
+		ReadContext: dataSourceVPCRead,
 
 		Schema: map[string]*schema.Schema{
 			"vpc_id": {
@@ -35,7 +35,7 @@ func dataSourceVPC() *schema.Resource {
 	}
 }
 
-func dataSourceVPCRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceVPCRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -55,15 +55,15 @@ func dataSourceVPCRead(d *schema.ResourceData, meta interface{}) error {
 
 	vpcs, err := service.GetVPCs(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving active VPCs: %s", err)
+		return diag.Errorf("Error retrieving active VPCs: %s", err)
 	}
 
 	if len(vpcs) < 1 {
-		return errors.New("No VPCs found with provided arguments")
+		return diag.Errorf("No VPCs found with provided arguments")
 	}
 
 	if len(vpcs) > 1 {
-		return errors.New("More than 1 VPC found with provided arguments")
+		return diag.Errorf("More than 1 VPC found with provided arguments")
 	}
 
 	d.SetId(vpcs[0].ID)

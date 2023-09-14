@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceNATOverloadRule() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceNATOverloadRuleRead,
+		ReadContext: dataSourceNATOverloadRuleRead,
 
 		Schema: map[string]*schema.Schema{
 			"nat_overload_rule_id": {
@@ -42,7 +42,7 @@ func dataSourceNATOverloadRule() *schema.Resource {
 	}
 }
 
-func dataSourceNATOverloadRuleRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceNATOverloadRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -62,15 +62,15 @@ func dataSourceNATOverloadRuleRead(d *schema.ResourceData, meta interface{}) err
 
 	rules, err := service.GetNATOverloadRules(params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving NAT overload rules: %s", err)
+		return diag.Errorf("Error retrieving NAT overload rules: %s", err)
 	}
 
 	if len(rules) < 1 {
-		return errors.New("No NAT overload rules found with provided arguments")
+		return diag.Errorf("No NAT overload rules found with provided arguments")
 	}
 
 	if len(rules) > 1 {
-		return errors.New("More than 1 NAT overload rule found with provided arguments")
+		return diag.Errorf("More than 1 NAT overload rule found with provided arguments")
 	}
 
 	d.SetId(rules[0].ID)

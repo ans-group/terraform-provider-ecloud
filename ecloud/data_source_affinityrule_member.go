@@ -1,17 +1,17 @@
 package ecloud
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceAffinityRuleMember() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceAffinityRuleMemberRead,
+		ReadContext: dataSourceAffinityRuleMemberRead,
 
 		Schema: map[string]*schema.Schema{
 			"affinity_rule_member_id": {
@@ -30,7 +30,7 @@ func dataSourceAffinityRuleMember() *schema.Resource {
 	}
 }
 
-func dataSourceAffinityRuleMemberRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceAffinityRuleMemberRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
 	params := connection.APIRequestParameters{}
@@ -47,15 +47,15 @@ func dataSourceAffinityRuleMemberRead(d *schema.ResourceData, meta interface{}) 
 
 	arMembers, err := service.GetAffinityRuleMembers(d.Get("affinity_rule_id").(string), params)
 	if err != nil {
-		return fmt.Errorf("Error retrieving affinity rule members: %s", err)
+		return diag.Errorf("Error retrieving affinity rule members: %s", err)
 	}
 
 	if len(arMembers) < 1 {
-		return errors.New("No affinity rule members found with provided arguments")
+		return diag.Errorf("No affinity rule members found with provided arguments")
 	}
 
 	if len(arMembers) > 1 {
-		return errors.New("More than 1 affinity rule member found with provided arguments")
+		return diag.Errorf("More than 1 affinity rule member found with provided arguments")
 	}
 
 	d.SetId(arMembers[0].ID)
