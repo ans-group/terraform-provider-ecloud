@@ -6,11 +6,14 @@ This resource is for managing eCloud Instances
 
 ```hcl
 resource "ecloud_instance" "instance-1" {
+  vcpu {
+    sockets = 1
+    cores_per_socket = 2
+  }
+  ram_capacity    = 2048
   vpc_id          = "vpc-abcdef12"
   name            = "my instance"
   image_id        = "img-abcdef"
-  vcpu_cores      = 2
-  ram_capacity    = 2048
   volume_capacity = 20
   volume_iops     = 600
   network_id      = "net-abcdef12"
@@ -33,7 +36,9 @@ resource "ecloud_instance" "instance-1" {
 - `name`: Name of instance
 - `image_id`: (Required) ID of image
 - `user_script`: Script to execute in-guest
-- `vcpu_cores`: (Required) Count of vCPU cores for instance
+- `vcpu`: (Required) Configuration block to configure the vCPUs for this instance. The total number of vCPU cores for this instance will be `sockets`*`cores_per_socket`. The following attributes are required in this block:
+  - `sockets`: (Required) The number of vCPU sockets to allocate
+  - `cores_per_socket`: (Required) The number of vCPU cores per socket
 - `ram_capacity`: (Required) Amount of RAM/Memory (in MiB) for instance
 - `volume_capacity`: (Required) Size of volume (in GiB) to allocate for instance.
 - `volume_iops`: IOPs of the operating system volume
@@ -50,6 +55,7 @@ resource "ecloud_instance" "instance-1" {
 - `resource_tier_id`: ID of the public resource tier to move the instance to. Cannot be used with `host_group_id`
 - `ip_address`: DHCP IP address to allocate to instance
 - `encrypted`: Whether instance should be encrypted at rest
+- `vcpu_cores`: (Deprecated) Count of vCPU sockets for the instance, use the new `vcpu` block, with `vcpu.sockets` and `vcpu.cores_per_socket` instead. To migrate, set `vcpu.sockets` to the value of `vcpu_cores`, and `vcpu.cores_per_socket` to `1`. Once you have migrated to the new `vcpu` configuration block, you can no longer use `vcpu_cores` for this instance.
 
 
 **Note on Floating IPs** 
@@ -68,7 +74,10 @@ If `requires_floating_ip` is set to `true` for an instance resource, **do not** 
 - `name`: Name of instance
 - `image_id`: ID of image
 - `user_script`: Script to execute in-guest
-- `vcpu_cores`: Count of vCPU cores for instance
+- `vcpu_cores`: (Deprecated) Count of vCPU cores for instance
+- `vcpu`: Block for vCPU configuration. Both of the following attributes are required:
+  - `sockets`: The number of vCPU sockets for this instance
+  - `cores_per_socket`: The number of vCPU cores per socket.
 - `ram_capacity`: Amount of RAM/Memory (in MiB) for instance
 - `volume_capacity`: Size of OS volume (in GiB) for instance.
 - `volume_iops`: IOPs of the operating system volume

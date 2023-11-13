@@ -10,8 +10,10 @@ import (
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/ukfast/terraform-provider-ecloud/pkg/lock"
 	"golang.org/x/net/context"
 )
@@ -55,8 +57,33 @@ func resourceInstance() *schema.Resource {
 				ForceNew: true,
 			},
 			"vcpu_cores": {
-				Type:     schema.TypeInt,
-				Required: true,
+				Type:          schema.TypeInt,
+				Optional:      true,
+				Computed:      true,
+				Deprecated:    "Use the vcpu block instead. To migrate, set vcpu.sockets to your current vcpu_cores value, and vcpu.cores_per_socket to 1.",
+				ConflictsWith: []string{"vcpu"},
+				AtLeastOneOf:  []string{"vcpu_cores", "vcpu"},
+			},
+			"vcpu": {
+				Type:          schema.TypeList,
+				MaxItems:      1,
+				Optional:      true,
+				ConflictsWith: []string{"vcpu_cores"},
+				AtLeastOneOf:  []string{"vcpu_cores", "vcpu"},
+				ValidateFunc:  nil,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"sockets": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validation.IntAtMost(10),
+						},
+						"cores_per_socket": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+					},
+				},
 			},
 			"ram_capacity": {
 				Type:     schema.TypeInt,
@@ -153,6 +180,23 @@ func resourceInstance() *schema.Resource {
 				Default:  false,
 			},
 		},
+		CustomizeDiff: customdiff.Sequence(
+			// If we're using the new vcpu block in the configuration, then we need to remove vcpu_cores
+			// from the diff, as supplying vcpu_cores along with the sockets/cores_per_socket options is
+			// not allowed by the API.
+			customdiff.If(
+				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+					if _, ok := d.GetOk("vcpu"); ok {
+						return true
+					}
+					return false
+				},
+				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+					// Set vcpu_cores to zero value to remove it from the API call
+					return d.SetNew("vcpu_cores", 0)
+				},
+			),
+		),
 	}
 }
 
@@ -165,7 +209,6 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta in
 		ImageID:            d.Get("image_id").(string),
 		ImageData:          expandCreateInstanceRequestImageData(ctx, d.Get("image_data").(map[string]interface{})),
 		UserScript:         d.Get("user_script").(string),
-		VCPUCores:          d.Get("vcpu_cores").(int),
 		RAMCapacity:        d.Get("ram_capacity").(int),
 		VolumeCapacity:     d.Get("volume_capacity").(int),
 		VolumeIOPS:         d.Get("volume_iops").(int),
@@ -180,6 +223,15 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta in
 		CustomIPAddress:    connection.IPAddress(d.Get("ip_address").(string)),
 		SSHKeyPairIDs:      expandSshKeyPairIds(ctx, d.Get("ssh_keypair_ids").(*schema.Set).List()),
 	}
+
+	if _, ok := d.GetOk("vcpu_cores"); ok {
+		createReq.VCPUCores = d.Get("vcpu_cores").(int)
+	} else {
+		sockets, coresPerSocket := expandVCPUConfig(d.Get("vcpu").([]interface{}))
+		createReq.VCPUSockets = sockets
+		createReq.VCPUCoresPerSocket = coresPerSocket
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("Created CreateInstanceRequest: %+v", createReq))
 
 	tflog.Info(ctx, "Creating Instance")
@@ -295,7 +347,6 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 	d.Set("vpc_id", instance.VPCID)
 	d.Set("name", instance.Name)
 	d.Set("image_id", instance.ImageID)
-	d.Set("vcpu_cores", instance.VCPUCores)
 	d.Set("ram_capacity", instance.RAMCapacity)
 	d.Set("locked", instance.Locked)
 	d.Set("backup_enabled", instance.BackupEnabled)
@@ -305,6 +356,19 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 	d.Set("volume_iops", osVolume[0].IOPS)
 	d.Set("volume_group_id", instance.VolumeGroupID)
 	d.Set("encrypted", instance.IsEncrypted)
+
+	if _, ok := d.GetOk("vcpu_cores"); ok {
+		d.Set("vcpu_cores", instance.VCPUCores)
+	} else {
+		vcpu := map[string]interface{}{
+			"sockets":          instance.VCPUSockets,
+			"cores_per_socket": instance.VCPUCoresPerSocket,
+		}
+		d.Set("vcpu", []interface{}{vcpu})
+
+		// Can't use vcpu_cores once we switch to sockets/cores_per_socket
+		d.Set("vcpu_cores", nil)
+	}
 
 	if d.Get("nic_id").(string) == "" {
 		nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
@@ -355,6 +419,12 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		hasChange = true
 		patchReq.VCPUCores = d.Get("vcpu_cores").(int)
 	}
+	if d.HasChange("vcpu") {
+		hasChange = true
+		sockets, coresPerSocket := expandVCPUConfig(d.Get("vcpu").([]interface{}))
+		patchReq.VCPUSockets = sockets
+		patchReq.VCPUCoresPerSocket = coresPerSocket
+	}
 	if d.HasChange("ram_capacity") {
 		hasChange = true
 		patchReq.RAMCapacity = d.Get("ram_capacity").(int)
@@ -365,6 +435,8 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	if hasChange {
+		tflog.Debug(ctx, fmt.Sprintf("Created PatchInstanceRequest: %+v", patchReq))
+
 		tflog.Info(ctx, "Updating instance", map[string]interface{}{
 			"id": d.Id(),
 		})
@@ -797,4 +869,23 @@ func waitForResourceState(ctx context.Context, targetState string, refreshFunc r
 	}
 
 	return stateConf.WaitForStateContext(ctx)
+}
+
+// expands the vcpu block configuration, returns sockets and cores per socket
+func expandVCPUConfig(l []interface{}) (sockets int, coresPerSocket int) {
+	if len(l) < 1 || l[0] == nil {
+		return
+	}
+
+	m := l[0].(map[string]interface{})
+
+	if v, ok := m["sockets"].(int); ok && v != 0 {
+		sockets = v
+	}
+
+	if v, ok := m["cores_per_socket"].(int); ok && v != 0 {
+		coresPerSocket = v
+	}
+
+	return
 }
