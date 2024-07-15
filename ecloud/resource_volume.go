@@ -70,7 +70,6 @@ func resourceVolume() *schema.Resource {
 			},
 			"port": {
 				Type:     schema.TypeInt,
-				Optional: true,
 				Computed: true,
 			},
 		},

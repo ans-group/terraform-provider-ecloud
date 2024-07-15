@@ -35,4 +35,5 @@ resource "ecloud_volume" "volume-1" {
 - `name`: Name of volume
 - `capacity`: Volume size in GiB
 - `iops`: IOPS of volume
-- `volume_group_id`: ID of the volumegroup that the volume is a member of
+- `volume_group_id`: ID of the volume group that the volume is a member of
+- `port`: Port number of volume (when member of a volume group)
