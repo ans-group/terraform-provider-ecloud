@@ -68,6 +68,11 @@ func resourceVolume() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"port": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -137,6 +142,7 @@ func resourceVolumeRead(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("iops", volume.IOPS)
 	d.Set("availability_zone_id", volume.AvailabilityZoneID)
 	d.Set("volume_group_id", volume.VolumeGroupID)
+	d.Set("port", volume.Port)
 
 	return nil
 }
@@ -194,6 +200,7 @@ func resourceVolumeDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	tflog.Info(ctx, "Removing volume", map[string]interface{}{
 		"id": d.Id(),
 	})
+
 	taskID, err := service.DeleteVolume(d.Id())
 	if err != nil {
 		switch err.(type) {
