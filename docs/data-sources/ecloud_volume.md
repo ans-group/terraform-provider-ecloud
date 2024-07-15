@@ -19,6 +19,7 @@ data "ecloud_volume" "volume-1" {
 - `capacity`: Capacity of volume
 - `iops`: IOPs of volume
 - `volume_group_id`: ID of volume volumegroup 
+- `port`: Port number of volume (when member of a volume group)
 
 ## Attributes Reference
 
@@ -29,4 +30,5 @@ data "ecloud_volume" "volume-1" {
 - `availability_zone_id`: ID of volume availability zone
 - `capacity`: Capacity of volume
 - `iops`: IOPs of volume
-- `volume_group_id`: ID of volume volumegroup 
+- `volume_group_id`: ID of volume volumegroup
+- `port`: Port number of volume (when member of a volume group)

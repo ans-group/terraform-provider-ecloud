@@ -43,6 +43,10 @@ func dataSourceVolume() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"port": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -73,6 +77,9 @@ func dataSourceVolumeRead(ctx context.Context, d *schema.ResourceData, meta inte
 	if volumeGroupID, ok := d.GetOk("volume_group_id"); ok {
 		params.WithFilter(*connection.NewAPIRequestFiltering("volume_group_id", connection.EQOperator, []string{volumeGroupID.(string)}))
 	}
+	if port, ok := d.GetOk("port"); ok {
+		params.WithFilter(*connection.NewAPIRequestFiltering("port", connection.EQOperator, []string{strconv.Itoa(port.(int))}))
+	}
 
 	volumes, err := service.GetVolumes(params)
 	if err != nil {
@@ -94,6 +101,7 @@ func dataSourceVolumeRead(ctx context.Context, d *schema.ResourceData, meta inte
 	d.Set("vpc_id", volumes[0].VPCID)
 	d.Set("availability_zone_id", volumes[0].AvailabilityZoneID)
 	d.Set("volume_group_id", volumes[0].VolumeGroupID)
+	d.Set("port", volumes[0].Port)
 
 	return nil
 }
