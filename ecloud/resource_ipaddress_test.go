@@ -22,7 +22,7 @@ func TestAccIPAddress_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceIPAddressConfig_basic(ANS_TEST_VPC_REGION_ID, ipAddressName, ipAddressIPAddress),
+				Config: testAccResourceIPAddressConfig_basic(ipAddressName, ipAddressIPAddress),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckIPAddressExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", ipAddressName),
@@ -82,10 +82,14 @@ func testAccCheckIPAddressDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceIPAddressConfig_basic(regionID string, ipAddressName string, ipAddressIPAddress string) string {
+func testAccResourceIPAddressConfig_basic(ipAddressName string, ipAddressIPAddress string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 
@@ -106,8 +110,8 @@ resource "ecloud_network" "test-network" {
 
 resource "ecloud_ipaddress" "test-host" {
 	network_id = ecloud_network.test-network.id
-	name = "%[2]s"
-	ip_address = "%[3]s"
+	name = "%[1]s"
+	ip_address = "%[2]s"
 }
-`, regionID, ipAddressName, ipAddressIPAddress)
+`, ipAddressName, ipAddressIPAddress)
 }

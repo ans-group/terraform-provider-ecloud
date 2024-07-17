@@ -21,7 +21,7 @@ func TestAccLoadBalancerVip_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckLoadBalancerVipDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceLoadBalancerVipConfig_basic(ANS_TEST_VPC_REGION_ID, VIPName),
+				Config: testAccResourceLoadBalancerVipConfig_basic(VIPName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLoadBalancerVipExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", VIPName),
@@ -80,10 +80,14 @@ func testAccCheckLoadBalancerVipDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceLoadBalancerVipConfig_basic(regionID string, VIPName string) string {
+func testAccResourceLoadBalancerVipConfig_basic(VIPName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 
@@ -116,8 +120,8 @@ resource "ecloud_loadbalancer" "test-lb" {
 }
 
 resource "ecloud_loadbalancer_vip" "lb-vip" {
-	name = "%[2]s"
+	name = "%[1]s"
 	load_balancer_id = data.ecloud_loadbalancer.test-lb.id
 }
-`, regionID, VIPName)
+`, VIPName)
 }

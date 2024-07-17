@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceRouter_basic(t *testing.T) {
 	routerName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceRouterConfig_basic(ANS_TEST_VPC_REGION_ID, routerName)
+	config := testAccDataSourceRouterConfig_basic(routerName)
 	resourceName := "data.ecloud_router.test-router"
 
 	resource.Test(t, resource.TestCase{
@@ -27,11 +27,15 @@ func TestAccDataSourceRouter_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceRouterConfig_basic(regionID string, routerName string) string {
+func testAccDataSourceRouterConfig_basic(routerName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "test-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -47,5 +51,5 @@ resource "ecloud_router" "test-router" {
 data "ecloud_router" "test-router" {
     name = ecloud_router.test-router.name
 }
-`, regionID, routerName)
+`, routerName)
 }

@@ -67,9 +67,6 @@ func dataSourceImageRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 	if name, ok := d.GetOk("name"); ok {
 		images = filterImageName(images, name.(string))
-		if err != nil {
-			return diag.FromErr(err)
-		}
 	}
 
 	if len(images) < 1 {

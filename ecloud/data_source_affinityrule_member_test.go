@@ -1,16 +1,13 @@
 package ecloud
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceAffinityRuleMember_basic(t *testing.T) {
-	memberInstanceID := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceAffinityRuleMemberConfig_basic(ANS_TEST_VPC_REGION_ID, memberInstanceID)
+	config := testAccDataSourceAffinityRuleMemberConfig_basic()
 	armResourceName := "data.affinityrule_member.test-arm"
 	arResourceName := "ecloud_affinityrule.test-ar.id"
 
@@ -28,11 +25,15 @@ func TestAccDataSourceAffinityRuleMember_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceAffinityRuleMemberConfig_basic(regionID string, memberInstanceID string) string {
-	return fmt.Sprintf(`
+func testAccDataSourceAffinityRuleMemberConfig_basic() string {
+	return `
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "test-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -81,5 +82,5 @@ data "ecloud_affinityrule_member" "test-arm" {
     instance_id = ecloud_instance.test-instance.id
 	affinity_rule_id = ecloud_affinityrule.test-ar.id
 }
-`, regionID, memberInstanceID)
+`
 }

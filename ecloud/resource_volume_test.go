@@ -21,7 +21,7 @@ func TestAccVolume_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckVolumeDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVolumeConfig_basic(ANS_TEST_VPC_REGION_ID, volumeName),
+				Config: testAccResourceVolumeConfig_basic(volumeName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVolumeExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", volumeName),
@@ -80,10 +80,14 @@ func testAccCheckVolumeDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceVolumeConfig_basic(regionID string, volumeName string) string {
+func testAccResourceVolumeConfig_basic(volumeName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 
@@ -95,8 +99,8 @@ resource "ecloud_volume" "test-volume" {
     vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
     capacity = 1
-    name = "%[2]s"
+    name = "%[1]s"
     iops = 300
 }
-`, regionID, volumeName)
+`, volumeName)
 }

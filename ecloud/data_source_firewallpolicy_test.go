@@ -9,7 +9,6 @@ import (
 
 func TestAccDataSourceFirewallPolicy_basic(t *testing.T) {
 	params := map[string]string{
-		"vpc_region_id":   ANS_TEST_VPC_REGION_ID,
 		"policy_name":     acctest.RandomWithPrefix("tftest"),
 		"policy_sequence": "0",
 	}
@@ -33,8 +32,12 @@ func TestAccDataSourceFirewallPolicy_basic(t *testing.T) {
 
 func testAccDataSourceFirewallPolicyConfig_basic(params map[string]string) string {
 	str, _ := testAccTemplateConfig(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "{{ .vpc_region_id }}"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 

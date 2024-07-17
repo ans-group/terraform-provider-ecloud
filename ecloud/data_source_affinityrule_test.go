@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceAffinityRule_basic(t *testing.T) {
 	arName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceAffinityRuleConfig_basic(ANS_TEST_VPC_REGION_ID, arName)
+	config := testAccDataSourceAffinityRuleConfig_basic(arName)
 	resourceName := "data.ecloud_affinityrule.test-ar"
 
 	resource.Test(t, resource.TestCase{
@@ -27,11 +27,15 @@ func TestAccDataSourceAffinityRule_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceAffinityRuleConfig_basic(regionID string, arName string) string {
+func testAccDataSourceAffinityRuleConfig_basic(arName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "test-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -41,12 +45,12 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_affinityrule" "test-ar" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "%[2]s"
+	name = "%[1]s"
 	type = "anti-affinity"
 }
 
 data "ecloud_affinityrule" "test-ar" {
     name = ecloud_affinityrule.test-ar.name
 }
-`, regionID, arName)
+`, arName)
 }

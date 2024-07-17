@@ -21,7 +21,7 @@ func TestAccFirewallPolicy_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckFirewallPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceFirewallPolicyConfig_basic(ANS_TEST_VPC_REGION_ID, policyName),
+				Config: testAccResourceFirewallPolicyConfig_basic(policyName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckFirewallPolicyExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", policyName),
@@ -81,10 +81,14 @@ func testAccCheckFirewallPolicyDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceFirewallPolicyConfig_basic(regionID string, policyName string) string {
+func testAccResourceFirewallPolicyConfig_basic(policyName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 
@@ -100,8 +104,8 @@ resource "ecloud_router" "test-router" {
 
 resource "ecloud_firewallpolicy" "test-fwp" {
 	router_id = ecloud_router.test-router.id
-	name = "%[2]s"
+	name = "%[1]s"
 	sequence = 0
 }
-`, regionID, policyName)
+`, policyName)
 }

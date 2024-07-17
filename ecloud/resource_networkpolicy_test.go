@@ -21,7 +21,7 @@ func TestAccNetworkPolicy_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckNetworkPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceNetworkPolicyConfig_basic(ANS_TEST_VPC_REGION_ID, policyName),
+				Config: testAccResourceNetworkPolicyConfig_basic(policyName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNetworkPolicyExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", policyName),
@@ -81,10 +81,14 @@ func testAccCheckNetworkPolicyDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceNetworkPolicyConfig_basic(regionID string, policyName string) string {
+func testAccResourceNetworkPolicyConfig_basic(policyName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 	advanced_networking = true
 }
@@ -106,8 +110,8 @@ resource "ecloud_network" "test-network" {
 
 resource "ecloud_networkpolicy" "test-np" {
 	network_id = ecloud_network.test-network.id
-	name = "%[2]s"
+	name = "%[1]s"
 	catchall_rule_action = "REJECT"
 }
-`, regionID, policyName)
+`, policyName)
 }

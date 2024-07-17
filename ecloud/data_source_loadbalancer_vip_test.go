@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceLoadBalancerVip_basic(t *testing.T) {
 	lbVipName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceLoadBalancerVipConfig_basic(ANS_TEST_VPC_REGION_ID, lbVipName)
+	config := testAccDataSourceLoadBalancerVipConfig_basic(lbVipName)
 	resourceName := "data.ecloud_loadbalancer_vip.test-lb-vip"
 
 	resource.Test(t, resource.TestCase{
@@ -27,11 +27,15 @@ func TestAccDataSourceLoadBalancerVip_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceLoadBalancerVipConfig_basic(regionID string, lbVipName string) string {
+func testAccDataSourceLoadBalancerVipConfig_basic(lbVipName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "test-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -63,12 +67,12 @@ resource "ecloud_loadbalancer" "test-lb" {
 }
 
 resource "ecloud_loadbalancer_vip" "lb-vip" {
-	name = "%[2]s"
+	name = "%[1]s"
 	load_balancer_id = data.ecloud_loadbalancer.test-lb.id
 }
 
 data "ecloud_loadbalancer_vip" "test-lb-vip" {
     name = ecloud_loadbalancer.lb-vip.name
 }
-`, regionID, lbVipName)
+`, lbVipName)
 }

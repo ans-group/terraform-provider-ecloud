@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceNetworkPolicy_basic(t *testing.T) {
 	policyName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceNetworkPolicyConfig_basic(ANS_TEST_VPC_REGION_ID, policyName)
+	config := testAccDataSourceNetworkPolicyConfig_basic(policyName)
 	resourceName := "data.ecloud_networkpolicy.test-network"
 
 	resource.Test(t, resource.TestCase{
@@ -27,10 +27,14 @@ func TestAccDataSourceNetworkPolicy_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceNetworkPolicyConfig_basic(regionID string, policyName string) string {
+func testAccDataSourceNetworkPolicyConfig_basic(policyName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 	advanced_networking = true
 }
@@ -52,11 +56,11 @@ resource "ecloud_network" "test-network" {
 
 resource "ecloud_networkpolicy" "test-np" {
 	network_id = ecloud_router.test-router.id
-	name = "%[2]s"
+	name = "%[1]s"
 }
 
 data "ecloud_networkpolicy" "test-np" {
     name = ecloud_networkpolicy.test-np.name
 }
-`, regionID, policyName)
+`, policyName)
 }

@@ -21,7 +21,7 @@ func TestAccHostGroup_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckHostGroupDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceHostGroupConfig_basic(ANS_TEST_VPC_REGION_ID, hostGroupName),
+				Config: testAccResourceHostGroupConfig_basic(hostGroupName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckHostGroupExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", hostGroupName),
@@ -80,10 +80,14 @@ func testAccCheckHostGroupDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceHostGroupConfig_basic(regionID string, hostGroupName string) string {
+func testAccResourceHostGroupConfig_basic(hostGroupName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 
@@ -99,8 +103,8 @@ resource "ecloud_hostgroup" "test-hostgroup" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	host_spec_id = data.ecloud_hostspec.test-hostspec.id
-	name = "%[2]s"
+	name = "%[1]s"
 	windows_enabled = false
 }
-`, regionID, hostGroupName)
+`, hostGroupName)
 }

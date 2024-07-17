@@ -1,7 +1,6 @@
 package ecloud
 
 import (
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -9,7 +8,7 @@ import (
 )
 
 func TestAccDataSourceNic_basic(t *testing.T) {
-	config := testAccDataSourceNicConfig_basic(ANS_TEST_VPC_REGION_ID)
+	config := testAccDataSourceNicConfig_basic()
 	resourceName := "data.ecloud_nic.test-nic"
 
 	resource.Test(t, resource.TestCase{
@@ -26,10 +25,14 @@ func TestAccDataSourceNic_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceNicConfig_basic(regionID string) string {
-	return fmt.Sprintf(`
+func testAccDataSourceNicConfig_basic() string {
+	return `
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 
@@ -66,5 +69,5 @@ resource "ecloud_instance" "test-instance" {
 data "ecloud_nic" "test-nic" {
     nic_id = ecloud_instance.test-instance.nic_id
 }
-`, regionID)
+`
 }

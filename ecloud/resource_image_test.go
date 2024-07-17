@@ -20,7 +20,7 @@ func TestAccImage_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckimageDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceImageConfig_basic(ANS_TEST_VPC_REGION_ID, imageName),
+				Config: testAccResourceImageConfig_basic(imageName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckimageExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", imageName),
@@ -78,10 +78,14 @@ func testAccCheckimageDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceImageConfig_basic(regionID string, imageName string) string {
+func testAccResourceImageConfig_basic(imageName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 
@@ -118,5 +122,5 @@ resource "ecloud_image" "test-image" {
 	instance_id = ecloud_instance.test-instance.id
 	name = "%s"
 }
-`, regionID, imageName)
+`, imageName)
 }

@@ -11,7 +11,7 @@ import (
 func TestAccDataSourceNetwork_basic(t *testing.T) {
 	networkName := acctest.RandomWithPrefix("tftest")
 	subnet := "10.0.0.0/24"
-	config := testAccDataSourceNetworkConfig_basic(ANS_TEST_VPC_REGION_ID, networkName, subnet)
+	config := testAccDataSourceNetworkConfig_basic(networkName, subnet)
 	resourceName := "data.ecloud_network.test-network"
 
 	resource.Test(t, resource.TestCase{
@@ -29,10 +29,14 @@ func TestAccDataSourceNetwork_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceNetworkConfig_basic(regionID string, networkName string, subnet string) string {
+func testAccDataSourceNetworkConfig_basic(networkName string, subnet string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
 	name = "test-vpc"
 }
 
@@ -48,12 +52,12 @@ resource "ecloud_router" "test-router" {
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "%[2]s"
-	subnet = "%[3]s"
+	name = "%[1]s"
+	subnet = "%[2]s"
 }
 
 data "ecloud_network" "test-network" {
     name = ecloud_network.test-network.name
 }
-`, regionID, networkName, subnet)
+`, networkName, subnet)
 }
