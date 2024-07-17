@@ -35,7 +35,7 @@ data "ecloud_region" "test-region" {
 
 resource "ecloud_vpc" "test-vpc" {
 	region_id = data.ecloud_region.test-region.id
-	name = "test-vpc"
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -50,7 +50,7 @@ resource "ecloud_hostgroup" "test-hostgroup" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	host_spec_id = data.ecloud_hostspec.test-hostspec.id
-	name = "test-hostgroup"
+	name = "tftest-hostgroup"
     windows_enabled = false
 }
 

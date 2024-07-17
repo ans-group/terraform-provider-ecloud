@@ -35,7 +35,7 @@ data "ecloud_region" "test-region" {
 
 resource "ecloud_vpc" "test-vpc" {
 	region_id = data.ecloud_region.test-region.id
-	name = "test-vpc"
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -44,18 +44,18 @@ data "ecloud_availability_zone" "test-az" {
 
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
-	name = "test-router"
+	name = "tftest-router"
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 }
 
 resource "ecloud_vpn_service" "test-vpnservice" {
 	router_id = ecloud_router.test-router.id
-	name = "test-vpnservice"
+	name = "tftest-vpnservice"
 }
 
 resource "ecloud_vpn_endpoint" "test-vpnendpoint" {
 	vpn_service_id = ecloud_vpn_service.test-vpnservice.id
-	name = "test-vpnendpoint"
+	name = "tftest-vpnendpoint"
 }
 
 resource "ecloud_vpn_session" "test-vpnsession" {

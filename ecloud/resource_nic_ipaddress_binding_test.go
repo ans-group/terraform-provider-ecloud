@@ -93,7 +93,7 @@ data "ecloud_region" "test-region" {
 
 resource "ecloud_vpc" "test-vpc" {
 	region_id = data.ecloud_region.test-region.id
-	name = "test-vpc"
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -107,7 +107,7 @@ data "ecloud_image" "centos7" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {

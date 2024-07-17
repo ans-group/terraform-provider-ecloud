@@ -35,7 +35,7 @@ data "ecloud_region" "test-region" {
 
 resource "ecloud_vpc" "test-vpc" {
 	region_id = data.ecloud_region.test-region.id
-	name = "test-vpc"
+	name = "tftest-vpc"
 }
 
 data "ecloud_image" "centos7" {
@@ -48,13 +48,13 @@ data "ecloud_availability_zone" "test-az" {
 
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
-	name = "test-router"
+	name = "tftest-router"
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 	subnet = "10.0.0.0/24"
 }
 

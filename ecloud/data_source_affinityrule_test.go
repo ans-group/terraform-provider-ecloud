@@ -35,7 +35,7 @@ data "ecloud_region" "test-region" {
 
 resource "ecloud_vpc" "test-vpc" {
 	region_id = data.ecloud_region.test-region.id
-	name = "test-vpc"
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
