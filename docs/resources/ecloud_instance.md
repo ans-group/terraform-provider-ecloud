@@ -50,7 +50,7 @@ resource "ecloud_instance" "instance-1" {
 - `data_volume_ids`: IDs of volumes to attach to the instance
 - `image_data`: Any parameters needed for deploying an image 
 - `ssh_keypair_ids`: IDs of any ssh keypairs to be added to the instance during creation 
-- `volume_group_id`: ID of the volumegroup to attach to the instance.
+- `volume_group_id`: ID of the volumegroup to attach to the instance. There is a separate resource for handling the attachment (`ecloud_volumegroup_instance`) which will clash with this parameter
 - `host_group_id`: ID of the dedicated host group to move the instance to. Cannot be used with `resource_tier_id`
 - `resource_tier_id`: ID of the public resource tier to move the instance to. Cannot be used with `host_group_id`
 - `ip_address`: DHCP IP address to allocate to instance
