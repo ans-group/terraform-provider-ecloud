@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceVPNService_basic(t *testing.T) {
 	vpnServiceName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceVPNServiceConfig_basic(ANS_TEST_VPC_REGION_ID, vpnServiceName)
+	config := testAccDataSourceVPNServiceConfig_basic(vpnServiceName)
 	resourceName := "data.ecloud_vpn_service.test-vpnservice"
 
 	resource.Test(t, resource.TestCase{
@@ -27,10 +27,15 @@ func TestAccDataSourceVPNService_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceVPNServiceConfig_basic(regionID string, vpnServiceName string) string {
+func testAccDataSourceVPNServiceConfig_basic(vpnServiceName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -40,16 +45,16 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_vpn_service" "test-vpnservice" {
 	router_id = ecloud_router.test-router.id
-	name = "%[2]s"
+	name = "%[1]s"
 }
 
 data "ecloud_vpn_service" "test-vpnservice" {
-	name = "%[2]s"
+	name = "%[1]s"
 }
-`, regionID, vpnServiceName)
+`, vpnServiceName)
 }

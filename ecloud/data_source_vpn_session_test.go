@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceVPNSession_basic(t *testing.T) {
 	vpnSessionName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceVPNSessionConfig_basic(ANS_TEST_VPC_REGION_ID, vpnSessionName)
+	config := testAccDataSourceVPNSessionConfig_basic(vpnSessionName)
 	resourceName := "data.ecloud_vpn_session.test-vpnsession"
 
 	resource.Test(t, resource.TestCase{
@@ -27,10 +27,15 @@ func TestAccDataSourceVPNSession_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceVPNSessionConfig_basic(regionID string, vpnSessionName string) string {
+func testAccDataSourceVPNSessionConfig_basic(vpnSessionName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -39,29 +44,29 @@ data "ecloud_availability_zone" "test-az" {
 
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
-	name = "test-router"
+	name = "tftest-router"
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 }
 
 resource "ecloud_vpn_service" "test-vpnservice" {
 	router_id = ecloud_router.test-router.id
-	name = "test-vpnservice"
+	name = "tftest-vpnservice"
 }
 
 resource "ecloud_vpn_endpoint" "test-vpnendpoint" {
 	vpn_service_id = ecloud_vpn_service.test-vpnservice.id
-	name = "test-vpnendpoint"
+	name = "tftest-vpnendpoint"
 }
 
 resource "ecloud_vpn_session" "test-vpnsession" {
 	vpn_service_id = ecloud_vpn_service.test-vpnservice.id
 	vpn_endpoint_id = ecloud_vpn_endpoint.test-vpnendpoint.id
 	remote_ip = "1.2.3.4"
-	name = "%[2]s"
+	name = "%[1]s"
 }
 
 data "ecloud_vpn_session" "test-vpnsession" {
-	name = "%[2]s"
+	name = "%[1]s"
 }
-`, regionID, vpnSessionName)
+`, vpnSessionName)
 }

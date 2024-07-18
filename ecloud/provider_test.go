@@ -13,7 +13,6 @@ import (
 var testAccProviders map[string]func() (*schema.Provider, error)
 var testAccProvider *schema.Provider
 var (
-	ANS_TEST_VPC_REGION_ID        = os.Getenv("ANS_TEST_VPC_REGION_ID")
 	ANS_TEST_VPN_PROFILE_GROUP_ID = os.Getenv("ANS_TEST_VPN_PROFILE_GROUP_ID")
 )
 
@@ -39,9 +38,9 @@ func testAccPreCheck(t *testing.T) {
 }
 
 func testAccPreCheckRequiredEnvVars(t *testing.T) {
-	if ANS_TEST_VPC_REGION_ID == "" {
-		t.Fatal("ANS_TEST_VPC_REGION_ID must be set for acceptance tests")
-	}
+	// if ANS_TEST_VPC_REGION_ID == "" {
+	// 	t.Fatal("ANS_TEST_VPC_REGION_ID must be set for acceptance tests")
+	// }
 }
 
 func testAccTemplateConfig(t string, i interface{}) (string, error) {

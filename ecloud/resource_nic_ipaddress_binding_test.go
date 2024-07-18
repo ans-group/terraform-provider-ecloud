@@ -19,7 +19,7 @@ func TestAccIPAddressNICBinding_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckIPAddressNICBindingDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceIPAddressNICBindingConfig_basic(ANS_TEST_VPC_REGION_ID),
+				Config: testAccResourceIPAddressNICBindingConfig_basic(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckIPAddressNICBindingExists(nicIPAddressBindingResourceName),
 				),
@@ -85,11 +85,15 @@ func testAccCheckIPAddressNICBindingDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceIPAddressNICBindingConfig_basic(regionID string) string {
-	return fmt.Sprintf(`
+func testAccResourceIPAddressNICBindingConfig_basic() string {
+	return `
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -103,7 +107,7 @@ data "ecloud_image" "centos7" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
@@ -132,5 +136,5 @@ resource "ecloud_nic_ipaddress_binding" "ipaddress-1-binding-1" {
   nic_id = data.ecloud_nic.nic-1.id
   ip_address_id = ecloud_ipaddress.ipaddress-1.id
 }
-`, regionID)
+`
 }

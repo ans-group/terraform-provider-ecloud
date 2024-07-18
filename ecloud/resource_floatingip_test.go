@@ -21,7 +21,7 @@ func TestAccFloatingIP_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckFloatingIPDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceFloatingIPConfig_basic(ANS_TEST_VPC_REGION_ID, fipName),
+				Config: testAccResourceFloatingIPConfig_basic(fipName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckFloatingIPExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", fipName),
@@ -80,11 +80,15 @@ func testAccCheckFloatingIPDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceFloatingIPConfig_basic(regionID string, fipName string) string {
+func testAccResourceFloatingIPConfig_basic(fipName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -96,5 +100,5 @@ resource "ecloud_floatingip" "test-fip" {
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	name = "%s"
 }
-`, regionID, fipName)
+`, fipName)
 }

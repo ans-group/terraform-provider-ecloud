@@ -21,7 +21,7 @@ func TestAccHost_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckHostDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceHostConfig_basic(ANS_TEST_VPC_REGION_ID, hostName),
+				Config: testAccResourceHostConfig_basic(hostName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckHostExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", hostName),
@@ -80,11 +80,15 @@ func testAccCheckHostDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceHostConfig_basic(regionID string, HostName string) string {
+func testAccResourceHostConfig_basic(HostName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -99,13 +103,13 @@ resource "ecloud_hostgroup" "test-hostgroup" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	host_spec_id = data.ecloud_hostspec.test-hostspec.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-hostgroup"
+	name = "tftest-hostgroup"
 	windows_enabled = false
 }
 
 resource "ecloud_host" "test-host" {
 	host_group_id = ecloud_hostgroup.test-hostgroup.id
-	name = "%[2]s"
+	name = "%[1]s"
 }
-`, regionID, HostName)
+`, HostName)
 }

@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceInstance_basic(t *testing.T) {
 	instanceName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceInstanceConfig_basic(ANS_TEST_VPC_REGION_ID, instanceName)
+	config := testAccDataSourceInstanceConfig_basic(instanceName)
 	resourceName := "data.ecloud_instance.test-instance"
 
 	resource.Test(t, resource.TestCase{
@@ -27,11 +27,15 @@ func TestAccDataSourceInstance_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceInstanceConfig_basic(regionID string, instanceName string) string {
+func testAccDataSourceInstanceConfig_basic(instanceName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_image" "centos7" {
@@ -44,20 +48,20 @@ data "ecloud_availability_zone" "test-az" {
 
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
-	name = "test-router"
+	name = "tftest-router"
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 	subnet = "10.0.0.0/24"
 }
 
 resource "ecloud_instance" "test-instance" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	network_id = ecloud_network.test-network.id
-	name = "%[2]s"
+	name = "%[1]s"
 	image_id = data.ecloud_image.centos7.id
 	volume_capacity = 40
 	ram_capacity = 1024
@@ -67,5 +71,5 @@ resource "ecloud_instance" "test-instance" {
 data "ecloud_instance" "test-instance" {
     name = ecloud_instance.test-instance.name
 }
-`, regionID, instanceName)
+`, instanceName)
 }

@@ -21,7 +21,7 @@ func TestAccLoadBalancer_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckLoadBalancerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceLoadBalancerConfig_basic(ANS_TEST_VPC_REGION_ID, lbName),
+				Config: testAccResourceLoadBalancerConfig_basic(lbName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLoadBalancerExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", lbName),
@@ -80,11 +80,15 @@ func testAccCheckLoadBalancerDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceLoadBalancerConfig_basic(regionID string, lbName string) string {
+func testAccResourceLoadBalancerConfig_basic(lbName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -98,12 +102,12 @@ data "ecloud_loadbalancer_spec" "medium-lb" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 	subnet = "10.0.1.0/24"
 }
 
@@ -114,5 +118,5 @@ resource "ecloud_loadbalancer" "test-lb" {
 	load_balancer_spec_id = data.ecloud_loadbalancer_spec.medium-lb.id
 	network_id = ecloud_network.test-network.id
 }
-`, regionID, lbName)
+`, lbName)
 }

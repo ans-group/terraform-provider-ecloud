@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ans-group/sdk-go/pkg/connection"
-	"github.com/ans-group/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -347,7 +346,7 @@ func resourceFloatingIPDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func getNICDHCPAddress(service ecloudservice.ECloudService, nicID string) (ecloud.IPAddress, error) {
+func getNICDHCPAddress(service ecloudservice.ECloudService, nicID string) (ecloudservice.IPAddress, error) {
 	filter := connection.NewAPIRequestParameters().
 		WithFilter(connection.APIRequestFiltering{
 			Property: "type",
@@ -356,11 +355,11 @@ func getNICDHCPAddress(service ecloudservice.ECloudService, nicID string) (eclou
 		})
 	ipAddresses, err := service.GetNICIPAddresses(nicID, *filter)
 	if err != nil {
-		return ecloud.IPAddress{}, fmt.Errorf("Error retrieving IP addresses for NIC with ID [%s]: %s", nicID, err)
+		return ecloudservice.IPAddress{}, fmt.Errorf("Error retrieving IP addresses for NIC with ID [%s]: %s", nicID, err)
 	}
 
 	if len(ipAddresses) != 1 {
-		return ecloud.IPAddress{}, fmt.Errorf("Unexpected number of DHCP IP addresses [%d] for NIC with ID [%s], expected 1", len(ipAddresses), nicID)
+		return ecloudservice.IPAddress{}, fmt.Errorf("Unexpected number of DHCP IP addresses [%d] for NIC with ID [%s], expected 1", len(ipAddresses), nicID)
 	}
 
 	return ipAddresses[0], nil

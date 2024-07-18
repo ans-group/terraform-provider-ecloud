@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceLoadBalancer_basic(t *testing.T) {
 	lbName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceLoadBalancerConfig_basic(ANS_TEST_VPC_REGION_ID, lbName)
+	config := testAccDataSourceLoadBalancerConfig_basic(lbName)
 	resourceName := "data.ecloud_loadbalancer.test-lb"
 
 	resource.Test(t, resource.TestCase{
@@ -27,11 +27,15 @@ func TestAccDataSourceLoadBalancer_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceLoadBalancerConfig_basic(regionID string, lbName string) string {
+func testAccDataSourceLoadBalancerConfig_basic(lbName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -45,19 +49,19 @@ data "ecloud_loadbalancer_spec" "test-lb-medium" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 	subnet = "10.0.1.0/24"
 }
 
 resource "ecloud_loadbalancer" "test-lb" {
    vpc_id = ecloud_vpc.test-vpc.id
    availability_zone_id = data.ecloud_availability_zone.test-az.id
-   name = "%[2]s"
+   name = "%[1]s"
    load_balancer_spec_id = data.ecloud_loadbalancer_spec.test-lb-medium.id
    network_id = ecloud_network.test-network.id
 }
@@ -65,5 +69,5 @@ resource "ecloud_loadbalancer" "test-lb" {
 data "ecloud_loadbalancer" "test-lb" {
     name = ecloud_loadbalancer.test-lb.name
 }
-`, regionID, lbName)
+`, lbName)
 }

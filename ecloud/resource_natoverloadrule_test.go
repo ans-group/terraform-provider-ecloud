@@ -20,7 +20,7 @@ func TestAccNATOverloadRule_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckNATOverloadRuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceNATOverloadRuleConfig_basic(ANS_TEST_VPC_REGION_ID, ruleName),
+				Config: testAccResourceNATOverloadRuleConfig_basic(ruleName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNATOverloadRuleExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", ruleName),
@@ -78,11 +78,15 @@ func testAccCheckNATOverloadRuleDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceNATOverloadRuleConfig_basic(regionID string, ruleName string) string {
+func testAccResourceNATOverloadRuleConfig_basic(ruleName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -92,7 +96,7 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
@@ -107,11 +111,11 @@ resource "ecloud_floatingip" "test-fip" {
 }
   
 resource "ecloud_natoverloadrule" "test-rule" {
-	name = "%[2]s"
+	name = "%[1]s"
 	network_id = ecloud_network.test-network.id
 	subnet = "10.0.0.0/24"
 	floating_ip_id = ecloud_floatingip.test-fip.id
 	action = "allow"
 }
-`, regionID, ruleName)
+`, ruleName)
 }

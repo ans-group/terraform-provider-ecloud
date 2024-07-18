@@ -9,7 +9,6 @@ import (
 
 func TestAccDataSourceNetworkRule_basic(t *testing.T) {
 	params := map[string]string{
-		"vpc_region_id":    ANS_TEST_VPC_REGION_ID,
 		"rule_name":        acctest.RandomWithPrefix("tftest"),
 		"rule_sequence":    "0",
 		"rule_direction":   "IN",
@@ -43,9 +42,13 @@ func TestAccDataSourceNetworkRule_basic(t *testing.T) {
 
 func testAccDataSourceNetworkRuleConfig_basic(params map[string]string) string {
 	str, _ := testAccTemplateConfig(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "{{ .vpc_region_id }}"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 	advanced_networking = true
 }
 
@@ -56,18 +59,18 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 	subnet = "10.0.0.0/24"
 }
 
 resource "ecloud_networkpolicy" "test-np" {
 	network_id = ecloud_network.test-network.id
-	name = "test-policy"
+	name = "tftest-policy"
 	catchall_rule_action = "REJECT"
 }
 

@@ -1,16 +1,13 @@
 package ecloud
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceAffinityRuleMember_basic(t *testing.T) {
-	memberInstanceID := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceAffinityRuleMemberConfig_basic(ANS_TEST_VPC_REGION_ID, memberInstanceID)
+	config := testAccDataSourceAffinityRuleMemberConfig_basic()
 	armResourceName := "data.affinityrule_member.test-arm"
 	arResourceName := "ecloud_affinityrule.test-ar.id"
 
@@ -28,11 +25,15 @@ func TestAccDataSourceAffinityRuleMember_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceAffinityRuleMemberConfig_basic(regionID string, memberInstanceID string) string {
-	return fmt.Sprintf(`
+func testAccDataSourceAffinityRuleMemberConfig_basic() string {
+	return `
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -46,19 +47,19 @@ data "ecloud_image" "centos7" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 	subnet = "10.0.1.0/24"
 }
 
 resource "ecloud_instance" "test-instance" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	network_id = ecloud_network.test-network.id
-	name = "test-instance"
+	name = "tftest-instance"
 	image_id = data.ecloud_image.centos7.id
 	volume_capacity = 20
 	ram_capacity = 1024
@@ -68,7 +69,7 @@ resource "ecloud_instance" "test-instance" {
 resource "ecloud_affinityrule" "test-ar" {
    vpc_id = ecloud_vpc.test-vpc.id
    availability_zone_id = data.ecloud_availability_zone.test-az.id
-   name = "test-ar"
+   name = "tftest-ar"
    type = "anti-affinity"
 }
 
@@ -81,5 +82,5 @@ data "ecloud_affinityrule_member" "test-arm" {
     instance_id = ecloud_instance.test-instance.id
 	affinity_rule_id = ecloud_affinityrule.test-ar.id
 }
-`, regionID, memberInstanceID)
+`
 }

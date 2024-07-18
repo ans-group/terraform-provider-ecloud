@@ -21,7 +21,7 @@ func TestAccVPC_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckVPCDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVPCConfig_basic(ANS_TEST_VPC_REGION_ID, vpcName),
+				Config: testAccResourceVPCConfig_basic(vpcName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVPCExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", vpcName),
@@ -79,11 +79,15 @@ func testAccCheckVPCDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceVPCConfig_basic(regionID string, vpcName string) string {
+func testAccResourceVPCConfig_basic(vpcName string) string {
 	return fmt.Sprintf(`
-	resource "ecloud_vpc" "test-vpc" {
-		region_id = "%s"
-		name = "%s"
-	}
-`, regionID, vpcName)
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
+resource "ecloud_vpc" "test-vpc" {
+	region_id = data.ecloud_region.test-region.id
+	name = "%s"
+}
+`, vpcName)
 }

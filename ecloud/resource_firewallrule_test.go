@@ -12,7 +12,6 @@ import (
 
 func TestAccFirewallRule_basic(t *testing.T) {
 	params := map[string]string{
-		"vpc_region_id":    ANS_TEST_VPC_REGION_ID,
 		"rule_name":        acctest.RandomWithPrefix("tftest"),
 		"rule_sequence":    "0",
 		"rule_direction":   "IN",
@@ -97,37 +96,41 @@ func testAccCheckFirewallRuleDestroy(s *terraform.State) error {
 
 func testAccResourceFirewallRuleConfig_basic(params map[string]string) string {
 	str, _ := testAccTemplateConfig(`
-	resource "ecloud_vpc" "test-vpc" {
-		region_id = "{{ .vpc_region_id }}"
-		name = "test-vpc"
-	}
-	
-	data "ecloud_availability_zone" "test-az" {
-		name = "Manchester West"
-	}
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
 
-	resource "ecloud_router" "test-router" {
-		vpc_id = ecloud_vpc.test-vpc.id
-		availability_zone_id = data.ecloud_availability_zone.test-az.id
-		name = "test-router"
-	}
-	
-	resource "ecloud_firewallpolicy" "test-fwp" {
-		router_id = ecloud_router.test-router.id
-		sequence = 0
-	}
-	
-	resource "ecloud_firewallrule" "test-fwr" {
-		firewall_policy_id = ecloud_firewallpolicy.test-fwp.id
-		name = "{{ .rule_name }}"
-		sequence = {{ .rule_sequence }}
-		direction = "{{ .rule_direction }}"
-		source = "{{ .rule_source }}"
-		destination = "{{ .rule_destination }}"
-		action = "{{ .rule_action }}"
-		enabled = {{ .rule_enabled }}
-	}
-	`, params)
+resource "ecloud_vpc" "test-vpc" {
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
+}
+
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
+resource "ecloud_router" "test-router" {
+	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
+	name = "tftest-router"
+}
+
+resource "ecloud_firewallpolicy" "test-fwp" {
+	router_id = ecloud_router.test-router.id
+	sequence = 0
+}
+
+resource "ecloud_firewallrule" "test-fwr" {
+	firewall_policy_id = ecloud_firewallpolicy.test-fwp.id
+	name = "{{ .rule_name }}"
+	sequence = {{ .rule_sequence }}
+	direction = "{{ .rule_direction }}"
+	source = "{{ .rule_source }}"
+	destination = "{{ .rule_destination }}"
+	action = "{{ .rule_action }}"
+	enabled = {{ .rule_enabled }}
+}
+`, params)
 
 	return str
 }

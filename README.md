@@ -52,11 +52,8 @@ Documentation is located within this repository at `/docs`, and is published in 
 Acceptance tests can be executed using `make` as below:
 
 ```
-export ANS_TEST_VPC_REGION_ID=<region_id>
 make testacc TEST=VPC_basic
 ```
-
-Note `ANS_TEST_VPC_REGION_ID` environment is required for executing tests
 
 
 ### Releasing 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/ans-group/sdk-go/pkg/connection"
 	"github.com/ans-group/sdk-go/pkg/ptr"
-	"github.com/ans-group/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -168,6 +167,7 @@ func resourceInstance() *schema.Resource {
 			"volume_group_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"ip_address": {
 				Type:     schema.TypeString,
@@ -662,7 +662,7 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	// Handle host groups
 	if d.HasChange("host_group_id") {
 		hostGroupID := d.Get("host_group_id").(string)
-		migrateReq := ecloud.MigrateInstanceRequest{
+		migrateReq := ecloudservice.MigrateInstanceRequest{
 			HostGroupID: hostGroupID,
 		}
 
@@ -690,7 +690,7 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	if d.HasChange("resource_tier_id") {
 		resourceTierID := d.Get("resource_tier_id").(string)
 
-		migrateReq := ecloud.MigrateInstanceRequest{
+		migrateReq := ecloudservice.MigrateInstanceRequest{
 			ResourceTierID: resourceTierID,
 		}
 

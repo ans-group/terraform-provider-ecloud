@@ -20,7 +20,7 @@ func TestAccImage_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckimageDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceImageConfig_basic(ANS_TEST_VPC_REGION_ID, imageName),
+				Config: testAccResourceImageConfig_basic(imageName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckimageExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", imageName),
@@ -78,11 +78,15 @@ func testAccCheckimageDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceImageConfig_basic(regionID string, imageName string) string {
+func testAccResourceImageConfig_basic(imageName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_image" "centos7" {
@@ -96,18 +100,18 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 }
 
 resource "ecloud_instance" "test-instance" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	network_id = ecloud_network.test-network.id
-	name = "test-instance"
+	name = "tftest-instance"
 	image_id = data.ecloud_image.centos7.id
 	volume_capacity = 20
 	ram_capacity = 1024
@@ -118,5 +122,5 @@ resource "ecloud_image" "test-image" {
 	instance_id = ecloud_instance.test-instance.id
 	name = "%s"
 }
-`, regionID, imageName)
+`, imageName)
 }

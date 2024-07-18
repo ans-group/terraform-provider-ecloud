@@ -90,6 +90,7 @@ func Provider() *schema.Provider {
 			"ecloud_affinityrule":          resourceAffinityRule(),
 			"ecloud_affinityrule_member":   resourceAffinityRuleMember(),
 			"ecloud_natoverloadrule":       resourceNATOverloadRule(),
+			"ecloud_volumegroup_instance":  resourceVolumeGroupInstance(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

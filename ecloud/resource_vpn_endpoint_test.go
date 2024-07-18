@@ -21,7 +21,7 @@ func TestAccVPNEndpoint_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckVPNEndpointDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVPNEndpointConfig_basic(ANS_TEST_VPC_REGION_ID, vpcName),
+				Config: testAccResourceVPNEndpointConfig_basic(vpcName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVPNEndpointExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", vpcName),
@@ -79,11 +79,15 @@ func testAccCheckVPNEndpointDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceVPNEndpointConfig_basic(regionID string, vpcName string) string {
+func testAccResourceVPNEndpointConfig_basic(vpcName string) string {
 	return fmt.Sprintf(`
-	resource "ecloud_vpc" "test-vpc" {
-		region_id = "%s"
-		name = "%s"
-	}
-`, regionID, vpcName)
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
+resource "ecloud_vpc" "test-vpc" {
+	region_id = data.ecloud_region.test-region.id
+	name = "%s"
+}
+`, vpcName)
 }

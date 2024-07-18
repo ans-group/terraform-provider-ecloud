@@ -22,7 +22,7 @@ func TestAccAffinityRuleMember_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckAffinityRuleMemberDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAffinityRuleMemberConfig_basic(ANS_TEST_VPC_REGION_ID, affinityRuleName, affinityRuleMemberInstanceID),
+				Config: testAccResourceAffinityRuleMemberConfig_basic(affinityRuleName, affinityRuleMemberInstanceID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAffinityRuleMemberExists(armResourceName),
 					resource.TestCheckResourceAttr(armResourceName, "name", affinityRuleName),
@@ -82,11 +82,15 @@ func testAccCheckAffinityRuleMemberDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceAffinityRuleMemberConfig_basic(regionID string, affinityRuleName string, affinityRuleMemberInstanceID string) string {
+func testAccResourceAffinityRuleMemberConfig_basic(affinityRuleName string, affinityRuleMemberInstanceID string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -96,7 +100,7 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
@@ -107,7 +111,7 @@ resource "ecloud_network" "test-network" {
 resource "ecloud_instance" "test-instance" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	network_id = ecloud_network.test-network.id
-	name = "test-instance"
+	name = "tftest-instance"
 	image_id = data.ecloud_image.centos7.id
 	volume_capacity = 20
 	ram_capacity = 1024
@@ -117,13 +121,13 @@ resource "ecloud_instance" "test-instance" {
 resource "ecloud_affinityrule" "test-ar" {
    vpc_id = ecloud_vpc.test-vpc.id
    availability_zone_id = data.ecloud_availability_zone.test-az.id
-   name = "%[2]s"
+   name = "%[1]s"
    type = "anti-affinity"
 }
 
 resource "ecloud_affinityrule_member" "test-arm" {
 	affinity_rule_id = ecloud_affinityrule.test-ar.id
-	instance_id = %[3]s
+	instance_id = %[2]s
 }
-`, regionID, affinityRuleName, affinityRuleMemberInstanceID)
+`, affinityRuleName, affinityRuleMemberInstanceID)
 }

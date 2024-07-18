@@ -8,9 +8,9 @@ import (
 )
 
 func TestAccDataSourceResourceTier_basic(t *testing.T) {
-	config := testAccDataSourceResourceTierConfig_basic(ANS_TEST_VPC_REGION_ID)
 	resourceName := "data.ecloud_resourcetier.test-rt"
 	tierName := "Standard CPU"
+	config := testAccDataSourceResourceTierConfig_basic(tierName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

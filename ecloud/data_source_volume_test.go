@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceVolume_basic(t *testing.T) {
 	volumeName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceVolumeConfig_basic(ANS_TEST_VPC_REGION_ID, volumeName)
+	config := testAccDataSourceVolumeConfig_basic(volumeName)
 	resourceName := "data.ecloud_volume.test-volume"
 
 	resource.Test(t, resource.TestCase{
@@ -27,11 +27,15 @@ func TestAccDataSourceVolume_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceVolumeConfig_basic(regionID string, volumeName string) string {
+func testAccDataSourceVolumeConfig_basic(volumeName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -41,7 +45,7 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_volume" "test-volume" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "%[2]s"
+	name = "%[1]s"
 	capacity = 1
 	iops = 300
 }
@@ -49,5 +53,5 @@ resource "ecloud_volume" "test-volume" {
 data "ecloud_volume" "test-volume" {
     name = ecloud_volume.test-volume.name
 }
-`, regionID, volumeName)
+`, volumeName)
 }

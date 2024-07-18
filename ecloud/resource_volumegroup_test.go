@@ -21,7 +21,7 @@ func TestAccVolumeGroup_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckVolumeGroupDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceVolumeGroupConfig_basic(ANS_TEST_VPC_REGION_ID, volumeGroupName),
+				Config: testAccResourceVolumeGroupConfig_basic(volumeGroupName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckVolumeGroupExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", volumeGroupName),
@@ -80,11 +80,15 @@ func testAccCheckVolumeGroupDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceVolumeGroupConfig_basic(regionID string, volumeGroupName string) string {
+func testAccResourceVolumeGroupConfig_basic(volumeGroupName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -94,7 +98,7 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_volumegroup" "test-volumegroup" {
     vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-    name = "%[2]s"
+    name = "%[1]s"
 }
-`, regionID, volumeGroupName)
+`, volumeGroupName)
 }

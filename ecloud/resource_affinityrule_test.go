@@ -21,7 +21,7 @@ func TestAccAffinityRule_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckAffinityRuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAffinityRuleConfig_basic(ANS_TEST_VPC_REGION_ID, affinityRuleName, affinityRuleType),
+				Config: testAccResourceAffinityRuleConfig_basic(affinityRuleName, affinityRuleType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAffinityRuleExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", affinityRuleName),
@@ -80,11 +80,15 @@ func testAccCheckAffinityRuleDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceAffinityRuleConfig_basic(regionID string, affinityRuleName string, affinityRuleType string) string {
+func testAccResourceAffinityRuleConfig_basic(affinityRuleName string, affinityRuleType string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -94,8 +98,8 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_affinityrule" "test-ar" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "%[2]s"
-	type = "%[3]s"
+	name = "%[1]s"
+	type = "%[2]s"
 }
-`, regionID, affinityRuleName, affinityRuleType)
+`, affinityRuleName, affinityRuleType)
 }

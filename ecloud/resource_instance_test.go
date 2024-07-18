@@ -24,7 +24,7 @@ func TestAccInstance_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceInstanceConfig_basic(ANS_TEST_VPC_REGION_ID, instanceName),
+				Config: testAccResourceInstanceConfig_basic(instanceName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckInstanceExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", instanceName),
@@ -83,11 +83,15 @@ func testAccCheckInstanceDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceInstanceConfig_basic(regionID string, instanceName string) string {
+func testAccResourceInstanceConfig_basic(instanceName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_image" "centos7" {
@@ -101,12 +105,12 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 }
 
 resource "ecloud_instance" "test-instance" {
@@ -118,11 +122,10 @@ resource "ecloud_instance" "test-instance" {
 	ram_capacity = 1024
 	vcpu_cores = 1
 }
-`, regionID, instanceName)
+`, instanceName)
 }
 
 type vcpuTestConfig struct {
-	RegionID           string
 	Name               string
 	VCPUCores          int
 	VCPUSockets        int
@@ -143,7 +146,7 @@ func TestAccInstance_vcpu(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1. Create instance using vcpu_cores
 			{
-				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{ANS_TEST_VPC_REGION_ID, instanceName, 1, 0, 0}),
+				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{instanceName, 1, 0, 0}),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckInstanceExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", instanceName),
@@ -155,7 +158,7 @@ func TestAccInstance_vcpu(t *testing.T) {
 			},
 			// 2. Increase with vcpu_cores
 			{
-				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{ANS_TEST_VPC_REGION_ID, instanceName, 2, 0, 0}),
+				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{instanceName, 2, 0, 0}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "vcpu_cores", "2"),
 					resource.TestCheckNoResourceAttr(resourceName, "vcpu.0.sockets"),
@@ -164,7 +167,7 @@ func TestAccInstance_vcpu(t *testing.T) {
 			},
 			// 3. Decrease with vcpu_cores
 			{
-				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{ANS_TEST_VPC_REGION_ID, instanceName, 1, 0, 0}),
+				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{instanceName, 1, 0, 0}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "vcpu_cores", "1"),
 					resource.TestCheckNoResourceAttr(resourceName, "vcpu.0.sockets"),
@@ -173,7 +176,7 @@ func TestAccInstance_vcpu(t *testing.T) {
 			},
 			// 4. Switch from vcpu_cores to using vcpu.sockets/vcpu.cores_per_socket.
 			{
-				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{ANS_TEST_VPC_REGION_ID, instanceName, 0, 1, 1}),
+				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{instanceName, 0, 1, 1}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "vcpu.0.sockets", "1"),
 					resource.TestCheckResourceAttr(resourceName, "vcpu.0.cores_per_socket", "1"),
@@ -182,7 +185,7 @@ func TestAccInstance_vcpu(t *testing.T) {
 			},
 			// 5. Increase our CPU count with vcpu.sockets/vcpu.cores_per_socket
 			{
-				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{ANS_TEST_VPC_REGION_ID, instanceName, 0, 2, 2}),
+				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{instanceName, 0, 2, 2}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "vcpu.0.sockets", "2"),
 					resource.TestCheckResourceAttr(resourceName, "vcpu.0.cores_per_socket", "2"),
@@ -191,7 +194,7 @@ func TestAccInstance_vcpu(t *testing.T) {
 			},
 			// 6. Decrease our CPU count with vcpu.sockets/vcpu.cores_per_socket
 			{
-				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{ANS_TEST_VPC_REGION_ID, instanceName, 0, 1, 2}),
+				Config: testAccResourceInstanceConfig_vcpu(vcpuTestConfig{instanceName, 0, 1, 2}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "vcpu.0.sockets", "1"),
 					resource.TestCheckResourceAttr(resourceName, "vcpu.0.cores_per_socket", "2"),
@@ -200,7 +203,7 @@ func TestAccInstance_vcpu(t *testing.T) {
 			},
 			// 7. Attempt to increase our CPU count with vcpu_cores - this should error
 			{
-				Config:      testAccResourceInstanceConfig_vcpu(vcpuTestConfig{ANS_TEST_VPC_REGION_ID, instanceName, 2, 0, 0}),
+				Config:      testAccResourceInstanceConfig_vcpu(vcpuTestConfig{instanceName, 2, 0, 0}),
 				ExpectError: regexp.MustCompile(`.*vcpu cores can't be updated.*`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "vcpu.0.sockets", "1"),
@@ -218,9 +221,13 @@ func testAccResourceInstanceConfig_vcpu(config vcpuTestConfig) string {
 	}
 
 	tmpl := template.Must(template.New("tf1").Parse(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "{{.RegionID}}"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_image" "ubuntu2204" {
@@ -234,12 +241,12 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
     subnet = "10.0.0.0/24"
 }
 

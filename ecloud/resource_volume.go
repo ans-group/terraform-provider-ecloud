@@ -196,6 +196,35 @@ func resourceVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 func resourceVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
+	if volumeGroupID, ok := d.GetOk("volume_group_id"); ok {
+		tflog.Info(ctx, "Detaching volume from volume group", map[string]interface{}{
+			"id":              d.Id(),
+			"volume_group_id": volumeGroupID,
+		})
+
+		patchReq := ecloudservice.PatchVolumeRequest{
+			VolumeGroupID: ptr.String(""),
+		}
+
+		task, err := service.PatchVolume(d.Id(), patchReq)
+		if err != nil {
+			return diag.Errorf("Error detaching volume with ID [%s] from volume group: %s", d.Id(), err)
+		}
+
+		stateConf := &resource.StateChangeConf{
+			Target:     []string{ecloudservice.TaskStatusComplete.String()},
+			Refresh:    TaskStatusRefreshFunc(ctx, service, task.TaskID),
+			Timeout:    d.Timeout(schema.TimeoutUpdate),
+			Delay:      5 * time.Second,
+			MinTimeout: 3 * time.Second,
+		}
+
+		_, err = stateConf.WaitForStateContext(ctx)
+		if err != nil {
+			return diag.Errorf("Error waiting for volume with ID [%s] to return sync status of [%s]: %s", d.Id(), ecloudservice.TaskStatusComplete, err)
+		}
+	}
+
 	tflog.Info(ctx, "Removing volume", map[string]interface{}{
 		"id": d.Id(),
 	})

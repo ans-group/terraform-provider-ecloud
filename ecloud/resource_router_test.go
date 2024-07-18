@@ -21,7 +21,7 @@ func TestAccRouter_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceRouterConfig_basic(ANS_TEST_VPC_REGION_ID, routerName),
+				Config: testAccResourceRouterConfig_basic(routerName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", routerName),
@@ -80,11 +80,15 @@ func testAccCheckRouterDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccResourceRouterConfig_basic(regionID string, routerName string) string {
+func testAccResourceRouterConfig_basic(routerName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%s"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -96,5 +100,5 @@ resource "ecloud_router" "test-router" {
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	name = "%s"
 }
-`, regionID, routerName)
+`, routerName)
 }

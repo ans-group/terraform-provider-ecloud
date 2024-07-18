@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ans-group/sdk-go/pkg/service/ecloud"
 	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -55,7 +54,7 @@ func resourceNATOverloadRule() *schema.Resource {
 func resourceNATOverloadRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	actionParsed, err := ecloud.ParseNATOverloadRuleAction(d.Get("action").(string))
+	actionParsed, err := ecloudservice.ParseNATOverloadRuleAction(d.Get("action").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}

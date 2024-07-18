@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceHostGroup_basic(t *testing.T) {
 	hostGroupName := acctest.RandomWithPrefix("tftest")
-	config := testAccDataSourceHostGroupConfig_basic(ANS_TEST_VPC_REGION_ID, hostGroupName)
+	config := testAccDataSourceHostGroupConfig_basic(hostGroupName)
 	resourceName := "data.ecloud_hostgroup.test-hostgroup"
 
 	resource.Test(t, resource.TestCase{
@@ -27,11 +27,15 @@ func TestAccDataSourceHostGroup_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceHostGroupConfig_basic(regionID string, hostGroupName string) string {
+func testAccDataSourceHostGroupConfig_basic(hostGroupName string) string {
 	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "%[1]s"
-	name      = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -46,12 +50,12 @@ resource "ecloud_hostgroup" "test-hostgroup" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
 	host_spec_id = data.ecloud_hostspec.test-hostspec.id
-	name = "%[2]s"
+	name = "%[1]s"
     windows_enabled = false
 }
 
 data "ecloud_hostgroup" "test-hostgroup" {
     name = ecloud_hostgroup.test-hostgroup.name
 }
-`, regionID, hostGroupName)
+`, hostGroupName)
 }

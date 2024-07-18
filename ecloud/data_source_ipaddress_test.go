@@ -9,7 +9,6 @@ import (
 
 func TestAccDataSourceIPAddress_basic(t *testing.T) {
 	params := map[string]string{
-		"vpc_region_id":   ANS_TEST_VPC_REGION_ID,
 		"datasource_name": "test-ipaddress",
 		"name":            acctest.RandomWithPrefix("tftest"),
 		"ip_address":      "10.0.0.10",
@@ -34,9 +33,13 @@ func TestAccDataSourceIPAddress_basic(t *testing.T) {
 
 func testAccDataSourceIPAddressConfig_basic(params map[string]string) string {
 	str, _ := testAccTemplateConfig(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
 resource "ecloud_vpc" "test-vpc" {
-	region_id = "{{ .vpc_region_id }}"
-	name = "test-vpc"
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
 }
 
 data "ecloud_availability_zone" "test-az" {
@@ -46,12 +49,12 @@ data "ecloud_availability_zone" "test-az" {
 resource "ecloud_router" "test-router" {
 	vpc_id = ecloud_vpc.test-vpc.id
 	availability_zone_id = data.ecloud_availability_zone.test-az.id
-	name = "test-router"
+	name = "tftest-router"
 }
 
 resource "ecloud_network" "test-network" {
 	router_id = ecloud_router.test-router.id
-	name = "test-network"
+	name = "tftest-network"
 	subnet = "10.0.0.0/24"
 }
 
