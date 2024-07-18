@@ -67,6 +67,7 @@ func resourceVolume() *schema.Resource {
 			"volume_group_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
 			},
 			"port": {
 				Type:     schema.TypeInt,
