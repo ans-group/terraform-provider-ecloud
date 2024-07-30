@@ -8,7 +8,7 @@ func expandCreateNetworkRuleRequestPorts(rawPorts []interface{}) ([]ecloud.Creat
 	for _, rawPort := range rawPorts {
 		port := rawPort.(map[string]interface{})
 		protocol := port["protocol"].(string)
-		protocolParsed, err := ecloud.ParseNetworkRulePortProtocol(protocol)
+		protocolParsed, err := ecloud.NetworkRulePortProtocolEnum.Parse(protocol)
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +30,7 @@ func expandUpdateNetworkRuleRequestPorts(rawPorts []interface{}) ([]ecloud.Patch
 	for _, rawPort := range rawPorts {
 		port := rawPort.(map[string]interface{})
 		protocol := port["protocol"].(string)
-		protocolParsed, err := ecloud.ParseNetworkRulePortProtocol(protocol)
+		protocolParsed, err := ecloud.NetworkRulePortProtocolEnum.Parse(protocol)
 		if err != nil {
 			return nil, err
 		}

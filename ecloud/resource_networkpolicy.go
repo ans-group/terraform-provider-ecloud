@@ -59,7 +59,7 @@ func resourceNetworkPolicyCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if catchallRuleAction, ok := d.GetOk("catchall_rule_action"); ok {
-		action, err := ecloudservice.ParseNetworkPolicyCatchallRuleAction(catchallRuleAction.(string))
+		action, err := ecloudservice.NetworkPolicyCatchallRuleActionEnum.Parse(catchallRuleAction.(string))
 		if err != nil {
 			return diag.Errorf("Error parsing network policy catch-all rule action: %s", err)
 		}
@@ -176,7 +176,7 @@ func resourceNetworkPolicyUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("catchall_rule_action") {
 		// parse new rule action
-		catchallRuleAction, err := ecloudservice.ParseNetworkPolicyCatchallRuleAction(d.Get("catchall_rule_action").(string))
+		catchallRuleAction, err := ecloudservice.NetworkPolicyCatchallRuleActionEnum.Parse(d.Get("catchall_rule_action").(string))
 		if err != nil {
 			return diag.Errorf("Error parsing network rule action: %s", err)
 		}

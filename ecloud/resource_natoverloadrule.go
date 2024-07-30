@@ -54,7 +54,7 @@ func resourceNATOverloadRule() *schema.Resource {
 func resourceNATOverloadRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	actionParsed, err := ecloudservice.ParseNATOverloadRuleAction(d.Get("action").(string))
+	actionParsed, err := ecloudservice.NATOverloadRuleActionEnum.Parse(d.Get("action").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}

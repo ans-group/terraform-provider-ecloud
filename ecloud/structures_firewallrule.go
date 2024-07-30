@@ -8,7 +8,7 @@ func expandCreateFirewallRuleRequestPorts(rawPorts []interface{}) ([]ecloud.Crea
 	for _, rawPort := range rawPorts {
 		port := rawPort.(map[string]interface{})
 		protocol := port["protocol"].(string)
-		protocolParsed, err := ecloud.ParseFirewallRulePortProtocol(protocol)
+		protocolParsed, err := ecloud.FirewallRulePortProtocolEnum.Parse(protocol)
 		if err != nil {
 			return nil, err
 		}
@@ -29,7 +29,7 @@ func expandUpdateFirewallRuleRequestPorts(rawPorts []interface{}) ([]ecloud.Patc
 	for _, rawPort := range rawPorts {
 		port := rawPort.(map[string]interface{})
 		protocol := port["protocol"].(string)
-		protocolParsed, err := ecloud.ParseFirewallRulePortProtocol(protocol)
+		protocolParsed, err := ecloud.FirewallRulePortProtocolEnum.Parse(protocol)
 		if err != nil {
 			return nil, err
 		}

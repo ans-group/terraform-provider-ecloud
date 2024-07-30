@@ -47,8 +47,8 @@ github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXva
 github.com/agext/levenshtein v1.2.2/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/ans-group/go-durationstring v1.2.0 h1:UJIuQATkp0t1rBvZsHRwki33YHV9E+Ulro+3NbMB7MM=
 github.com/ans-group/go-durationstring v1.2.0/go.mod h1:QGF9Mdpq9058QXaut8r55QWu6lcHX6i/GvF1PZVkV6o=
-github.com/ans-group/sdk-go v1.17.1 h1:4MFfJCqfSyorAeffZjvBBug5ifuvkxkG3CJPcDbgX5E=
-github.com/ans-group/sdk-go v1.17.1/go.mod h1:w4tX8raa9y3j7pug6TLcF8ZW1j9G05AmNoQLBloYxEY=
+github.com/ans-group/sdk-go v1.19.0 h1:MnoNZDN86ilbLQk7x6iXKEXcA6HY/izC9mv/EL232M4=
+github.com/ans-group/sdk-go v1.19.0/go.mod h1:w4tX8raa9y3j7pug6TLcF8ZW1j9G05AmNoQLBloYxEY=
 github.com/apparentlymart/go-textseg/v12 v12.0.0/go.mod h1:S/4uRK2UtaQttw1GenVJEynmyUenKwP++x/+DdGV/Ec=
 github.com/apparentlymart/go-textseg/v15 v15.0.0 h1:uYvfpb3DyLSCGWnctWKGj857c6ew1u1fNQOlOtuGxQY=
 github.com/apparentlymart/go-textseg/v15 v15.0.0/go.mod h1:K8XmNZdhEBkdlyDdvbmmsvpAG721bKi0joRfFdHIWJ4=

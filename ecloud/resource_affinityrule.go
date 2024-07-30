@@ -45,7 +45,7 @@ func resourceAffinityRule() *schema.Resource {
 				ForceNew: true,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					v := val.(string)
-					_, err := ecloudservice.ParseAffinityRuleType(v)
+					_, err := ecloudservice.AffinityRuleTypeEnum.Parse(v)
 					if err != nil {
 						errs = append(errs, fmt.Errorf("%q must be a valid affinity rule type [affinity, anti-affinity], got: %s", key, v))
 					}
@@ -66,7 +66,7 @@ func resourceAffinityRule() *schema.Resource {
 func resourceAffinityRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	service := meta.(ecloudservice.ECloudService)
 
-	ruleType, err := ecloudservice.ParseAffinityRuleType(d.Get("type").(string))
+	ruleType, err := ecloudservice.AffinityRuleTypeEnum.Parse(d.Get("type").(string))
 	if err != nil {
 		return diag.Errorf("Error parsing affinity rule type: %s", err)
 	}
