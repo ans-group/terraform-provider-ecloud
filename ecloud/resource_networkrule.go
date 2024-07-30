@@ -112,14 +112,14 @@ func resourceNetworkRuleCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	direction := d.Get("direction").(string)
-	directionParsed, err := ecloudservice.ParseNetworkRuleDirection(direction)
+	directionParsed, err := ecloudservice.NetworkRuleDirectionEnum.Parse(direction)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	createReq.Direction = directionParsed
 
 	action := d.Get("action").(string)
-	actionParsed, err := ecloudservice.ParseNetworkRuleAction(action)
+	actionParsed, err := ecloudservice.NetworkRuleActionEnum.Parse(action)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -230,7 +230,7 @@ func resourceNetworkRuleUpdate(ctx context.Context, d *schema.ResourceData, meta
 		hasChange = true
 
 		action := d.Get("action").(string)
-		actionParsed, err := ecloudservice.ParseNetworkRuleAction(action)
+		actionParsed, err := ecloudservice.NetworkRuleActionEnum.Parse(action)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -242,7 +242,7 @@ func resourceNetworkRuleUpdate(ctx context.Context, d *schema.ResourceData, meta
 		hasChange = true
 
 		direction := d.Get("direction").(string)
-		directionParsed, err := ecloudservice.ParseNetworkRuleDirection(direction)
+		directionParsed, err := ecloudservice.NetworkRuleDirectionEnum.Parse(direction)
 		if err != nil {
 			return diag.FromErr(err)
 		}

@@ -107,14 +107,14 @@ func resourceFirewallRuleCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	direction := d.Get("direction").(string)
-	directionParsed, err := ecloudservice.ParseFirewallRuleDirection(direction)
+	directionParsed, err := ecloudservice.FirewallRuleDirectionEnum.Parse(direction)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	createReq.Direction = directionParsed
 
 	action := d.Get("action").(string)
-	actionParsed, err := ecloudservice.ParseFirewallRuleAction(action)
+	actionParsed, err := ecloudservice.FirewallRuleActionEnum.Parse(action)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -218,7 +218,7 @@ func resourceFirewallRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 		hasChange = true
 
 		action := d.Get("action").(string)
-		actionParsed, err := ecloudservice.ParseFirewallRuleAction(action)
+		actionParsed, err := ecloudservice.FirewallRuleActionEnum.Parse(action)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -230,7 +230,7 @@ func resourceFirewallRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 		hasChange = true
 
 		direction := d.Get("direction").(string)
-		directionParsed, err := ecloudservice.ParseFirewallRuleDirection(direction)
+		directionParsed, err := ecloudservice.FirewallRuleDirectionEnum.Parse(direction)
 		if err != nil {
 			return diag.FromErr(err)
 		}
