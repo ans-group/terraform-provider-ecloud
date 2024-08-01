@@ -58,15 +58,15 @@ func dataSourceInstanceCredentialsRead(ctx context.Context, d *schema.ResourceDa
 
 	credentials, err := service.GetInstanceCredentials(d.Get("instance_id").(string), params)
 	if err != nil {
-		return diag.Errorf("Error retrieving active instances: %s", err)
+		return diag.Errorf("Error retrieving instance credentials: %s", err)
 	}
 
 	if len(credentials) < 1 {
-		return diag.Errorf("No instances found with provided arguments")
+		return diag.Errorf("No credentials found with provided arguments")
 	}
 
 	if len(credentials) > 1 {
-		return diag.Errorf("More than 1 instance found with provided arguments")
+		return diag.Errorf("More than 1 credential found with provided arguments")
 	}
 
 	d.SetId(credentials[0].ID)
