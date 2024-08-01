@@ -63,6 +63,7 @@ func Provider() *schema.Provider {
 			"ecloud_resourcetier":        dataSourceResourceTier(),
 			"ecloud_natoverloadrule":     dataSourceNATOverloadRule(),
 			"ecloud_iops":                dataSourceIOPS(),
+			"ecloud_instance_credential": dataSourceInstanceCredentials(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":                   resourceVPC(),
@@ -91,6 +92,7 @@ func Provider() *schema.Provider {
 			"ecloud_affinityrule_member":   resourceAffinityRuleMember(),
 			"ecloud_natoverloadrule":       resourceNATOverloadRule(),
 			"ecloud_volumegroup_instance":  resourceVolumeGroupInstance(),
+			"ecloud_instance_script":       resourceInstanceScript(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
