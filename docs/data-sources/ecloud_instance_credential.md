@@ -19,8 +19,6 @@ data "ecloud_credential" "instance1_root" {
 
 ## Attributes Reference
 
-`id` is set to host ID
-
-- `name`: Name of host
-- `username`: credential username
+- `name`: Name of credential
+- `username`: Credential username
 - `password`: Credential password
