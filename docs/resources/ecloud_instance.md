@@ -43,7 +43,8 @@ resource "ecloud_instance" "instance-1" {
 - `volume_capacity`: (Required) Size of volume (in GiB) to allocate for instance.
 - `volume_iops`: IOPs of the operating system volume
 - `locked`: Specifies instance should be locked from update/delete
-- `backup_enabled`: Specifies backup should be enabled
+- `backup_enabled`: Specifies that VM-level backups should be enabled. This cannot be changed after instance creation.
+- `backup_gateway_id`: When set, enables agent-level backups. Requires an `ecloud_backup_gateway` resource to be created. Can be toggled after instance creation.
 - `network_id`: (Required) ID of network to attach instance NIC to
 - `floating_ip_id`: ID of floating IP address to assign to instance NIC
 - `requires_floating_ip`: Specifies floating IP should be allocated and assigned
@@ -82,7 +83,9 @@ If `requires_floating_ip` is set to `true` for an instance resource, **do not** 
 - `volume_capacity`: Size of OS volume (in GiB) for instance.
 - `volume_iops`: IOPs of the operating system volume
 - `locked`: Whether instance is locked from update/delete
-- `backup_enabled`: Whether backup is be enabled
+- `backup_enabled`: Whether VM-level backup is enabled
+- `backup_gateway_id`: The ID of the backup gateway used for agent-level backups
+- `backup_agent_enabled`: Whether the backup agent has been successfully enabled on this instance
 - `network_id`:  ID of instance network
 - `floating_ip_id`: ID of assigned floating ip address
 - `data_volume_ids`: IDs of attached data volumes
