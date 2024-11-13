@@ -112,6 +112,15 @@ func resourceInstance() *schema.Resource {
 				ForceNew: true,
 				Default:  false,
 			},
+			"backup_gateway_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"backup_agent_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 			"network_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -214,6 +223,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta in
 		VolumeIOPS:         d.Get("volume_iops").(int),
 		Locked:             d.Get("locked").(bool),
 		BackupEnabled:      d.Get("backup_enabled").(bool),
+		BackupGatewayID:    d.Get("backup_gateway_id").(string),
 		NetworkID:          d.Get("network_id").(string),
 		FloatingIPID:       d.Get("floating_ip_id").(string),
 		RequiresFloatingIP: d.Get("requires_floating_ip").(bool),
@@ -350,6 +360,8 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 	d.Set("ram_capacity", instance.RAMCapacity)
 	d.Set("locked", instance.Locked)
 	d.Set("backup_enabled", instance.BackupEnabled)
+	d.Set("backup_gateway_id", instance.BackupGatewayID)
+	d.Set("backup_agent_enabled", instance.BackupAgentEnabled)
 	d.Set("host_group_id", instance.HostGroupID)
 	d.Set("resource_tier_id", instance.ResourceTierID)
 	d.Set("volume_capacity", osVolume[0].Capacity)
@@ -432,6 +444,10 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	if d.HasChange("volume_group_id") {
 		hasChange = true
 		patchReq.VolumeGroupID = ptr.String(d.Get("volume_group_id").(string))
+	}
+
+	if d.HasChange("backup_gateway_id") {
+		patchReq.BackupGatewayID = d.Get("backup_gateway_id").(string)
 	}
 
 	if hasChange {
