@@ -5,8 +5,8 @@ This data source represents an eCloud Monitoring Gateway
 ## Example Usage
 
 ```hcl
-data "ecloud_backup_gateway" "gateway-1" {
-  name = "my-backup-gateway"
+data "ecloud_monitoring_gateway" "gateway-1" {
+  name = "my-monitoring-gateway"
 }
 ```
 
