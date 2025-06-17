@@ -69,6 +69,7 @@ func Provider() *schema.Provider {
 			"ecloud_instance_credential":       dataSourceInstanceCredentials(),
 			"ecloud_backup_gateway_spec":       dataSourceBackupGatewaySpecification(),
 			"ecloud_backup_gateway":            dataSourceBackupGateway(),
+			"ecloud_monitoring_gateway":        dataSourceMonitoringGateway(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":                   resourceVPC(),
