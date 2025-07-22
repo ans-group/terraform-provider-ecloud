@@ -61,7 +61,7 @@ resource "ecloud_networkrule" "networkrule-web" {
 - `enabled`: Specifies whether network rule is enabled
 - `port`: Map of ports for rule
   - `name`:  Name of network port rule
-  - `protocol`: (Required) Protocol of port/service. One of: `TCP`, `UDP`
+  - `protocol`: (Required) Protocol of port/service. One of: `TCP`, `UDP`, `ICMPv4`
   - `source`: (Required) Source port / port-range. Accepts `ANY` or comma-separated list of ports / port-ranges
   - `destination`: (Required) Destination port / port-range. Accepts `ANY` or comma-separated list of ports / port-ranges.
 
