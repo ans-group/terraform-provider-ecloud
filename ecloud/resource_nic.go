@@ -83,7 +83,7 @@ func resourceNICCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return diag.Errorf("Error waiting for volume with ID [%s] to be created: %s", d.Id(), err)
+		return diag.Errorf("Error waiting for nic with ID [%s] to be created: %s", d.Id(), err)
 	}
 
 	d.SetId(taskRef.ResourceID)
