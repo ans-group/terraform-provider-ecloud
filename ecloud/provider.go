@@ -102,6 +102,7 @@ func Provider() *schema.Provider {
 			"ecloud_volumegroup_instance":  resourceVolumeGroupInstance(),
 			"ecloud_instance_script":       resourceInstanceScript(),
 			"ecloud_backup_gateway":        resourceBackupGateway(),
+			"ecloud_nic":                   resourceNIC(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
