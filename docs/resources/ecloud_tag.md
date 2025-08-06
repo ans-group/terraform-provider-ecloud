@@ -7,7 +7,7 @@ This resource is for managing eCloud Tags. Tags are metadata labels that can be 
 ### Basic Tag
 
 ```hcl
-resource "ecloud_tag" "environment" {
+resource "ecloud_tag" "my_first_tag" {
   name = "production"
 }
 ```
@@ -15,28 +15,33 @@ resource "ecloud_tag" "environment" {
 ### Tag with Scope
 
 ```hcl
-resource "ecloud_tag" "web_server" {
-  name  = "web-server"
-  scope = "instance"
+resource "ecloud_tag" "env_prod" {
+  scope = "environment"
+  name  = "production"
 }
 ```
 
 ### Multiple Tags for Resource Organization
 
 ```hcl
-resource "ecloud_tag" "environment" {
+resource "ecloud_tag" "env_prod" {
+  scope = "environment"
   name  = "production"
-  scope = "instance"
 }
 
-resource "ecloud_tag" "team" {
-  name  = "platform"
-  scope = "instance"
+resource "ecloud_tag" "env_dev" {
+  scope = "environment"
+  name  = "development"
 }
 
-resource "ecloud_tag" "application" {
-  name  = "api-gateway"
-  scope = "instance"
+resource "ecloud_tag" "team_devops" {
+  scope = "team"
+  name  = "devops"
+}
+
+resource "ecloud_tag" "monitoring_enabled" {
+  scope = "monitoring"
+  name  = "enabled"
 }
 
 # Use tags with an instance
@@ -44,9 +49,9 @@ resource "ecloud_instance" "api_server" {
   # ... instance configuration ...
   
   tag_ids = [
-    ecloud_tag.environment.id,
-    ecloud_tag.team.id,
-    ecloud_tag.application.id
+    ecloud_tag.env_prod.id,
+    ecloud_tag.team_devops.id,
+    ecloud_tag.monitoring_enabled.id
   ]
 }
 ```
@@ -54,15 +59,13 @@ resource "ecloud_instance" "api_server" {
 ## Argument Reference
 
 - `name`: (Required) Name of the tag. This is the primary identifier and label for the tag
-- `scope`: Scope of the tag, indicating what type of resources this tag is intended for (e.g., "instance", "vpc", "network")
+- `scope`: Scope of the tag. Tag names must be unique within a given scope.
 
 ## Attributes Reference
 
 - `id`: ID of the tag
 - `name`: Name of the tag
 - `scope`: Scope of the tag
-- `created_at`: Timestamp when the tag was created
-- `updated_at`: Timestamp when the tag was last updated
 
 ## Import
 
@@ -83,11 +86,14 @@ Tags are assigned to resources using the resource's `tag_ids` attribute. When up
 ### Tag Naming
 - Tag names should be descriptive and follow your organization's naming conventions
 - Consider using consistent naming patterns across your infrastructure
-- Tag names are case-sensitive
 
 ### Tag Scopes
-The `scope` field is optional but recommended for organizing tags by resource type:
-- Use `"instance"` for tags intended for instances
-- Use `"vpc"` for VPC-related tags
-- Use `"network"` for network-related tags
-- Custom scopes can be defined based on your organizational needs
+The `scope` field is optional but recommended. Some examples:
+
+- Use `"environment"` with tag names like `"production"` or `"development"` to indicate the environment
+- Use `"team"` for team-related tags, such as `"devops"` or `"engineering"`
+- Use `"monitoring"` with values like `"enabled"` or `"disabled"` to indicate monitoring status
+- Use `"cost_center"` for financial tracking, such as `"marketing"` or `"sales"`
+- Use `"backups"` for backup-related tags, such as `"enabled"` or `"disabled"`
+
+Custom scopes can be defined based on your organizational needs

@@ -87,17 +87,6 @@ The following arguments are supported for filtering tags. At least one argument 
 
 - `id`: ID of the tag
 - `name`: Name of the tag
-- `scope`: Scope of the tag  
+- `scope`: Scope of the tag
 - `created_at`: Timestamp when the tag was created
 - `updated_at`: Timestamp when the tag was last updated
-
-## Notes
-
-### Filtering
-- If multiple filters are provided, they are combined with AND logic
-- The data source will return an error if no tags match the specified criteria
-- The data source will return an error if multiple tags match the specified criteria
-
-### Performance
-- When possible, use specific filters like `tag_id` for better performance
-- Using only `name` without `scope` may return unexpected results if multiple tags have the same name but different scopes
