@@ -199,6 +199,33 @@ func resourceInstance() *schema.Resource {
 				Optional: true,
 				Default:  false,
 			},
+			"tags": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"scope": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
+			"tag_ids": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Set:      schema.HashString,
+			},
 		},
 		CustomizeDiff: customdiff.Sequence(
 			// If we're using the new vcpu block in the configuration, then we need to remove vcpu_cores
@@ -243,6 +270,15 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta in
 		ResourceTierID:     d.Get("resource_tier_id").(string),
 		CustomIPAddress:    connection.IPAddress(d.Get("ip_address").(string)),
 		SSHKeyPairIDs:      expandSshKeyPairIds(ctx, d.Get("ssh_keypair_ids").(*schema.Set).List()),
+	}
+
+	// Handle tag IDs if provided
+	if tagIDsInterface := d.Get("tag_ids").(*schema.Set).List(); len(tagIDsInterface) > 0 {
+		tagIDs := make([]string, len(tagIDsInterface))
+		for i, tagID := range tagIDsInterface {
+			tagIDs[i] = tagID.(string)
+		}
+		createReq.TagIDs = tagIDs
 	}
 
 	if _, ok := d.GetOk("vcpu_cores"); ok {
@@ -426,6 +462,20 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.Set("data_volume_ids", flattenInstanceDataVolumes(volumes))
 
+	// Set tags
+	if err := d.Set("tags", flattenInstanceTags(instance.Tags)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Set tag_ids
+	tagIDs := make([]string, len(instance.Tags))
+	for i, tag := range instance.Tags {
+		tagIDs[i] = tag.ID
+	}
+	if err := d.Set("tag_ids", tagIDs); err != nil {
+		return diag.FromErr(err)
+	}
+
 	return nil
 }
 
@@ -459,6 +509,16 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 	if d.HasChange("backup_gateway_id") {
 		patchReq.BackupGatewayID = d.Get("backup_gateway_id").(string)
+	}
+
+	if d.HasChange("tag_ids") {
+		hasChange = true
+		tagIDsInterface := d.Get("tag_ids").(*schema.Set).List()
+		tagIDs := make([]string, len(tagIDsInterface))
+		for i, tagID := range tagIDsInterface {
+			tagIDs[i] = tagID.(string)
+		}
+		patchReq.TagIDs = &tagIDs
 	}
 
 	if hasChange {

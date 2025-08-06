@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	ecloudservice "github.com/ans-group/sdk-go/pkg/service/ecloud"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -29,4 +30,18 @@ func expandSshKeyPairIds(ctx context.Context, rawKeys []interface{}) []string {
 	tflog.Info(ctx, fmt.Sprintf("SSH key pairs: %+v", keyPairs))
 
 	return keyPairs
+}
+
+func flattenInstanceTags(tags []ecloudservice.ResourceTag) []interface{} {
+	flattenedTags := make([]interface{}, len(tags))
+
+	for i, tag := range tags {
+		flattenedTag := make(map[string]interface{})
+		flattenedTag["id"] = tag.ID
+		flattenedTag["name"] = tag.Name
+		flattenedTag["scope"] = tag.Scope
+		flattenedTags[i] = flattenedTag
+	}
+
+	return flattenedTags
 }

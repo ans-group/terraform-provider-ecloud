@@ -26,6 +26,26 @@ func dataSourceInstance() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"tags": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"scope": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -61,6 +81,11 @@ func dataSourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta in
 	d.SetId(instances[0].ID)
 	d.Set("vpc_id", instances[0].VPCID)
 	d.Set("name", instances[0].Name)
+
+	// Set tags
+	if err := d.Set("tags", flattenInstanceTags(instances[0].Tags)); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return nil
 }

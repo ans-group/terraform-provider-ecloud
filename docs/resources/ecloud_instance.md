@@ -4,6 +4,8 @@ This resource is for managing eCloud Instances
 
 ## Example Usage
 
+### Basic Instance
+
 ```hcl
 resource "ecloud_instance" "instance-1" {
   vcpu {
@@ -26,6 +28,40 @@ resource "ecloud_instance" "instance-1" {
 
   ssh_keypair_ids = [
     "ssh-abcd1234"
+  ]
+}
+```
+
+### Instance with Tags
+
+```hcl
+# Create tags first
+resource "ecloud_tag" "environment" {
+  name  = "production"
+  scope = "instance"
+}
+
+resource "ecloud_tag" "application" {
+  name  = "web-server"
+  scope = "instance"
+}
+
+resource "ecloud_instance" "tagged-instance" {
+  vcpu {
+    sockets = 2
+    cores_per_socket = 2
+  }
+  ram_capacity    = 4096
+  vpc_id          = "vpc-abcdef12"
+  name            = "production-web-server"
+  image_id        = "img-abcdef"
+  volume_capacity = 40
+  network_id      = "net-abcdef12"
+  
+  # Assign tags to the instance
+  tag_ids = [
+    ecloud_tag.environment.id,
+    ecloud_tag.application.id
   ]
 }
 ```
@@ -56,6 +92,7 @@ resource "ecloud_instance" "instance-1" {
 - `resource_tier_id`: ID of the public resource tier to move the instance to. Cannot be used with `host_group_id`
 - `ip_address`: DHCP IP address to allocate to instance
 - `encrypted`: Whether instance should be encrypted at rest
+- `tag_ids`: Set of tag IDs to assign to the instance. When updating tags, the complete list must be provided - any tags not included in the list will be removed from the instance
 - `vcpu_cores`: (Deprecated) Count of vCPU sockets for the instance, use the new `vcpu` block, with `vcpu.sockets` and `vcpu.cores_per_socket` instead. To migrate, set `vcpu.sockets` to the value of `vcpu_cores`, and `vcpu.cores_per_socket` to `1`. Once you have migrated to the new `vcpu` configuration block, you can no longer use `vcpu_cores` for this instance.
 
 
@@ -95,3 +132,7 @@ If `requires_floating_ip` is set to `true` for an instance resource, **do not** 
 - `host_group_id`: ID of the host group the instance runs on, if defined.
 - `resource_tier_id`: ID of the public resource tier the instance runs on.
 - `encrypted`: Whether instance is encrypted
+- `tags`: Set of tags assigned to the instance. Each tag contains:
+  - `id`: ID of the tag
+  - `name`: Name of the tag
+  - `scope`: Scope of the tag
