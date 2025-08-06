@@ -70,6 +70,7 @@ func Provider() *schema.Provider {
 			"ecloud_backup_gateway_spec":       dataSourceBackupGatewaySpecification(),
 			"ecloud_backup_gateway":            dataSourceBackupGateway(),
 			"ecloud_monitoring_gateway":        dataSourceMonitoringGateway(),
+			"ecloud_tag":                       dataSourceTag(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ecloud_vpc":                   resourceVPC(),
@@ -103,6 +104,7 @@ func Provider() *schema.Provider {
 			"ecloud_instance_script":       resourceInstanceScript(),
 			"ecloud_backup_gateway":        resourceBackupGateway(),
 			"ecloud_nic":                   resourceNIC(),
+			"ecloud_tag":                   resourceTag(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

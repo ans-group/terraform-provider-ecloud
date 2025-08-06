@@ -35,6 +35,30 @@ func TestAccInstance_basic(t *testing.T) {
 	})
 }
 
+func TestAccInstance_withTags(t *testing.T) {
+	instanceName := acctest.RandomWithPrefix("tftest")
+	tagName := acctest.RandomWithPrefix("tftest-tag")
+	resourceName := "ecloud_instance.test-instance"
+	vpcResourceName := "ecloud_vpc.test-vpc"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckInstanceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceInstanceConfig_withTags(instanceName, tagName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckInstanceExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", instanceName),
+					resource.TestCheckResourceAttrPair(vpcResourceName, "id", resourceName, "vpc_id"),
+					resource.TestCheckResourceAttr(resourceName, "tag_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckInstanceExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -123,6 +147,54 @@ resource "ecloud_instance" "test-instance" {
 	vcpu_cores = 1
 }
 `, instanceName)
+}
+
+func testAccResourceInstanceConfig_withTags(instanceName, tagName string) string {
+	return fmt.Sprintf(`
+data "ecloud_region" "test-region" {
+	name = "Manchester"
+}
+
+resource "ecloud_vpc" "test-vpc" {
+	region_id = data.ecloud_region.test-region.id
+	name = "tftest-vpc"
+}
+
+data "ecloud_image" "centos7" {
+	name = "CentOS 7"
+}
+
+data "ecloud_availability_zone" "test-az" {
+	name = "Manchester West"
+}
+
+resource "ecloud_router" "test-router" {
+	vpc_id = ecloud_vpc.test-vpc.id
+	availability_zone_id = data.ecloud_availability_zone.test-az.id
+	name = "tftest-router"
+}
+
+resource "ecloud_network" "test-network" {
+	router_id = ecloud_router.test-router.id
+	name = "tftest-network"
+}
+
+resource "ecloud_tag" "test-tag" {
+	name = "%s"
+	scope = "instance"
+}
+
+resource "ecloud_instance" "test-instance" {
+	vpc_id = ecloud_vpc.test-vpc.id
+	network_id = ecloud_network.test-network.id
+	name = "%s"
+	image_id = data.ecloud_image.centos7.id
+	volume_capacity = 20
+	ram_capacity = 1024
+	vcpu_cores = 1
+	tag_ids = [ecloud_tag.test-tag.id]
+}
+`, tagName, instanceName)
 }
 
 type vcpuTestConfig struct {
