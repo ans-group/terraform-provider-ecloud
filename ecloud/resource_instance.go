@@ -251,25 +251,27 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta in
 	service := meta.(ecloudservice.ECloudService)
 
 	createReq := ecloudservice.CreateInstanceRequest{
-		VPCID:              d.Get("vpc_id").(string),
-		Name:               d.Get("name").(string),
-		ImageID:            d.Get("image_id").(string),
-		ImageData:          expandCreateInstanceRequestImageData(ctx, d.Get("image_data").(map[string]interface{})),
-		UserScript:         d.Get("user_script").(string),
-		RAMCapacity:        d.Get("ram_capacity").(int),
-		VolumeCapacity:     d.Get("volume_capacity").(int),
-		VolumeIOPS:         d.Get("volume_iops").(int),
-		Locked:             d.Get("locked").(bool),
-		BackupEnabled:      d.Get("backup_enabled").(bool),
-		BackupGatewayID:    d.Get("backup_gateway_id").(string),
-		NetworkID:          d.Get("network_id").(string),
-		FloatingIPID:       d.Get("floating_ip_id").(string),
-		RequiresFloatingIP: d.Get("requires_floating_ip").(bool),
-		IsEncrypted:        d.Get("encrypted").(bool),
-		HostGroupID:        d.Get("host_group_id").(string),
-		ResourceTierID:     d.Get("resource_tier_id").(string),
-		CustomIPAddress:    connection.IPAddress(d.Get("ip_address").(string)),
-		SSHKeyPairIDs:      expandSshKeyPairIds(ctx, d.Get("ssh_keypair_ids").(*schema.Set).List()),
+		VPCID:               d.Get("vpc_id").(string),
+		Name:                d.Get("name").(string),
+		ImageID:             d.Get("image_id").(string),
+		ImageData:           expandCreateInstanceRequestImageData(ctx, d.Get("image_data").(map[string]interface{})),
+		UserScript:          d.Get("user_script").(string),
+		RAMCapacity:         d.Get("ram_capacity").(int),
+		VolumeCapacity:      d.Get("volume_capacity").(int),
+		VolumeIOPS:          d.Get("volume_iops").(int),
+		Locked:              d.Get("locked").(bool),
+		BackupEnabled:       d.Get("backup_enabled").(bool),
+		BackupGatewayID:     d.Get("backup_gateway_id").(string),
+		NetworkID:           d.Get("network_id").(string),
+		MonitoringEnabled:   d.Get("monitoring_enabled").(bool),
+		MonitoringGatewayID: d.Get("monitoring_gateway_id").(string),
+		FloatingIPID:        d.Get("floating_ip_id").(string),
+		RequiresFloatingIP:  d.Get("requires_floating_ip").(bool),
+		IsEncrypted:         d.Get("encrypted").(bool),
+		HostGroupID:         d.Get("host_group_id").(string),
+		ResourceTierID:      d.Get("resource_tier_id").(string),
+		CustomIPAddress:     connection.IPAddress(d.Get("ip_address").(string)),
+		SSHKeyPairIDs:       expandSshKeyPairIds(ctx, d.Get("ssh_keypair_ids").(*schema.Set).List()),
 	}
 
 	// Handle tag IDs if provided
@@ -409,6 +411,8 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 	d.Set("backup_enabled", instance.BackupEnabled)
 	d.Set("backup_gateway_id", instance.BackupGatewayID)
 	d.Set("backup_agent_enabled", instance.BackupAgentEnabled)
+	d.Set("monitoring_enabled", instance.MonitoringEnabled)
+	d.Set("monitoring_gateway_id", instance.MonitoringGatewayID)
 	d.Set("host_group_id", instance.HostGroupID)
 	d.Set("resource_tier_id", instance.ResourceTierID)
 	d.Set("volume_capacity", osVolume[0].Capacity)
@@ -508,7 +512,18 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	if d.HasChange("backup_gateway_id") {
+		hasChange = true
 		patchReq.BackupGatewayID = d.Get("backup_gateway_id").(string)
+	}
+
+	if d.HasChange("monitoring_enabled") {
+		hasChange = true
+		patchReq.MonitoringEnabled = ptr.Bool(d.Get("monitoring_enabled").(bool))
+	}
+
+	if d.HasChange("monitoring_gateway_id") {
+		hasChange = true
+		patchReq.MonitoringGatewayID = ptr.String(d.Get("monitoring_gateway_id").(string))
 	}
 
 	if d.HasChange("tag_ids") {

@@ -3,7 +3,7 @@ module github.com/ukfast/terraform-provider-ecloud
 go 1.24.5
 
 require (
-	github.com/ans-group/sdk-go v1.25.0
+	github.com/ans-group/sdk-go v1.25.4
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0
 	github.com/stretchr/testify v1.10.0
