@@ -110,7 +110,6 @@ func resourceInstance() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
-				Default:  false,
 			},
 			"backup_gateway_id": {
 				Type:     schema.TypeString,
@@ -125,7 +124,6 @@ func resourceInstance() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
-				Default:  false,
 			},
 			"monitoring_gateway_id": {
 				Type:     schema.TypeString,
