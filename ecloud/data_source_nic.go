@@ -59,7 +59,7 @@ func dataSourceNicRead(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	if len(nics) > 1 {
-		return diag.Errorf("More than 1 network found with provided arguments")
+		return diag.Errorf("More than 1 nic found with provided arguments")
 	}
 
 	d.SetId(nics[0].ID)
