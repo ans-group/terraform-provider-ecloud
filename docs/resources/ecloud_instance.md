@@ -81,6 +81,8 @@ resource "ecloud_instance" "tagged-instance" {
 - `locked`: Specifies instance should be locked from update/delete
 - `backup_enabled`: Specifies that VM-level backups should be enabled. This cannot be changed after instance creation.
 - `backup_gateway_id`: When set, enables agent-level backups. Requires an `ecloud_backup_gateway` resource to be created. Can be toggled after instance creation.
+- `monitoring_enabled`: Whether monitoring should be enabled for the instance
+- `monitoring_gateway_id`: ID of the monitoring gateway to use for the instance. Requires an `ecloud_monitoring_gateway` resource to be created.
 - `network_id`: (Required) ID of network to attach instance NIC to
 - `floating_ip_id`: ID of floating IP address to assign to instance NIC
 - `requires_floating_ip`: Specifies floating IP should be allocated and assigned
@@ -123,6 +125,8 @@ If `requires_floating_ip` is set to `true` for an instance resource, **do not** 
 - `backup_enabled`: Whether VM-level backup is enabled
 - `backup_gateway_id`: The ID of the backup gateway used for agent-level backups
 - `backup_agent_enabled`: Whether the backup agent has been successfully enabled on this instance
+- `monitoring_enabled`: Whether monitoring is enabled for the instance. Once enabled, this cannot be disabled.
+- `monitoring_gateway_id`: ID of the monitoring gateway associated with the instance
 - `network_id`:  ID of instance network
 - `floating_ip_id`: ID of assigned floating ip address
 - `data_volume_ids`: IDs of attached data volumes
