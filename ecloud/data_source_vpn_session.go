@@ -47,8 +47,9 @@ func dataSourceVPNSession() *schema.Resource {
 				Computed: true,
 			},
 			"psk": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 		},
 	}
