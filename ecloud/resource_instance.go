@@ -269,7 +269,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta in
 		IsEncrypted:         d.Get("encrypted").(bool),
 		HostGroupID:         d.Get("host_group_id").(string),
 		ResourceTierID:      d.Get("resource_tier_id").(string),
-		CustomIPAddress:     connection.IPAddress(d.Get("ip_address").(string)),
+		IPAddress:           connection.IPAddress(d.Get("ip_address").(string)),
 		SSHKeyPairIDs:       expandSshKeyPairIds(ctx, d.Get("ssh_keypair_ids").(*schema.Set).List()),
 	}
 
@@ -432,6 +432,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 		d.Set("vcpu_cores", nil)
 	}
 
+	var nic ecloudservice.NIC
 	if d.Get("nic_id").(string) == "" {
 		nics, err := service.GetInstanceNICs(d.Id(), connection.APIRequestParameters{})
 		if err != nil {
@@ -443,7 +444,16 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		d.Set("nic_id", nics[0].ID)
+		nic = nics[0]
+	} else {
+		var err error
+		nic, err = service.GetNIC(d.Get("nic_id").(string))
+		if err != nil {
+			return diag.Errorf("Failed to retrieve instance nic: %s", err)
+		}
 	}
+
+	d.Set("ip_address", nic.IPAddress)
 
 	if d.Get("requires_floating_ip").(bool) {
 		// we need to retrieve the instance nic to find the associated floating ip
